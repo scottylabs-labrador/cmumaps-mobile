@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { fetchSearch } from "@/api/client";
+import { useSearch } from "@/api/client";
 import { isPublicBuilding } from "@/lib/publicBuilding";
 import { theme } from "@/theme";
 
@@ -25,11 +24,7 @@ export const SearchResults = ({
   pickingDestination,
   onPick,
 }: Props) => {
-  const results = useQuery({
-    queryKey: ["search", query],
-    queryFn: () => fetchSearch(query),
-    enabled: query.trim().length > 0,
-  });
+  const results = useSearch(query);
 
   if (!query.trim()) {
     return null;

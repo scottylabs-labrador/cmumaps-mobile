@@ -4,6 +4,7 @@ import type {
   Pois,
   PreciseRoute,
 } from "@cmumaps/common";
+import { useQuery } from "@tanstack/react-query";
 import { authClient } from "@/auth/client";
 import { env } from "@/env";
 
@@ -31,21 +32,50 @@ const apiGet = async <T>(path: string): Promise<T> => {
   return (await response.json()) as T;
 };
 
-export const fetchBuildings = () => apiGet<Buildings>("/buildings");
+export const useBuildings = () =>
+  useQuery({
+    queryKey: ["buildings"],
+    queryFn: () => apiGet<Buildings>("/buildings"),
+  });
 
-export const fetchSearch = (query: string) => {
-  const params = new URLSearchParams({ query });
-  return apiGet<SearchDocument[]>(`/search?${params.toString()}`);
-};
+export const useSearch = (query: string) =>
+  useQuery({
+    queryKey: ["search", query],
+    queryFn: () => {
+      const params = new URLSearchParams({ query });
+      return apiGet<SearchDocument[]>(`/search?${params.toString()}`);
+    },
+    enabled: query.trim().length > 0,
+  });
 
-export const fetchFloorplan = (floorCode: string) =>
-  apiGet<GeoRooms>(`/floors/${encodeURIComponent(floorCode)}/floorplan`);
+export const useFloorplan = (floorCode: string | null, enabled: boolean) =>
+  useQuery({
+    queryKey: ["floorplan", floorCode],
+    queryFn: () =>
+      apiGet<GeoRooms>(`/floors/${encodeURIComponent(floorCode ?? "")}/floorplan`),
+    enabled: Boolean(floorCode) && enabled,
+  });
 
-export const fetchPois = (floorCode: string) =>
-  apiGet<Pois>(`/floors/${encodeURIComponent(floorCode)}/pois`);
+export const usePois = (floorCode: string | null, enabled: boolean) =>
+  useQuery({
+    queryKey: ["pois", floorCode],
+    queryFn: () =>
+      apiGet<Pois>(`/floors/${encodeURIComponent(floorCode ?? "")}/pois`),
+    enabled: Boolean(floorCode) && enabled,
+  });
 
-export const fetchRoutes = (start: string, end: string, signedIn: boolean) => {
-  const params = new URLSearchParams({ start, end });
-  const path = signedIn ? "/path" : "/path/public";
-  return apiGet<Record<string, PreciseRoute>>(`${path}?${params.toString()}`);
-};
+export const useRoutePaths = (
+  start: string | undefined,
+  end: string | undefined,
+  signedIn: boolean,
+  enabled: boolean,
+) =>
+  useQuery({
+    queryKey: ["routes", signedIn, start, end],
+    queryFn: () => {
+      const params = new URLSearchParams({ start: start ?? "", end: end ?? "" });
+      const path = signedIn ? "/path" : "/path/public";
+      return apiGet<Record<string, PreciseRoute>>(`${path}?${params.toString()}`);
+    },
+    enabled: Boolean(start && end) && enabled,
+  });

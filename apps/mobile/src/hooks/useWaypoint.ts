@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useBuildings, useFloorplan } from "@/api/client";
 import { authClient } from "@/auth/client";
-import { fetchBuildings, fetchFloorplan } from "@/api/client";
 import { getFloorLevelFromRoomName } from "@/lib/place";
 import { isPublicBuilding } from "@/lib/publicBuilding";
 import { useMapStore } from "@/store";
@@ -25,10 +24,7 @@ export const useSignedInUser = () => {
 export const useWaypoint = (point: string): Waypoint => {
   const { user } = useSignedInUser();
   const userPosition = useMapStore((state) => state.userPosition);
-  const buildings = useQuery({
-    queryKey: ["buildings"],
-    queryFn: fetchBuildings,
-  });
+  const buildings = useBuildings();
 
   const normalized = point.startsWith(FLOOR_WAYPOINT_PREFIX)
     ? point.slice(FLOOR_WAYPOINT_PREFIX.length)
@@ -44,11 +40,7 @@ export const useWaypoint = (point: string): Waypoint => {
       : null;
   const canSeeFloor =
     isPublicBuilding(buildingCode) || Boolean(user);
-  const rooms = useQuery({
-    queryKey: ["floorplan", floorCode],
-    queryFn: () => fetchFloorplan(floorCode ?? ""),
-    enabled: Boolean(floorCode) && canSeeFloor,
-  });
+  const rooms = useFloorplan(floorCode, canSeeFloor);
 
   if (point === "" || point === "user") {
     if (point === "") {

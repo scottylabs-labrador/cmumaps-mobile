@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { router, useGlobalSearchParams, usePathname } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -11,11 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Buildings, GeoCoordinate, GeoRooms } from "@cmumaps/common";
-import {
-  fetchBuildings,
-  fetchFloorplan,
-  fetchPois,
-} from "@/api/client";
+import { useBuildings, useFloorplan, usePois } from "@/api/client";
 import { signIn, signOut } from "@/auth/client";
 import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
@@ -90,7 +85,7 @@ export const MapScreen = () => {
   useUserLocation();
   const { user } = useSignedInUser();
   const signedIn = Boolean(user);
-  const buildings = useQuery({ queryKey: ["buildings"], queryFn: fetchBuildings });
+  const buildings = useBuildings();
   const suffix = suffixFromPathname(pathname);
   const place = parsePlace(
     suffix === "" && floorParam ? floorParam : suffix,
@@ -99,16 +94,8 @@ export const MapScreen = () => {
   const floor = focusedFloor(place, buildings.data);
   const floorCode = floor ? `${floor.buildingCode}-${floor.floor}` : null;
   const canSeeFloor = Boolean(floor) && (signedIn || isPublicBuilding(floor?.buildingCode));
-  const rooms = useQuery({
-    queryKey: ["floorplan", floorCode],
-    queryFn: () => fetchFloorplan(floorCode ?? ""),
-    enabled: Boolean(floorCode) && canSeeFloor,
-  });
-  const pois = useQuery({
-    queryKey: ["pois", floorCode],
-    queryFn: () => fetchPois(floorCode ?? ""),
-    enabled: Boolean(floorCode) && canSeeFloor,
-  });
+  const rooms = useFloorplan(floorCode, canSeeFloor);
+  const pois = usePois(floorCode, canSeeFloor);
   const { start, end, routes } = useRoutes(src, dst);
 
   const sheet = useMapStore((state) => state.sheet);

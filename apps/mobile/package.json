@@ -2,6 +2,7 @@
   "name": "@cmumaps/mobile",
   "version": "0.0.0",
   "dependencies": {
+    "@babel/runtime": "^7.28.4",
     "@better-auth/expo": "^1.7.7",
     "@cmumaps/common": "workspace:*",
     "@cmumaps/ui": "workspace:*",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.1.8",
+    "babel-preset-expo": "^57.0.15",
     "typescript": "^5.9.3"
   },
   "main": "expo-router/entry",

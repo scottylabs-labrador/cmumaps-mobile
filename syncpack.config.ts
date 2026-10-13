@@ -12,6 +12,12 @@ export default {
   // https://jamiemason.github.io/syncpack/semver-groups/
   semverGroups: [
     {
+      label: "pin react-native-maps to the Expo Go release",
+      dependencies: ["react-native-maps"],
+      packages: ["@cmumaps/mobile"],
+      range: "",
+    },
+    {
       dependencyTypes: [
         "prod",
         "resolutions",

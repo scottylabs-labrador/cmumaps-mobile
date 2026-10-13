@@ -21,11 +21,11 @@ If you aren't allowed to commit, try the following:
    - `bun run secrets:pull all all`
    - `bun run sync`
 
-If you really believe that it is a local issue, use the `--no-verify` flag to bypass the precommit hook. 
-All the tests will be run again on PR as GitHub workflows. 
+If you really believe that it is a local issue, use the `--no-verify` flag to bypass the precommit hook.
+All the tests will be run again on PR as GitHub workflows.
 
 Optionally, you can also comment out lines in <https://github.com/ScottyLabs/cmumaps/blob/main/.husky/pre-commit> to disable
-some precommit checks to speed up committing. For example, there is no need to run `uv run lint` if you didn't make any change 
+some precommit checks to speed up committing. For example, there is no need to run `uv run lint` if you didn't make any change
 to Python files. Make sure to not commit these changes!
 
 ## Git Push Troubleshooting
@@ -34,7 +34,7 @@ to Python files. Make sure to not commit these changes!
 >
 > *Source: [VS Code Remote Containers – Known Limitations](https://code.visualstudio.com/docs/devcontainers/containers#_known-limitations)*
 
-The easiest option is to run `git push` from command line outside the dev container. 
+The easiest option is to run `git push` from command line outside the dev container.
 
 ## Extension Issue in Editor
 

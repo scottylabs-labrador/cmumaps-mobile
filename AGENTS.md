@@ -27,6 +27,24 @@ CMU Maps is a Turborepo monorepo with 4 apps and 3 shared packages. See `README.
 
 When `S3_ENDPOINT` is unset, populate reads `data/floorplans/` and refills Building, Floor, Room, Alias, Node, and Edge. It leaves Poi untouched. When `S3_ENDPOINT` is set, it reads the same objects from S3, including `floorplans/osm-pois.json`. After populating, restart the server to rebuild the in-memory search index and graph cache.
 
+### Testing the mobile app on the iOS simulator
+
+`bun run dev:mobile` starts the server and Expo together. In dev, the app calls port 8080 on the host Metro reports.
+
+#### Setup
+
+1. `xcode-select -p` prints `/Applications/Xcode.app/Contents/Developer`. Switch with `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`.
+2. `xcrun simctl help` exits 0. If CoreDevice fails to load `_XPCTypeBool` from Mercury, install the matching frameworks with `sudo installer -pkg /Applications/Xcode.app/Contents/Resources/Packages/XcodeSystemResources.pkg -target /`. Accepting the Xcode license leaves that stale framework in place.
+3. `xcrun simctl runtime list` shows a Ready disk image. Download this Xcode's runtime with `xcodebuild -downloadPlatform iOS`. Boot a device on that runtime (`xcrun simctl list devices available`, then `xcrun simctl boot <udid>` and `open -a Simulator`). Devices whose runtime profile is missing stay unavailable.
+4. The database is populated.
+5. Expo Go for this app's SDK is installed on the booted simulator. Take `iosClientUrl` from `sdkVersions` in `https://api.expo.dev/v2/versions/latest`. That tarball is the `.app` contents with no wrapping folder: extract it into a directory whose name ends in `.app`, then `xcrun simctl install booted` that directory. Confirm the first open prompt, then dismiss the Expo developer-menu sheet.
+
+#### Running
+
+1. From the repo root, `bun run dev:mobile`. Done when Expo prints a Metro URL on port 8081 and the server is listening on 8080.
+2. Open the project with `xcrun simctl openurl booted exp://127.0.0.1:8081`.
+3. Done when the CMU Maps search field is on the map. The location card is the app asking for permission.
+
 ### Standard commands
 
 - **Lint/check**: `bun run check` (runs turbo check across all packages — combines `tsc -b` + `biome check`)

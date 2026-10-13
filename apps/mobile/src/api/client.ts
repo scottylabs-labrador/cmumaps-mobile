@@ -20,11 +20,9 @@ export interface SearchDocument {
 
 const apiGet = async <T>(path: string): Promise<T> => {
   const headers: Record<string, string> = { accept: "application/json" };
-  if (!env.ignoreLogin) {
-    const cookie = await authClient.getCookie();
-    if (cookie) {
-      headers.cookie = cookie;
-    }
+  const cookie = await authClient.getCookie();
+  if (cookie) {
+    headers.cookie = cookie;
   }
   const response = await fetch(`${env.serverUrl}${path}`, { headers });
   if (!response.ok) {

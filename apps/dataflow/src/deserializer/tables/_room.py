@@ -1,6 +1,6 @@
 import json
 
-from clients import get_api_client_singleton, get_s3_client_singleton
+from clients import get_api_client_singleton, get_floorplan_json
 from logger import get_app_logger
 
 
@@ -12,12 +12,9 @@ def populate_room_table() -> None:
     # Get the logger and clients
     logger = get_app_logger()
     api_client = get_api_client_singleton()
-    s3_client = get_s3_client_singleton()
-
-    # Get the floorplans data from S3
-    floorplans = s3_client.get_json_file("floorplans/floorplans.json")
+    floorplans = get_floorplan_json("floorplans/floorplans.json")
     if floorplans is None:
-        msg = "Failed to get floorplans data from S3"
+        msg = "Failed to get floorplans data"
         logger.critical(msg)
         raise ValueError(msg)
 

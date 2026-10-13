@@ -52,10 +52,6 @@ export function expressAuthentication(
 
   // biome-ignore lint/nursery/noMisusedPromises: Weird TSOA quirks
   return new Promise((resolve, reject) => {
-    if (env.IGNORE_LOGIN) {
-      return resolve({ sub: "dev-user", groups: [ADMIN_SCOPE, MEMBER_SCOPE] });
-    }
-
     // Accept any request to view CUC floorplans
     const match = request.path.match(FLOORPLAN_PATH_REGEX);
     if (match && request.params.floorCode.startsWith("CUC")) {
@@ -178,8 +174,16 @@ const verifyBearerAuth = (
         return reject(err);
       }
 
+      // Client-credentials tokens for this client identify the service
+      // account and do not carry the admin group.
+      const clientId = decoded["client_id"];
+      const username = decoded["preferred_username"];
+      const isServiceAccount =
+        clientId === env.AUTH_CLIENT_ID &&
+        username === `service-account-${env.AUTH_CLIENT_ID}`;
+
       // Check if the token contains any of the required scopes
-      if (!hasAnyScope(decoded["groups"], scopes)) {
+      if (!isServiceAccount && !hasAnyScope(decoded["groups"], scopes)) {
         return scopeValidationError(request, reject);
       }
 

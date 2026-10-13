@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { authClient } from "@/auth/client";
 import { fetchBuildings, fetchFloorplan } from "@/api/client";
-import { env } from "@/env";
 import { getFloorLevelFromRoomName } from "@/lib/place";
 import { isPublicBuilding } from "@/lib/publicBuilding";
 import { useMapStore } from "@/store";
@@ -17,12 +16,6 @@ export interface Waypoint {
 
 export const useSignedInUser = () => {
   const session = authClient.useSession();
-  if (env.ignoreLogin) {
-    return {
-      user: { id: "dev-user", name: "Dev User", email: "dev@localhost" },
-      isPending: false,
-    };
-  }
   return {
     user: session.data?.user ?? null,
     isPending: session.isPending,

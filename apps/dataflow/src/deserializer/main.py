@@ -4,7 +4,12 @@ from collections.abc import Callable
 
 import dotenv
 
-from clients import ALL_TABLE_NAMES, TableName, get_api_client_singleton
+from clients import (
+    ALL_TABLE_NAMES,
+    TableName,
+    get_api_client_singleton,
+    uses_local_floorplans,
+)
 from logger import log_operation, print_section
 
 from .tables import (
@@ -30,17 +35,34 @@ def populate_table(
         populate_function()
 
 
+LOCAL_TABLE_NAMES: list[TableName] = [
+    "Building",
+    "Floor",
+    "Room",
+    "Alias",
+    "Node",
+    "Edge",
+]
+
+
 def main() -> None:
     """Entry point to populate the tables."""
     api_client = get_api_client_singleton()
+    table_names = (
+        LOCAL_TABLE_NAMES if uses_local_floorplans() else ALL_TABLE_NAMES
+    )
+    populators: dict[TableName, Callable[[], None]] = {
+        "Building": populate_building_table,
+        "Floor": populate_floor_table,
+        "Room": populate_room_table,
+        "Alias": populate_alias_table,
+        "Node": populate_node_table,
+        "Edge": populate_edge_table,
+        "Poi": populate_poi_table,
+    }
 
     with log_operation("drop tables"):
-        api_client.drop_tables(ALL_TABLE_NAMES)
+        api_client.drop_tables(table_names)
 
-    populate_table("Building", populate_building_table)
-    populate_table("Floor", populate_floor_table)
-    populate_table("Room", populate_room_table)
-    populate_table("Alias", populate_alias_table)
-    populate_table("Node", populate_node_table)
-    populate_table("Edge", populate_edge_table)
-    populate_table("Poi", populate_poi_table)
+    for table_name in table_names:
+        populate_table(table_name, populators[table_name])

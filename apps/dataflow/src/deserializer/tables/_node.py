@@ -1,4 +1,4 @@
-from clients import get_api_client_singleton, get_s3_client_singleton
+from clients import get_api_client_singleton, get_floorplan_json
 from logger import get_app_logger
 
 MAX_NODES_PER_REQUEST = 5000  # Tested to work with 1MB request payload limit
@@ -12,12 +12,9 @@ def populate_node_table() -> None:
     # Get the logger and clients
     logger = get_app_logger()
     api_client = get_api_client_singleton()
-    s3_client = get_s3_client_singleton()
-
-    # Get the all-graph data from S3
-    graph = s3_client.get_json_file("floorplans/all-graph.json")
+    graph = get_floorplan_json("floorplans/all-graph.json")
     if graph is None:
-        msg = "Failed to get all-graph data from S3"
+        msg = "Failed to get all-graph data"
         logger.critical(msg)
         raise ValueError(msg)
 

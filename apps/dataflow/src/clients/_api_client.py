@@ -28,12 +28,8 @@ ALL_TABLE_NAMES: list[TableName] = [
 
 
 class ApiClient:
-    TIMEOUT = 10
+    TIMEOUT = 120
     SUCCESS_STATUS_CODE = 200
-
-    TOKEN_URL = (
-        "https://idp.scottylabs.org/realms/scottylabs/protocol/openid-connect/token"  # noqa: S105
-    )
 
     def __init__(self) -> None:
         self.logger = get_app_logger()
@@ -42,6 +38,11 @@ class ApiClient:
         self.server_url = os.getenv("SERVER_URL")
         self.auth_client_id = os.getenv("AUTH_CLIENT_ID")
         self.auth_client_secret = os.getenv("AUTH_CLIENT_SECRET")
+        issuer = os.getenv(
+            "AUTH_ISSUER",
+            "https://idp.scottylabs.org/realms/scottylabs",
+        )
+        self.token_url = f"{issuer.rstrip('/')}/protocol/openid-connect/token"
 
         if not self.server_url:
             msg = "SERVER_URL must be set"
@@ -66,7 +67,7 @@ class ApiClient:
             "client_secret": self.auth_client_secret,
         }
 
-        response = requests.post(self.TOKEN_URL, data=data, timeout=self.TIMEOUT)
+        response = requests.post(self.token_url, data=data, timeout=self.TIMEOUT)
         response.raise_for_status()
         token_data = response.json()
 
@@ -102,6 +103,7 @@ class ApiClient:
             raise RuntimeError(msg)
 
         return True
+
 
 @lru_cache(maxsize=1)
 def get_api_client_singleton() -> ApiClient:

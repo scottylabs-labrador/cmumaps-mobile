@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/useNamingConvention: defined by better-auth */
+import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { genericOAuth, keycloak } from "better-auth/plugins";
 import { env } from "../env.ts";
@@ -7,8 +8,9 @@ import { env } from "../env.ts";
 // https://www.better-auth.com/docs/plugins/generic-oauth#pre-configured-provider-helpers
 export const auth = betterAuth({
   baseURL: env.SERVER_URL,
-  trustedOrigins: [env.BETTER_AUTH_URL],
+  trustedOrigins: [env.BETTER_AUTH_URL, "cmumaps://", "exp://"],
   plugins: [
+    expo(),
     genericOAuth({
       config: [
         keycloak({

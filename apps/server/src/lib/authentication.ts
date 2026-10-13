@@ -102,7 +102,7 @@ const validateOidc = async (
     // Get the group from the user access token
     const decoded = await auth.api
       .getAccessToken({
-        body: { providerId: "keycloak" },
+        body: { useAccountCookie: true },
         headers: fromNodeHeaders(request.headers),
       })
       .then((accessToken) => jwt.decode(accessToken.accessToken));

@@ -1,3 +1,6 @@
+# Data directories
+data/
+
 # Dependency directories
 node_modules/
 .venv/

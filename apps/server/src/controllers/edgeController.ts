@@ -1,14 +1,6 @@
 import { extractBuildingCode, extractFloorLevel } from "@cmumaps/common";
 import type { Request as ExpressRequest } from "express";
-import {
-  Body,
-  Delete,
-  Middlewares,
-  Post,
-  Request,
-  Route,
-  Security,
-} from "tsoa";
+import { Body, Delete, Middlewares, Post, Request, Route, Security } from "tsoa";
 import { BEARER_AUTH, MEMBER_SCOPE, OIDC_AUTH } from "../lib/authentication.ts";
 import { requireSocketId } from "../middleware/socketAuth.ts";
 import { webSocketService } from "../server.ts";
@@ -83,22 +75,14 @@ export class EdgeController {
 
     await edgeService.createEdge(inNodeId, outNodeId);
     const payload = { outFloorCode, inNodeId, outNodeId };
-    webSocketService.broadcastToUserFloor(
-      socketId,
-      "create-edge-across-floors",
-      payload,
-    );
+    webSocketService.broadcastToUserFloor(socketId, "create-edge-across-floors", payload);
 
     const inPayload = {
       outFloorCode: floorCode,
       inNodeId: outNodeId,
       outNodeId: inNodeId,
     };
-    webSocketService.broadcastToFloor(
-      outFloorCode,
-      "create-edge-across-floors",
-      inPayload,
-    );
+    webSocketService.broadcastToFloor(outFloorCode, "create-edge-across-floors", inPayload);
     return null;
   }
 
@@ -117,22 +101,14 @@ export class EdgeController {
 
     await edgeService.deleteEdge(inNodeId, outNodeId);
     const payload = { outFloorCode, inNodeId, outNodeId };
-    webSocketService.broadcastToUserFloor(
-      socketId,
-      "delete-edge-across-floors",
-      payload,
-    );
+    webSocketService.broadcastToUserFloor(socketId, "delete-edge-across-floors", payload);
 
     const inPayload = {
       outFloorCode: floorCode,
       inNodeId: outNodeId,
       outNodeId: inNodeId,
     };
-    webSocketService.broadcastToFloor(
-      outFloorCode,
-      "delete-edge-across-floors",
-      inPayload,
-    );
+    webSocketService.broadcastToFloor(outFloorCode, "delete-edge-across-floors", inPayload);
     return null;
   }
 }

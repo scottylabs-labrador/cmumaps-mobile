@@ -15,10 +15,7 @@ const plugins: NonNullable<ExpoConfig["plugins"]> = [
 ];
 
 if (googleMapsApiKey) {
-  plugins.push([
-    "react-native-maps",
-    { androidGoogleMapsApiKey: googleMapsApiKey },
-  ]);
+  plugins.push(["react-native-maps", { androidGoogleMapsApiKey: googleMapsApiKey }]);
 }
 
 const config: ExpoConfig = {
@@ -31,10 +28,7 @@ const config: ExpoConfig = {
   ios: {
     bundleIdentifier: "org.scottylabs.cmumaps",
     supportsTablet: true,
-    associatedDomains: [
-      "applinks:maps.scottylabs.org",
-      "applinks:maps.slabs-staging.org",
-    ],
+    associatedDomains: ["applinks:maps.scottylabs.org", "applinks:maps.slabs-staging.org"],
     infoPlist: {
       NSLocationWhenInUseUsageDescription:
         "CMU Maps uses your location to show where you are and to start directions.",

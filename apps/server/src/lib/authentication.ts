@@ -179,8 +179,7 @@ const verifyBearerAuth = (
       const clientId = decoded["client_id"];
       const username = decoded["preferred_username"];
       const isServiceAccount =
-        clientId === env.AUTH_CLIENT_ID &&
-        username === `service-account-${env.AUTH_CLIENT_ID}`;
+        clientId === env.AUTH_CLIENT_ID && username === `service-account-${env.AUTH_CLIENT_ID}`;
 
       // Check if the token contains any of the required scopes
       if (!isServiceAccount && !hasAnyScope(decoded["groups"], scopes)) {
@@ -208,13 +207,8 @@ const hasAnyScope = (groups?: string[], scopes?: string[]) => {
   return groups?.some((group) => scopes?.includes(group));
 };
 
-const scopeValidationError = (
-  request: express.Request,
-  reject: (value: unknown) => void,
-) => {
-  const err = new AuthorizationError(
-    "Insufficient permissions to access this resource.",
-  );
+const scopeValidationError = (request: express.Request, reject: (value: unknown) => void) => {
+  const err = new AuthorizationError("Insufficient permissions to access this resource.");
   request.authErrors?.push(err);
   return reject(err);
 };

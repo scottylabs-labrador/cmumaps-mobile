@@ -4,9 +4,7 @@ import { useMapStore } from "@/store";
 
 export const useUserLocation = () => {
   const setUserPosition = useMapStore((state) => state.setUserPosition);
-  const setLocationPromptVisible = useMapStore(
-    (state) => state.setLocationPromptVisible,
-  );
+  const setLocationPromptVisible = useMapStore((state) => state.setLocationPromptVisible);
 
   useEffect(() => {
     let subscription: Location.LocationSubscription | null = null;

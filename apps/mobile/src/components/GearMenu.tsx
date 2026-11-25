@@ -9,13 +9,7 @@ interface Props {
   onSignOut: () => void;
 }
 
-export const GearMenu = ({
-  visible,
-  email,
-  onClose,
-  onSignIn,
-  onSignOut,
-}: Props) => {
+export const GearMenu = ({ visible, email, onClose, onSignIn, onSignOut }: Props) => {
   if (!visible) {
     return null;
   }
@@ -47,14 +41,7 @@ interface PromptProps {
   onDismiss: () => void;
 }
 
-export const PromptCard = ({
-  visible,
-  title,
-  body,
-  action,
-  onAction,
-  onDismiss,
-}: PromptProps) => {
+export const PromptCard = ({ visible, title, body, action, onAction, onDismiss }: PromptProps) => {
   if (!visible) {
     return null;
   }

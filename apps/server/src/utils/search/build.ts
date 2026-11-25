@@ -205,10 +205,7 @@ function insertTerms(index: SearchIndex, terms: string[], docId: string): void {
   }
 }
 
-export function buildSearchIndex(
-  floorplans: FloorPlans,
-  buildingMap: Buildings,
-) {
+export function buildSearchIndex(floorplans: FloorPlans, buildingMap: Buildings) {
   const startTime = Date.now();
   const index: SearchIndex = {};
 

@@ -19,7 +19,7 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 - **`DATABASE_URL` in shell env**: The local connection string is the `local` profile default in `apps/server/secretspec.toml`. A stale shell `DATABASE_URL` (for example `postgres:5432` from Docker Compose) can still override it. `unset DATABASE_URL` before starting the server.
 - **`SERVER_PORT`**: The local SecretSpec profile sets `SERVER_PORT` to `8080` because this Mac cannot bind port 80 without sudo. The schema coerces that string. `SERVER_URL` is `http://localhost:8080`.
 - **Code generation before check/build**: Before running `bun run check` or `bun run build`, generate the server's build artifacts: `cd apps/server && bun run db-generate && bun run tsoa && bun run openapi` (or use `bun run sync` from the root).
-- **Pre-commit hooks** (`.vite-hooks/pre-commit`): Runs `editorconfig-checker`, `syncpack lint`, `vp check --no-fmt`, and `uv run lint` for Python when `apps/dataflow` changes. Vite+ installs the hook dispatcher on `prepare`.
+- **Pre-commit hooks** (`.vite-hooks/pre-commit`): Runs `editorconfig-checker`, `syncpack lint`, `vp check`, and `uv run lint` for Python when `apps/dataflow` changes. Vite+ installs the hook dispatcher on `prepare`.
 
 ### Populating the database
 
@@ -47,7 +47,7 @@ When `S3_ENDPOINT` is unset, populate reads `data/floorplans/` and refills Build
 
 ### Standard commands
 
-- **Lint/check**: `bun run check` runs `vp check --no-fmt` (Oxlint plus tsrs typecheck). Formatting is not enforced yet.
+- **Lint/check**: `bun run check` runs `vp check` (Oxfmt, Oxlint, and tsrs typecheck).
 - **Python lint**: `cd apps/dataflow && uv run lint`
 - **Build**: `bun run build`
 - **Dev (server + mobile)**: `bun run dev` starts the server and Expo through Turbo

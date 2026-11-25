@@ -51,13 +51,11 @@ export const useMapStore = create<MapState>((set) => ({
   cycleSheet: () => set((state) => ({ sheet: nextSheet[state.sheet] })),
   setSearchOpen: (searchOpen) => set({ searchOpen }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
-  setNavigating: (navigating) =>
-    set({ navigating, instructionIndex: navigating ? 0 : 0 }),
+  setNavigating: (navigating) => set({ navigating, instructionIndex: navigating ? 0 : 0 }),
   setInstructionIndex: (instructionIndex) => set({ instructionIndex }),
   setSelectedRoute: (selectedRoute) => set({ selectedRoute }),
   setUserPosition: (userPosition) => set({ userPosition }),
   setSignInVisible: (signInVisible) => set({ signInVisible }),
-  setLocationPromptVisible: (locationPromptVisible) =>
-    set({ locationPromptVisible }),
+  setLocationPromptVisible: (locationPromptVisible) => set({ locationPromptVisible }),
   resetNav: () => set({ navigating: false, instructionIndex: 0 }),
 }));

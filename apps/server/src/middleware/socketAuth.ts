@@ -4,10 +4,7 @@ import type { NextFunction, Request, Response } from "express";
 import type { Socket } from "socket.io";
 
 // auth middleware for socket.io
-export const socketAuth = async (
-  socket: Socket,
-  next: (err?: Error) => void,
-) => {
+export const socketAuth = async (socket: Socket, next: (err?: Error) => void) => {
   try {
     const { token } = socket.handshake.auth;
     if (!token) {
@@ -32,11 +29,7 @@ export const socketAuth = async (
 };
 
 // middleware for requiring the socket id
-export const requireSocketId = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const requireSocketId = (req: Request, res: Response, next: NextFunction) => {
   const socketId = req.header("X-Socket-ID");
 
   if (!socketId) {

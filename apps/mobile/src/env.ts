@@ -15,9 +15,7 @@ const devServerUrl = (): string | undefined => {
 };
 
 const serverUrl =
-  process.env.EXPO_PUBLIC_SERVER_URL ??
-  devServerUrl() ??
-  `http://localhost:${LOCAL_SERVER_PORT}`;
+  process.env.EXPO_PUBLIC_SERVER_URL ?? devServerUrl() ?? `http://localhost:${LOCAL_SERVER_PORT}`;
 
 export const env = {
   serverUrl: serverUrl.replace(/\/$/, ""),

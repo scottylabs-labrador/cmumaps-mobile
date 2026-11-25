@@ -3,10 +3,7 @@ import type { Buildings, GeoCoordinate } from "@cmumaps/common";
 // Same cutoff the website uses: screen width divided by longitude span.
 export const FLOOR_ZOOM_DENSITY = 350_000;
 
-export const isInPolygon = (
-  point: GeoCoordinate,
-  vertices: GeoCoordinate[],
-) => {
+export const isInPolygon = (point: GeoCoordinate, vertices: GeoCoordinate[]) => {
   const x = point.longitude;
   const y = point.latitude;
   let inside = false;
@@ -19,8 +16,7 @@ export const isInPolygon = (
     const intersect =
       vi.latitude > y !== vj.latitude > y &&
       x <
-        ((vj.longitude - vi.longitude) * (y - vi.latitude)) /
-          (vj.latitude - vi.latitude) +
+        ((vj.longitude - vi.longitude) * (y - vi.latitude)) / (vj.latitude - vi.latitude) +
           vi.longitude;
     if (intersect) {
       inside = !inside;
@@ -30,6 +26,4 @@ export const isInPolygon = (
 };
 
 export const buildingAt = (buildings: Buildings, point: GeoCoordinate) =>
-  Object.values(buildings).find((building) =>
-    isInPolygon(point, building.shape[0] ?? []),
-  );
+  Object.values(buildings).find((building) => isInPolygon(point, building.shape[0] ?? []));

@@ -15,11 +15,7 @@ config.resolver.nodeModulesPaths = [
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName.startsWith("@/")) {
-    return context.resolveRequest(
-      context,
-      path.resolve(srcRoot, moduleName.slice(2)),
-      platform,
-    );
+    return context.resolveRequest(context, path.resolve(srcRoot, moduleName.slice(2)), platform);
   }
   return context.resolveRequest(context, moduleName, platform);
 };

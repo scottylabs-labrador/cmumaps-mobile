@@ -8,10 +8,7 @@ export class PathController {
   @Get("/")
   @Security(OIDC_AUTH, [])
   @Security(BEARER_AUTH, [])
-  public path(
-    @Query() start: string,
-    @Query() end: string,
-  ): Promise<Record<string, PreciseRoute>> {
+  public path(@Query() start: string, @Query() end: string): Promise<Record<string, PreciseRoute>> {
     return pathService.calculatePath(start, end);
   }
 

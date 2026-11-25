@@ -125,11 +125,7 @@ async function ensureEnvFiles() {
   }
 
   try {
-    await runCommand(
-      ["bun", "run", "secrets:pull", "all", vaultEnv],
-      repoRoot,
-      process.env,
-    );
+    await runCommand(["bun", "run", "secrets:pull", "all", vaultEnv], repoRoot, process.env);
     await promotePulledEnvFiles(specs, vaultEnv);
   } catch (error) {
     throw new Error(
@@ -152,10 +148,7 @@ async function ensureEnvFiles() {
   return getServerEnv(validations);
 }
 
-async function promotePulledEnvFiles(
-  specs: EnvFileSpec[],
-  vaultEnv: VaultEnv,
-) {
+async function promotePulledEnvFiles(specs: EnvFileSpec[], vaultEnv: VaultEnv) {
   for (const spec of specs) {
     const sourcePath = getVaultEnvFilePath(spec.path, vaultEnv);
 
@@ -180,15 +173,8 @@ function getVaultEnvFilePath(envFilePath: string, vaultEnv: VaultEnv) {
   return `${envFilePath}.${vaultEnv}`;
 }
 
-function transformPulledEnvFile(
-  envFilePath: string,
-  sourceText: string,
-  vaultEnv: VaultEnv,
-) {
-  if (
-    vaultEnv === "local" &&
-    envFilePath === path.join(repoRoot, "apps/server/.env")
-  ) {
+function transformPulledEnvFile(envFilePath: string, sourceText: string, vaultEnv: VaultEnv) {
+  if (vaultEnv === "local" && envFilePath === path.join(repoRoot, "apps/server/.env")) {
     const values = parseDotEnv(sourceText);
     const databaseUrl = values["DATABASE_URL"];
     const normalizedDatabaseUrl = normalizeLocalDatabaseUrl(databaseUrl);
@@ -249,9 +235,7 @@ function printEnvIssues(validations: EnvValidation[]) {
       continue;
     }
 
-    log(
-      `${path.relative(repoRoot, validation.file)}: ${validation.issues.join("; ")}`,
-    );
+    log(`${path.relative(repoRoot, validation.file)}: ${validation.issues.join("; ")}`);
   }
 }
 
@@ -287,10 +271,7 @@ function serializeDotEnv(values: Record<string, string>) {
 }
 
 function escapeDotEnvDoubleQuotedValue(value: string) {
-  return value
-    .replaceAll('"', '\\"')
-    .replaceAll("\r", "\\r")
-    .replaceAll("\n", "\\n");
+  return value.replaceAll('"', '\\"').replaceAll("\r", "\\r").replaceAll("\n", "\\n");
 }
 
 function getLocalDatabaseUrlIssues(env: Record<string, string>) {
@@ -323,8 +304,7 @@ function getLocalDatabaseUrlIssues(env: Record<string, string>) {
 }
 
 function normalizeLocalDatabaseUrl(databaseUrl: string | undefined) {
-  const defaultDatabaseUrl =
-    "postgresql://postgres:donotuseinprod@localhost:5432/cmumaps";
+  const defaultDatabaseUrl = "postgresql://postgres:donotuseinprod@localhost:5432/cmumaps";
 
   if (!databaseUrl?.trim() || databaseUrl.includes("${{")) {
     return defaultDatabaseUrl;
@@ -337,14 +317,8 @@ function normalizeLocalDatabaseUrl(databaseUrl: string | undefined) {
     return defaultDatabaseUrl;
   }
 
-  const pathname =
-    parsed.pathname === "" || parsed.pathname === "/"
-      ? "/cmumaps"
-      : parsed.pathname;
-  const credentials =
-    parsed.username.length > 0
-      ? `${parsed.username}:${parsed.password}@`
-      : "";
+  const pathname = parsed.pathname === "" || parsed.pathname === "/" ? "/cmumaps" : parsed.pathname;
+  const credentials = parsed.username.length > 0 ? `${parsed.username}:${parsed.password}@` : "";
 
   return `postgresql://${credentials}localhost:5432${pathname}`;
 }
@@ -403,25 +377,18 @@ async function ensureServerArtifacts() {
     return;
   }
 
-  log(
-    `Refreshing generated server artifacts: ${staleOutputs.join(", ")}`,
-  );
+  log(`Refreshing generated server artifacts: ${staleOutputs.join(", ")}`);
   await runCommand(["bun", "run", "sync"], repoRoot, process.env);
 
   for (const output of outputs) {
     const exists = await getFileMtimeMs(output);
     if (exists === null) {
-      throw new Error(
-        `Expected ${path.relative(repoRoot, output)} to exist after bun run sync.`,
-      );
+      throw new Error(`Expected ${path.relative(repoRoot, output)} to exist after bun run sync.`);
     }
   }
 }
 
-async function ensureDatabase(
-  databaseUrl: string,
-  dockerAvailable: boolean,
-) {
+async function ensureDatabase(databaseUrl: string, dockerAvailable: boolean) {
   const target = getDatabaseTarget(databaseUrl);
 
   if (await isPortReachable(target.host, target.port)) {
@@ -457,9 +424,7 @@ function getDatabaseTarget(databaseUrl: string) {
   try {
     parsed = new URL(databaseUrl);
   } catch {
-    throw new Error(
-      "DATABASE_URL in apps/server/.env is not a valid URL for local development.",
-    );
+    throw new Error("DATABASE_URL in apps/server/.env is not a valid URL for local development.");
   }
 
   return {
@@ -470,14 +435,10 @@ function getDatabaseTarget(databaseUrl: string) {
 
 async function applyDatabaseMigrations(databaseUrl: string) {
   log("Pushing the Prisma schema to the local database.");
-  await runCommand(
-    ["bunx", "prisma", "db", "push", "--skip-generate"],
-    serverDir,
-    {
-      ...process.env,
-      DATABASE_URL: databaseUrl,
-    },
-  );
+  await runCommand(["bunx", "prisma", "db", "push", "--skip-generate"], serverDir, {
+    ...process.env,
+    DATABASE_URL: databaseUrl,
+  });
 }
 
 async function getFileMtimeMs(filePath: string) {
@@ -549,11 +510,7 @@ function assertCommand(command: string[], label: string) {
   logTool(output || label);
 }
 
-async function runCommand(
-  command: readonly string[],
-  cwd: string,
-  env: NodeJS.ProcessEnv,
-) {
+async function runCommand(command: readonly string[], cwd: string, env: NodeJS.ProcessEnv) {
   log(`$ ${command.join(" ")}`);
 
   const proc = Bun.spawn([...command], {

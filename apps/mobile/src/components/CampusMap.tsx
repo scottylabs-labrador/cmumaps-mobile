@@ -90,9 +90,7 @@ export const CampusMap = ({
     ? `${camera.latitude}:${camera.longitude}:${camera.latitudeDelta}:${camera.longitudeDelta}`
     : "campus";
   const [visibleKey, setVisibleKey] = useState(regionKey);
-  const openBuilding = rooms
-    ? Object.values(rooms)[0]?.floor.buildingCode
-    : undefined;
+  const openBuilding = rooms ? Object.values(rooms)[0]?.floor.buildingCode : undefined;
 
   useEffect(() => {
     if (visibleKey === regionKey) {
@@ -135,9 +133,7 @@ export const CampusMap = ({
                 tappable
                 onPress={() => onSelectBuilding(code)}
                 strokeColor={selected ? theme.green : "#334155"}
-                fillColor={
-                  selected ? "rgba(22,128,60,0.28)" : "rgba(100,116,139,0.28)"
-                }
+                fillColor={selected ? "rgba(22,128,60,0.28)" : "rgba(100,116,139,0.28)"}
                 strokeWidth={selected ? 3 : 1}
               />
             );
@@ -196,11 +192,7 @@ export const CampusMap = ({
           ))
         : null}
       {line.length > 1 ? (
-        <Polyline
-          coordinates={line}
-          strokeColor={theme.green}
-          strokeWidth={5}
-        />
+        <Polyline coordinates={line} strokeColor={theme.green} strokeWidth={5} />
       ) : null}
     </MapView>
   );

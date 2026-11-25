@@ -23,6 +23,8 @@ export default defineConfig({
       "node_modules/**",
       "coverage/**",
       "**/*.gen.ts",
+      "**/*.md",
+      "**/package.json",
     ],
   },
 });

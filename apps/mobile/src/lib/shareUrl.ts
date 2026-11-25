@@ -1,10 +1,7 @@
 import { env } from "@/env";
 import { placePath, type Place } from "@/lib/place";
 
-export const shareUrl = (
-  place: Place,
-  query: { src?: string; dst?: string; floor?: string },
-) => {
+export const shareUrl = (place: Place, query: { src?: string; dst?: string; floor?: string }) => {
   const url = new URL(placePath(place), env.webOrigin);
   if (query.src) {
     url.searchParams.set("src", query.src);

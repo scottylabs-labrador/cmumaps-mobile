@@ -85,9 +85,7 @@ export const SearchResults = ({
             <Text style={styles.meta}>{result.type}</Text>
           </Pressable>
         ))}
-        {results.isError ? (
-          <Text style={styles.meta}>Search is unavailable.</Text>
-        ) : null}
+        {results.isError ? <Text style={styles.meta}>Search is unavailable.</Text> : null}
       </ScrollView>
     </View>
   );

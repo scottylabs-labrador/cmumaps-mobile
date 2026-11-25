@@ -5,21 +5,9 @@ import type {
   DeleteEdgeAcrossFloorsPayload,
   DeleteEdgePayload,
 } from "./edgeTypes.ts";
-import type {
-  CreateNodePayload,
-  DeleteNodePayload,
-  UpdateNodePayload,
-} from "./nodeTypes.ts";
-import type {
-  CreatePoiPayload,
-  DeletePoiPayload,
-  UpdatePoiPayload,
-} from "./poiTypes.ts";
-import type {
-  CreateRoomPayload,
-  DeleteRoomPayload,
-  UpdateRoomPayload,
-} from "./roomTypes.ts";
+import type { CreateNodePayload, DeleteNodePayload, UpdateNodePayload } from "./nodeTypes.ts";
+import type { CreatePoiPayload, DeletePoiPayload, UpdatePoiPayload } from "./poiTypes.ts";
+import type { CreateRoomPayload, DeleteRoomPayload, UpdateRoomPayload } from "./roomTypes.ts";
 import type { SyncUserPayload } from "./userTypes.ts";
 
 // Define all WebSocket event names as string literals
@@ -45,8 +33,7 @@ export const WebSocketEvents = {
 } as const;
 
 // Create a type from the values
-export type WebSocketEventType =
-  (typeof WebSocketEvents)[keyof typeof WebSocketEvents];
+export type WebSocketEventType = (typeof WebSocketEvents)[keyof typeof WebSocketEvents];
 
 // Define payload types for each event
 export interface WebSocketPayloads {

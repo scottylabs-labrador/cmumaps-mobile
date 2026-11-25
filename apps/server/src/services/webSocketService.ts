@@ -62,11 +62,7 @@ export class WebSocketService {
     });
   }
 
-  private async syncUsers(
-    room: string,
-    senderId: string,
-    includeSender: boolean,
-  ) {
+  private async syncUsers(room: string, senderId: string, includeSender: boolean) {
     // fetch all users in the room except the sender
     const users = await this.io.in(room).fetchSockets();
     const userMap: Record<string, LiveUser> = {};
@@ -93,9 +89,7 @@ export class WebSocketService {
     if (room) {
       this.io.to(room).emit(event, payload);
     } else {
-      console.error(
-        "Could not broadcast to room due to invalid sender or room",
-      );
+      console.error("Could not broadcast to room due to invalid sender or room");
     }
   }
 
@@ -110,9 +104,7 @@ export class WebSocketService {
     if (room) {
       this.io.to(room).emit(event, payload);
     } else {
-      console.error(
-        "Could not broadcast to room due to invalid sender or room",
-      );
+      console.error("Could not broadcast to room due to invalid sender or room");
     }
   }
 }

@@ -1,9 +1,4 @@
-import type {
-  Building,
-  BuildingMetadata,
-  Buildings,
-  GeoCoordinate,
-} from "@cmumaps/common";
+import type { Building, BuildingMetadata, Buildings, GeoCoordinate } from "@cmumaps/common";
 import { ERROR_CODES } from "@cmumaps/common";
 import { prisma } from "../../prisma/index.ts";
 import { BuildingError } from "../errors/error.ts";
@@ -21,16 +16,12 @@ export const buildingService = {
         code: dbBuilding.buildingCode,
         name: dbBuilding.name,
         defaultOrdinal: dbBuilding.defaultOrdinal,
-        defaultFloor:
-          dbBuilding.floors.find((floor) => floor.isDefault)?.floorLevel ??
-          null,
+        defaultFloor: dbBuilding.floors.find((floor) => floor.isDefault)?.floorLevel ?? null,
         labelLatitude: dbBuilding.labelLatitude,
         labelLongitude: dbBuilding.labelLongitude,
         shape: dbBuilding.shape as unknown as GeoCoordinate[][],
         hitbox: dbBuilding.hitbox as unknown as GeoCoordinate[],
-        floors: this.sortFloors(
-          dbBuilding.floors.map((floor) => floor.floorLevel),
-        ),
+        floors: this.sortFloors(dbBuilding.floors.map((floor) => floor.floorLevel)),
         // TODO: need to add isMapped field to the database
         isMapped: true,
       };
@@ -52,8 +43,7 @@ export const buildingService = {
       code: building.buildingCode,
       name: building.name,
       defaultOrdinal: building.defaultOrdinal,
-      defaultFloor:
-        building.floors.find((floor) => floor.isDefault)?.floorLevel ?? null,
+      defaultFloor: building.floors.find((floor) => floor.isDefault)?.floorLevel ?? null,
       labelLatitude: building.labelLatitude,
       labelLongitude: building.labelLongitude,
       shape: building.shape as unknown as GeoCoordinate[][],
@@ -76,8 +66,7 @@ export const buildingService = {
       .map((building) => ({
         buildingCode: building.buildingCode,
         name: building.name,
-        defaultFloor:
-          building.floors.find((floor) => floor.isDefault)?.floorLevel ?? null,
+        defaultFloor: building.floors.find((floor) => floor.isDefault)?.floorLevel ?? null,
       }));
   },
 

@@ -35,11 +35,8 @@ export const useWaypoint = (point: string): Waypoint => {
     ? rest
     : getFloorLevelFromRoomName(rest);
   const floorCode =
-    buildingCode && floorName && buildingCode !== "outside"
-      ? `${buildingCode}-${floorName}`
-      : null;
-  const canSeeFloor =
-    isPublicBuilding(buildingCode) || Boolean(user);
+    buildingCode && floorName && buildingCode !== "outside" ? `${buildingCode}-${floorName}` : null;
+  const canSeeFloor = isPublicBuilding(buildingCode) || Boolean(user);
   const rooms = useFloorplan(floorCode, canSeeFloor);
 
   if (point === "" || point === "user") {
@@ -73,8 +70,7 @@ export const useWaypoint = (point: string): Waypoint => {
   }
 
   const isFloor =
-    point.startsWith(FLOOR_WAYPOINT_PREFIX) ||
-    (Boolean(rest) && building.floors.includes(rest));
+    point.startsWith(FLOOR_WAYPOINT_PREFIX) || (Boolean(rest) && building.floors.includes(rest));
   if (isFloor) {
     if (!building.floors.includes(rest)) {
       return { label: point, buildingCode, error: "Unknown floor" };

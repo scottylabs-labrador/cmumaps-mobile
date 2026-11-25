@@ -30,12 +30,7 @@ export class InternalServerError extends HttpError {
 }
 
 // From https://tsoa-community.github.io/docs/error-handling.html
-export const errorHandler = (
-  err: unknown,
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const errorHandler = (err: unknown, req: Request, res: Response, next: NextFunction) => {
   // The authentication errors takes the highest priority
   const firstAuthError = req.authErrors?.[0];
   if (req.authErrors && firstAuthError) {
@@ -80,9 +75,7 @@ export const errorHandler = (
   // Then the unknown errors
   if (err instanceof Error) {
     console.error(`Error ${req.path}`, err);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", details: err.message });
+    return res.status(500).json({ message: "Internal Server Error", details: err.message });
   }
 
   next();

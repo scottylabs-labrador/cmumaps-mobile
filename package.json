@@ -21,7 +21,7 @@
   "private": true,
   "scripts": {
     "build": "turbo build",
-    "check": "vp check --no-fmt",
+    "check": "vp check",
     "db:populate": "cd apps/dataflow && secretspec run -P local -- uv run populate-database",
     "dev": "bun run dev:mobile",
     "dev:mobile": "turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server",

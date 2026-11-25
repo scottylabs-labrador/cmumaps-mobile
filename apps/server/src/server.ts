@@ -23,9 +23,7 @@ app.use(express.json({ limit: "1mb" }));
 
 // Define CORS options
 const corsOptions: CorsOptions = {
-  origin: env.ALLOWED_ORIGINS_REGEX?.split(",").map(
-    (origin) => new RegExp(origin, "u"),
-  ),
+  origin: env.ALLOWED_ORIGINS_REGEX?.split(",").map((origin) => new RegExp(origin, "u")),
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -50,12 +48,9 @@ const swaggerYaml = fs.readFileSync("./build/swagger.yaml", "utf8");
 const swaggerJson = YAML.parse(swaggerYaml) as JsonObject;
 app.use(
   "/swagger",
-  express.static(
-    path.join(import.meta.dirname, "../node_modules/swagger-ui-dist"),
-    {
-      index: false,
-    },
-  ),
+  express.static(path.join(import.meta.dirname, "../node_modules/swagger-ui-dist"), {
+    index: false,
+  }),
   swaggerUi.serve,
   swaggerUi.setup(swaggerJson),
 );

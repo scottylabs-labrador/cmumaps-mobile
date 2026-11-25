@@ -3,7 +3,7 @@ set -e
 editorconfig-checker --exclude '(^LICENSE|^apps/rust-server/.*)'
 bun run syncpack
 # bunx markdownlint-cli2
-node_modules/.bin/vp check --no-fmt
+node_modules/.bin/vp check
 if git diff --cached --name-only | grep -q '^apps/dataflow/'; then
   (cd apps/dataflow && uv run lint)
 fi

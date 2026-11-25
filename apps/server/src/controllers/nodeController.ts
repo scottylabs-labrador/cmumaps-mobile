@@ -1,15 +1,6 @@
 import type { NodeInfo } from "@cmumaps/common";
 import type { Request as ExpressRequest } from "express";
-import {
-  Body,
-  Delete,
-  Middlewares,
-  Post,
-  Put,
-  Request,
-  Route,
-  Security,
-} from "tsoa";
+import { Body, Delete, Middlewares, Post, Put, Request, Route, Security } from "tsoa";
 import { BEARER_AUTH, MEMBER_SCOPE, OIDC_AUTH } from "../lib/authentication.ts";
 import { requireSocketId } from "../middleware/socketAuth.ts";
 import { webSocketService } from "../server.ts";

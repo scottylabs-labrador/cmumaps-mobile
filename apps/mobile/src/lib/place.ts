@@ -25,10 +25,7 @@ export const suffixFromPathname = (pathname: string) => {
   return pathname.replace(/^\//, "");
 };
 
-export const parsePlace = (
-  suffix: string,
-  buildings: Buildings | undefined,
-): Place => {
+export const parsePlace = (suffix: string, buildings: Buildings | undefined): Place => {
   if (suffix === "" || suffix === "user") {
     return { kind: "home" };
   }

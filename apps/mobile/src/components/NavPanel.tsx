@@ -23,10 +23,11 @@ interface Props {
 const summary = (route: PreciseRoute | undefined) => {
   const distance = Math.round(route?.path.distance ?? 0);
   const minutes = Math.round(distance / 100);
-  const arrival = new Date(Date.now() + minutes * 60 * 1000).toLocaleTimeString(
-    "en-US",
-    { hour: "numeric", minute: "2-digit", hour12: true },
-  );
+  const arrival = new Date(Date.now() + minutes * 60 * 1000).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
   return { distance, minutes, arrival };
 };
 
@@ -73,9 +74,7 @@ export const NavPanel = ({
               onPress={() => onSelect(kind)}
               style={[styles.chip, active ? styles.chipOn : null]}
             >
-              <Text style={[styles.chipText, !available ? styles.chipOff : null]}>
-                {kind}
-              </Text>
+              <Text style={[styles.chipText, !available ? styles.chipOff : null]}>{kind}</Text>
             </Pressable>
           );
         })}

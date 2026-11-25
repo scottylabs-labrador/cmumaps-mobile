@@ -1,15 +1,6 @@
 import type { PoiInfo, PoiType } from "@cmumaps/common";
 import type { Request as ExpressRequest } from "express";
-import {
-  Body,
-  Delete,
-  Middlewares,
-  Post,
-  Put,
-  Request,
-  Route,
-  Security,
-} from "tsoa";
+import { Body, Delete, Middlewares, Post, Put, Request, Route, Security } from "tsoa";
 import { BEARER_AUTH, MEMBER_SCOPE, OIDC_AUTH } from "../lib/authentication.ts";
 import { requireSocketId } from "../middleware/socketAuth.ts";
 import { webSocketService } from "../server.ts";
@@ -21,10 +12,7 @@ import { poiService } from "../services/poiService.ts";
 @Route("pois")
 export class PoiController {
   @Post("/:poiId")
-  public async createPoi(
-    @Request() req: ExpressRequest,
-    @Body() body: { poiInfo: PoiInfo },
-  ) {
+  public async createPoi(@Request() req: ExpressRequest, @Body() body: { poiInfo: PoiInfo }) {
     const { poiId, socketId } = req.params;
     const { poiInfo } = body;
 
@@ -44,10 +32,7 @@ export class PoiController {
   }
 
   @Put("/:poiId/type")
-  public async updatePoiType(
-    @Request() req: ExpressRequest,
-    @Body() body: { poiType: PoiType },
-  ) {
+  public async updatePoiType(@Request() req: ExpressRequest, @Body() body: { poiType: PoiType }) {
     const { poiId, socketId } = req.params;
     const { poiType } = body;
 

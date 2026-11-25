@@ -1,15 +1,7 @@
 import type { Buildings, GeoCoordinate, GeoRooms } from "@cmumaps/common";
 import { router, useGlobalSearchParams, usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  Dimensions,
-  Pressable,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Dimensions, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import type { Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBuildings, useFloorplan, usePois } from "@/api/client";
@@ -24,19 +16,13 @@ import { routeLine, useRoutes } from "@/hooks/useRoutes";
 import { requestUserLocation, useUserLocation } from "@/hooks/useUserLocation";
 import { useSignedInUser } from "@/hooks/useWaypoint";
 import { buildingAt, FLOOR_ZOOM_DENSITY } from "@/lib/geometry";
-import {
-  focusedFloor,
-  type Place,
-  parsePlace,
-  suffixFromPathname,
-} from "@/lib/place";
+import { focusedFloor, type Place, parsePlace, suffixFromPathname } from "@/lib/place";
 import { isPublicBuilding } from "@/lib/publicBuilding";
 import { shareUrl } from "@/lib/shareUrl";
 import { useMapStore } from "@/store";
 import { theme } from "@/theme";
 
-const one = (value: string | string[] | undefined) =>
-  Array.isArray(value) ? value[0] : value;
+const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
 
 const href = (path: string, src?: string, dst?: string) => {
   const params = new URLSearchParams();
@@ -61,19 +47,13 @@ const placeTitle = (
   if (place.kind === "unknown") {
     return "That link is not on the map";
   }
-  if (
-    place.kind !== "building" &&
-    place.kind !== "floor" &&
-    place.kind !== "room"
-  ) {
+  if (place.kind !== "building" && place.kind !== "floor" && place.kind !== "room") {
     return "";
   }
   const building = buildings?.[place.buildingCode];
   if (place.kind === "room") {
     const room = rooms?.[place.roomName];
-    return (
-      room?.alias || `${building?.name ?? place.buildingCode} ${place.roomName}`
-    );
+    return room?.alias || `${building?.name ?? place.buildingCode} ${place.roomName}`;
   }
   if (place.kind === "floor") {
     return `${building?.name ?? place.buildingCode} floor ${place.floor}`;
@@ -105,18 +85,12 @@ export const MapScreen = () => {
   const signedIn = Boolean(user);
   const buildings = useBuildings();
   const suffix = suffixFromPathname(pathname);
-  const place = parsePlace(
-    suffix === "" && floorParam ? floorParam : suffix,
-    buildings.data,
-  );
+  const place = parsePlace(suffix === "" && floorParam ? floorParam : suffix, buildings.data);
   const floor = focusedFloor(place, buildings.data);
   const activeFloor = floor ?? mapFloor;
-  const floorCode = activeFloor
-    ? `${activeFloor.buildingCode}-${activeFloor.floor}`
-    : null;
+  const floorCode = activeFloor ? `${activeFloor.buildingCode}-${activeFloor.floor}` : null;
   const canSeeFloor =
-    Boolean(activeFloor) &&
-    (signedIn || isPublicBuilding(activeFloor?.buildingCode));
+    Boolean(activeFloor) && (signedIn || isPublicBuilding(activeFloor?.buildingCode));
   const rooms = useFloorplan(floorCode, canSeeFloor);
   const pois = usePois(floorCode, canSeeFloor);
   const { start, end, routes } = useRoutes(src, dst);
@@ -136,12 +110,8 @@ export const MapScreen = () => {
   const userPosition = useMapStore((state) => state.userPosition);
   const signInVisible = useMapStore((state) => state.signInVisible);
   const setSignInVisible = useMapStore((state) => state.setSignInVisible);
-  const locationPromptVisible = useMapStore(
-    (state) => state.locationPromptVisible,
-  );
-  const setLocationPromptVisible = useMapStore(
-    (state) => state.setLocationPromptVisible,
-  );
+  const locationPromptVisible = useMapStore((state) => state.locationPromptVisible);
+  const setLocationPromptVisible = useMapStore((state) => state.setLocationPromptVisible);
   const resetNav = useMapStore((state) => state.resetNav);
 
   useEffect(() => {
@@ -216,13 +186,9 @@ export const MapScreen = () => {
   const building = buildingCode ? buildings.data?.[buildingCode] : undefined;
   const needsSignIn = Boolean(floor) && !canSeeFloor;
   const navOpen = Boolean(src && dst);
-  const sheetOpen =
-    searchOpen ||
-    navOpen ||
-    (place.kind !== "home" && place.kind !== "pending");
+  const sheetOpen = searchOpen || navOpen || (place.kind !== "home" && place.kind !== "pending");
   const line = routeLine(routes.data, selectedRoute);
-  const currentInstruction =
-    routes.data?.[selectedRoute]?.instructions[instructionIndex];
+  const currentInstruction = routes.data?.[selectedRoute]?.instructions[instructionIndex];
 
   const camera = (() => {
     if (place.kind === "coordinate") {
@@ -330,16 +296,8 @@ export const MapScreen = () => {
           />
         </View>
       ) : null}
-      <View
-        style={[
-          styles.gear,
-          { bottom: insets.bottom + (sheetOpen ? 300 : 24) },
-        ]}
-      >
-        <Pressable
-          style={styles.gearButton}
-          onPress={() => setGearOpen((open) => !open)}
-        >
+      <View style={[styles.gear, { bottom: insets.bottom + (sheetOpen ? 300 : 24) }]}>
+        <Pressable style={styles.gearButton} onPress={() => setGearOpen((open) => !open)}>
           <Text style={styles.gearText}>⚙</Text>
         </Pressable>
         <GearMenu
@@ -348,11 +306,9 @@ export const MapScreen = () => {
           onClose={() => setGearOpen(false)}
           onSignIn={() => {
             setGearOpen(false);
-            signIn(href(pathname, src || undefined, dst || undefined)).catch(
-              () => {
-                setSignInVisible(true);
-              },
-            );
+            signIn(href(pathname, src || undefined, dst || undefined)).catch(() => {
+              setSignInVisible(true);
+            });
           }}
           onSignOut={() => {
             setGearOpen(false);
@@ -389,9 +345,7 @@ export const MapScreen = () => {
             query={searchQuery}
             signedIn={signedIn}
             pickingDestination={Boolean(src) && !dst}
-            onPick={(value) =>
-              open(pathname === "/" ? "/" : pathname, src, value)
-            }
+            onPick={(value) => open(pathname === "/" ? "/" : pathname, src, value)}
             onSelectBuilding={selectBuilding}
             onSelectFloor={selectFloor}
             onSelectRoom={selectRoom}
@@ -406,23 +360,16 @@ export const MapScreen = () => {
             selected={selectedRoute}
             navigating={navigating}
             instructionIndex={instructionIndex}
-            error={
-              routes.isError
-                ? "No route for that pair."
-                : (start.error ?? end.error)
-            }
+            error={routes.isError ? "No route for that pair." : (start.error ?? end.error)}
             onSelect={setSelectedRoute}
             onGo={() => setNavigating(true)}
             onEnd={() => {
               resetNav();
               router.replace(href(pathname));
             }}
-            onPrev={() =>
-              setInstructionIndex(Math.max(0, instructionIndex - 1))
-            }
+            onPrev={() => setInstructionIndex(Math.max(0, instructionIndex - 1))}
             onNext={() => {
-              const count =
-                routes.data?.[selectedRoute]?.instructions.length ?? 0;
+              const count = routes.data?.[selectedRoute]?.instructions.length ?? 0;
               if (count === 0) {
                 return;
               }

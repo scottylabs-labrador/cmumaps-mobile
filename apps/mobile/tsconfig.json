@@ -9,14 +9,8 @@
     "noUnusedParameters": true,
     "verbatimModuleSyntax": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "app",
-    "src",
-    "app.config.ts"
-  ]
+  "include": ["app", "src", "app.config.ts"]
 }

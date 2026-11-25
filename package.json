@@ -10,6 +10,7 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/bun": "^1.3.5",
+    "railway": "^3.17.0",
     "syncpack": "^13.0.4",
     "turbo": "^2.7.4",
     "typescript": "^7.0.2",

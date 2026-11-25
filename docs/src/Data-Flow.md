@@ -60,10 +60,9 @@ takes in the scraped data and the serialized data as input and generates
 
 The S3 bucket json files are deserialized locally.
 
-### Step 4: Visualization
+### Step 4: Placement
 
-The visualizer is used to place the data in geo-coordinates. It can also be used
-to add new data, such as connections between rooms and POIs.
+Floorplan data is placed in geo-coordinates, including connections between rooms and POIs.
 
 ### Step 5: Serialization
 

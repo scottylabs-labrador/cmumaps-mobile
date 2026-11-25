@@ -1,7 +1,7 @@
 ## Tech Stack
 
-**Web**: [React](https://react.dev/) + [Vite](https://vite.dev/) + [TanStack Router](https://tanstack.com/router) +
-         [TanStack Query](https://tanstack.com/query) + [Zustand](https://zustand-demo.pmnd.rs/) + [Tailwind CSS](https://tailwindcss.com/)
+**Mobile**: [Expo](https://docs.expo.dev/) + [React Native](https://reactnative.dev/) +
+           [TanStack Query](https://tanstack.com/query) + [Zustand](https://zustand-demo.pmnd.rs/)
 
 **Server**: [Express.js](https://expressjs.com/) + [TSOA](https://tsoa-community.github.io/docs/)
 
@@ -11,7 +11,6 @@
 [markdownlint](https://github.com/DavidAnson/markdownlint-cli2) +
 [syncpack](https://jamiemason.github.io/syncpack/) +
 [tsc](https://www.typescriptlang.org/docs/handbook/compiler-options.html) +
-[biome](https://biomejs.dev/) +
 [ruff](https://docs.astral.sh/ruff/) +
 [mypy](https://mypy-lang.org/) +
 [ty](https://docs.astral.sh/ty/)

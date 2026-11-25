@@ -7,8 +7,6 @@ import path from "node:path";
 import process from "node:process";
 import { parseArgs } from "node:util";
 
-type Profile = "default" | "visualizer";
-
 type EnvFileSpec = {
   path: string;
   requiredKeys: string[];
@@ -28,77 +26,45 @@ const repoRoot = path.resolve(import.meta.dir, "../..");
 const serverDir = path.join(repoRoot, "apps/server");
 const composeFile = path.join(repoRoot, "compose.dev.yml");
 
-const envFilesByProfile: Record<Profile, EnvFileSpec[]> = {
-  default: [
-    {
-      path: path.join(repoRoot, "apps/server/.env"),
-      requiredKeys: [
-        "ALLOWED_ORIGINS_REGEX",
-        "AUTH_CLIENT_ID",
-        "AUTH_CLIENT_SECRET",
-        "AUTH_ISSUER",
-        "AUTH_JWKS_URI",
-        "BETTER_AUTH_URL",
-        "DATABASE_URL",
-        "SERVER_URL",
-      ],
-      mismatchChecks: (env) => getLocalDatabaseUrlIssues(env),
-    },
-    {
-      path: path.join(repoRoot, "apps/web/.env"),
-      requiredKeys: ["VITE_SERVER_URL"],
-    },
-  ],
-  visualizer: [
-    {
-      path: path.join(repoRoot, "apps/server/.env"),
-      requiredKeys: [
-        "ALLOWED_ORIGINS_REGEX",
-        "AUTH_CLIENT_ID",
-        "AUTH_CLIENT_SECRET",
-        "AUTH_ISSUER",
-        "AUTH_JWKS_URI",
-        "BETTER_AUTH_URL",
-        "DATABASE_URL",
-        "SERVER_URL",
-      ],
-      mismatchChecks: (env) => getLocalDatabaseUrlIssues(env),
-    },
-    {
-      path: path.join(repoRoot, "apps/visualizer/.env"),
-      requiredKeys: ["VITE_CLERK_PUBLISHABLE_KEY", "VITE_SERVER_URL"],
-    },
-  ],
-};
+const envFiles: EnvFileSpec[] = [
+  {
+    path: path.join(repoRoot, "apps/server/.env"),
+    requiredKeys: [
+      "ALLOWED_ORIGINS_REGEX",
+      "AUTH_CLIENT_ID",
+      "AUTH_CLIENT_SECRET",
+      "AUTH_ISSUER",
+      "AUTH_JWKS_URI",
+      "BETTER_AUTH_URL",
+      "DATABASE_URL",
+      "SERVER_URL",
+    ],
+    mismatchChecks: (env) => getLocalDatabaseUrlIssues(env),
+  },
+];
 
-const vaultEnvByProfile: Record<Profile, VaultEnv> = {
-  default: "local",
-  visualizer: "local",
-};
+const vaultEnv: VaultEnv = "local";
 
 const { values } = parseArgs({
   args: process.argv.slice(2),
   options: {
     help: { type: "boolean" },
-    profile: { type: "string" },
   },
   strict: true,
 });
 
 if (values.help) {
-  console.log(`Usage: bun ./scripts/dev/prepare.ts [--profile default|visualizer]
+  console.log(`Usage: bun ./scripts/dev/prepare.ts
 
 Preflight steps:
-  1. Validate the selected env files
+  1. Validate the server env file
   2. Run the repo secrets flow only when env files are missing or invalid
   3. Start local Postgres from compose.dev.yml when it is not already reachable
   4. Regenerate stale server build artifacts
-  5. Apply Drizzle migrations to the local database
+  5. Push the Prisma schema to the local database
 `);
   process.exit(0);
 }
-
-const profile = parseProfile(values.profile);
 
 try {
   await main();
@@ -109,7 +75,7 @@ try {
 }
 
 async function main() {
-  console.log(`Preparing local dev profile: ${profile}`);
+  console.log("Preparing local dev.");
 
   logTool(`Bun ${Bun.version}`);
 
@@ -122,7 +88,7 @@ async function main() {
     );
   }
 
-  const serverEnv = await ensureEnvFiles(profile);
+  const serverEnv = await ensureEnvFiles();
   await ensureServerArtifacts();
   const databaseUrl = serverEnv["DATABASE_URL"];
   if (!databaseUrl) {
@@ -134,23 +100,12 @@ async function main() {
   log("Preflight complete.");
 }
 
-function parseProfile(input: string | undefined): Profile {
-  if (input === undefined || input === "default" || input === "visualizer") {
-    return input ?? "default";
-  }
-
-  throw new Error(
-    `Unsupported profile "${input}". Expected default or visualizer.`,
-  );
-}
-
-async function ensureEnvFiles(profile: Profile) {
-  const specs = envFilesByProfile[profile];
-  const vaultEnv = vaultEnvByProfile[profile];
+async function ensureEnvFiles() {
+  const specs = envFiles;
   let validations = await Promise.all(specs.map(validateEnvFile));
 
   if (validations.every((validation) => validation.issues.length === 0)) {
-    log("Environment files are present and valid for this profile.");
+    log("Environment files are present and valid.");
     return getServerEnv(validations);
   }
 

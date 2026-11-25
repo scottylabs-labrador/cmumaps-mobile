@@ -16,17 +16,6 @@
     ".env.*": "properties"
   },
 
-  // Ignore routeTree.gen.ts file
-  "files.watcherExclude": {
-    "**/routeTree.gen.ts": true
-  },
-  "search.exclude": {
-    "**/routeTree.gen.ts": true
-  },
-  "files.readonlyInclude": {
-    "**/routeTree.gen.ts": true
-  },
-
   // Formatters
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff"

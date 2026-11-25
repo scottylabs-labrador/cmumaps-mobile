@@ -2,8 +2,8 @@
 
 ## Overview
 
-[CMU Maps](https://cmumaps.com) is a web application that provides a map of the
-Carnegie Mellon University campus, allowing users to easily access information about campus locations.
+[CMU Maps](https://cmumaps.com) is the mobile app for the Carnegie Mellon University campus map.
+It lets people look up buildings, rooms, and routes on campus.
 
 Key features include:
 

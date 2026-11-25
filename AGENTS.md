@@ -4,7 +4,7 @@
 
 ### Overview
 
-CMU Maps is a Turborepo monorepo with 4 apps and 3 shared packages. See `README.md` and `.github/CONTRIBUTING.md` for general project info.
+CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `apps/dataflow`) and 3 shared packages. See `README.md` and `.github/CONTRIBUTING.md` for general project info.
 
 ### Services
 
@@ -12,14 +12,14 @@ CMU Maps is a Turborepo monorepo with 4 apps and 3 shared packages. See `README.
 | --- | --- | --- |
 | PostgreSQL 18 (Homebrew) | 5432 | Database `cmumaps` at `postgresql://postgres:donotuseinprod@localhost:5432/cmumaps`. `compose.dev.yml` remains for other machines. |
 | Server (`@cmumaps/server`) | 8080 | `cd apps/server && secretspec run -P local -- bun run --watch src/server.ts` |
-| Web app (`@cmumaps/web`) | 5173 | `cd apps/web && bunx vite --port 5173 --host` |
+| Mobile app (`@cmumaps/mobile`) | 8081 | `bun run dev:mobile` from the repo root |
 
 ### Key gotchas
 
 - **`DATABASE_URL` in shell env**: The local connection string is the `local` profile default in `apps/server/secretspec.toml`. A stale shell `DATABASE_URL` (for example `postgres:5432` from Docker Compose) can still override it. `unset DATABASE_URL` before starting the server.
 - **`SERVER_PORT`**: The local SecretSpec profile sets `SERVER_PORT` to `8080` because this Mac cannot bind port 80 without sudo. The schema coerces that string. `SERVER_URL` is `http://localhost:8080`.
 - **Code generation before lint/build**: Before running `bun run check`, `bun run lint`, `bun run tsc`, or `bun run build`, you must first generate the server's build artifacts: `cd apps/server && bun run db-generate && bun run tsoa && bun run openapi` (or use `bun run sync` from the root).
-- **Pre-commit hooks** (`.husky/pre-commit`): Runs `editorconfig-checker`, `syncpack lint`, `biome check`, and `uv run lint` for Python. These are automatically run by husky on commit.
+- **Pre-commit hooks** (`.husky/pre-commit`): Runs `editorconfig-checker`, `syncpack lint`, `bun run check`, and `uv run lint` for Python when `apps/dataflow` changes. These are automatically run by husky on commit.
 
 ### Populating the database
 
@@ -47,9 +47,10 @@ When `S3_ENDPOINT` is unset, populate reads `data/floorplans/` and refills Build
 
 ### Standard commands
 
-- **Lint/check**: `bun run check` (runs turbo check across all packages — combines `tsc -b` + `biome check`)
+- **Lint/check**: `bun run check` (runs turbo check across all packages — `tsc` in each package)
 - **Python lint**: `cd apps/dataflow && uv run lint`
 - **Build**: `bun run build`
-- **Dev (server + web)**: `bun run dev` sets `VITE_IGNORE_LOGIN=true` and runs `dev:web`. The server still requires login. `bun run dev:web` starts both through Turbo without that flag.
+- **Dev (server + mobile)**: `bun run dev` starts the server and Expo through Turbo
 - **Dev (server only)**: `bun run dev:server`
+- **Dev preflight**: `bun run dev:prepare` checks `apps/server/.env`, Postgres, generated server artifacts, and applies the Prisma schema
 - See `package.json` scripts for the full list.

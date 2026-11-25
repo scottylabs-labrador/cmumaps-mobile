@@ -1,7 +1,0 @@
-{
-  "name": "@cmumaps/ui",
-  "version": "1.0.0",
-  "devDependencies": {},
-  "main": "src/index.ts",
-  "type": "module"
-}

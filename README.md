@@ -16,8 +16,3 @@ Key features include:
 
 Please check out our [wiki](https://github.com/ScottyLabs/cmumaps/wiki)
 for more information about the project.
-
-## Contributing
-
-Please check out our [Contributing Guide](.github/CONTRIBUTING.md)
-for more information about how to contribute to the project.

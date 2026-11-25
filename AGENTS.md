@@ -4,7 +4,7 @@
 
 ### Overview
 
-CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `apps/dataflow`) and 3 shared packages. See `README.md` and `.github/CONTRIBUTING.md` for general project info.
+CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `apps/dataflow`) and 1 shared package (`packages/common`). See `README.md` for general project info.
 
 ### Services
 

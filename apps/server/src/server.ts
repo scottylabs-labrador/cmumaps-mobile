@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import http from "node:http";
 import path from "node:path";
 import process from "node:process";
 import { toNodeHandler } from "better-auth/node";
@@ -7,7 +6,6 @@ import { YAML } from "bun";
 import cors, { type CorsOptions } from "cors";
 import type { ErrorRequestHandler } from "express";
 import express from "express";
-import { Server } from "socket.io";
 import swaggerUi, { type JsonObject } from "swagger-ui-express";
 import { RegisterRoutes } from "../build/routes.ts";
 import { prisma } from "../prisma/index.ts";
@@ -15,8 +13,6 @@ import { env } from "./env.ts";
 import { auth } from "./lib/auth.ts";
 import { errorHandler } from "./middleware/errorHandler.ts";
 import { notFoundHandler } from "./middleware/notFoundHandler.ts";
-import { socketAuth } from "./middleware/socketAuth.ts";
-import { WebSocketService } from "./services/webSocketService.ts";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -27,17 +23,6 @@ const corsOptions: CorsOptions = {
   credentials: true,
 };
 app.use(cors(corsOptions));
-
-// Create HTTP server with Express app attached
-const server = http.createServer(app);
-
-// Initialize Socket.IO with authentication middleware
-// https://socket.io/docs/v4/handling-cors/
-const io = new Server(server, { cors: corsOptions });
-io.use(socketAuth);
-
-// Initialize WebSocket service
-export const webSocketService = new WebSocketService(io);
 
 // Setup Authentication
 // Setup Authentication: https://www.better-auth.com/docs/integrations/express
@@ -69,7 +54,7 @@ app.use(errorHandler as ErrorRequestHandler);
 app.use(notFoundHandler);
 
 const port = env.SERVER_PORT;
-server.listen(port, () => {
+app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
 

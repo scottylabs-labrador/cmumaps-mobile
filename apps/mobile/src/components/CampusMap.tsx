@@ -1,6 +1,5 @@
 import type { Buildings, GeoCoordinate, GeoRooms, Pois } from "@cmumaps/common";
 import { getRoomTypeDetails } from "@cmumaps/common";
-import { INITIAL_REGION } from "@cmumaps/ui";
 import { useEffect, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import MapView, {
@@ -35,10 +34,10 @@ interface Props {
 }
 
 const initialRegion = {
-  latitude: INITIAL_REGION.centerLatitude,
-  longitude: INITIAL_REGION.centerLongitude,
-  latitudeDelta: INITIAL_REGION.latitudeDelta,
-  longitudeDelta: INITIAL_REGION.longitudeDelta,
+  latitude: 40.444,
+  longitude: -79.945,
+  latitudeDelta: 0.006337455593801167,
+  longitudeDelta: 0.011960061265583022,
 };
 
 // GeoJSON rings repeat the first point. MapKit closes the shape itself, and the

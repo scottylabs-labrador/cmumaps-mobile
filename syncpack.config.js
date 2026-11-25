@@ -30,4 +30,4 @@ export default {
       range: "^",
     },
   ],
-} satisfies import("syncpack").RcFile;
+};

@@ -10,6 +10,7 @@ export default defineConfig({
       "coverage/**",
       "**/*.gen.ts",
       ".agents/**",
+      ".railway/**",
     ],
     options: {
       typeAware: true,

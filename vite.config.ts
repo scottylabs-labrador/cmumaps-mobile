@@ -9,6 +9,7 @@ export default defineConfig({
       "node_modules/**",
       "coverage/**",
       "**/*.gen.ts",
+      ".agents/**",
     ],
     options: {
       typeAware: true,
@@ -23,7 +24,7 @@ export default defineConfig({
       "node_modules/**",
       "coverage/**",
       "**/*.gen.ts",
-      ".agents/**/*.md",
+      ".agents/**",
       "**/package.json",
     ],
   },

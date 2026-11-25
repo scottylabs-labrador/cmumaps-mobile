@@ -24,7 +24,7 @@ type VaultEnv = "local";
 const textDecoder = new TextDecoder();
 const repoRoot = path.resolve(import.meta.dir, "../..");
 const serverDir = path.join(repoRoot, "apps/server");
-const composeFile = path.join(repoRoot, "compose.dev.yml");
+const composeFile = path.join(repoRoot, "docker/compose.dev.yml");
 
 const envFiles: EnvFileSpec[] = [
   {
@@ -59,7 +59,7 @@ if (values.help) {
 Preflight steps:
   1. Validate the server env file
   2. Run the repo secrets flow only when env files are missing or invalid
-  3. Start local Postgres from compose.dev.yml when it is not already reachable
+  3. Start local Postgres from docker/compose.dev.yml when it is not already reachable
   4. Regenerate stale server build artifacts
   5. Push the Prisma schema to the local database
 `);
@@ -402,7 +402,7 @@ async function ensureDatabase(databaseUrl: string, dockerAvailable: boolean) {
     );
   }
 
-  log("Starting local Postgres with compose.dev.yml.");
+  log("Starting local Postgres with docker/compose.dev.yml.");
   await runCommand(
     ["docker", "compose", "-f", composeFile, "up", "-d", "postgres"],
     repoRoot,

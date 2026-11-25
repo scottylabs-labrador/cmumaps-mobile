@@ -8,7 +8,7 @@ export default defineRailway(() => {
 
   const Postgres = postgres("Postgres");
   Postgres.networking = { privateNetworkEndpoint: "postgres" };
-  const postgresVolume = volume("postgres-volume");
+  const postgresVolume = volume("volume");
 
   const server = service("@cmumaps/server", {
     source: repo,
@@ -34,7 +34,29 @@ export default defineRailway(() => {
     },
   });
 
+  // 08:00 UTC is 03:00 or 04:00 in Pittsburgh, before the tables are truncated and refilled.
+  const dataflow = service("@cmumaps/dataflow", {
+    source: repo,
+    build: {
+      builder: "DOCKERFILE",
+      dockerfilePath: "/apps/dataflow/Dockerfile",
+    },
+    deploy: {
+      cronSchedule: "0 8 * * *",
+      preDeployCommand: ["bun apps/dataflow/src/populate.ts"],
+      restartPolicyType: "NEVER",
+      startCommand: "bun apps/dataflow/src/populate.ts",
+    },
+    env: {
+      DATABASE_URL: "${{Postgres.DATABASE_URL}}",
+      S3_ACCESS_KEY: preserve(),
+      S3_BUCKET: preserve(),
+      S3_ENDPOINT: preserve(),
+      S3_SECRET_KEY: preserve(),
+    },
+  });
+
   return project("CMU Maps", {
-    resources: [Postgres, server, postgresVolume],
+    resources: [Postgres, server, dataflow, postgresVolume],
   });
 });

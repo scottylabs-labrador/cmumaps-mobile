@@ -158,8 +158,12 @@ async function refill(rows: Rows): Promise<void> {
 const env = readEnv();
 const files = await loadFloorplans(env);
 const rows = buildRows(files);
-await refill(rows);
-
-console.log(
-  `Populated ${rows.buildings.length} buildings, ${rows.floors.length} floors, ${rows.rooms.length} rooms, ${rows.aliases.length} aliases, ${rows.nodes.length} nodes, ${rows.edges.length} edges, ${rows.pois.length} pois`,
-);
+try {
+  await refill(rows);
+  console.log(
+    `Populated ${rows.buildings.length} buildings, ${rows.floors.length} floors, ${rows.rooms.length} rooms, ${rows.aliases.length} aliases, ${rows.nodes.length} nodes, ${rows.edges.length} edges, ${rows.pois.length} pois`,
+  );
+} finally {
+  // A cron run has to exit. The Postgres pool would otherwise keep the process open.
+  await db.$client.end();
+}

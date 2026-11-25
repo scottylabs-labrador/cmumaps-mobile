@@ -9,8 +9,9 @@ WORKDIR /app
 # Copy everything
 COPY . .
 
-# Install deps from bun.lock
-RUN bun install --frozen-lockfile
+# Install deps from bun.lock. The root prepare script installs git hooks,
+# and the image has no git checkout.
+RUN bun install --frozen-lockfile --ignore-scripts
 
 # Generate the OpenAPI spec
 RUN cd apps/server && bun run tsoa && bun run openapi

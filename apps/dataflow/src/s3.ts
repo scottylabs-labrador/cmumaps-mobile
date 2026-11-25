@@ -13,8 +13,6 @@ import {
   poisSchema,
 } from "./schemas.ts";
 
-const BUCKET = "cmumaps";
-
 function endpointUrl(endpoint: string): string {
   if (endpoint.startsWith("http://") || endpoint.startsWith("https://")) {
     return endpoint;
@@ -39,7 +37,7 @@ export async function loadFloorplans(env: Env): Promise<FloorplanFiles> {
   const client = new S3Client({
     accessKeyId: env.S3_ACCESS_KEY,
     secretAccessKey: env.S3_SECRET_KEY,
-    bucket: BUCKET,
+    bucket: env.S3_BUCKET,
     endpoint: endpointUrl(env.S3_ENDPOINT),
   });
 

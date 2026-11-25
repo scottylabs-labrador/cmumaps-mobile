@@ -4,7 +4,7 @@
 
 ### Overview
 
-CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `apps/dataflow`) and 1 shared package (`packages/common`). See `README.md` for general project info.
+CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `apps/dataflow`) and 1 shared package (`packages/common`). See `README.md` for general project info. Domain language lives in `docs/GLOSSARY.md`. ADRs live in `docs/adr/`.
 
 ### Services
 
@@ -52,5 +52,4 @@ When `S3_ENDPOINT` is unset, populate reads `data/floorplans/` and refills Build
 - **Build**: `bun run build`
 - **Dev (server + mobile)**: `bun run dev` starts the server and Expo through Turbo
 - **Dev (server only)**: `bun run dev:server`
-- **Dev preflight**: `bun run dev:prepare` checks `apps/server/.env`, Postgres, generated server artifacts, and applies the Prisma schema
 - See `package.json` scripts for the full list.

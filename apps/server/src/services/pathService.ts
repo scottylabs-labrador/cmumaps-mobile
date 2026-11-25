@@ -1,9 +1,10 @@
 /** biome-ignore-all lint/style/useNamingConvention: TODO: use the right naming convention */
 import type { GeoNodes, PreciseRoute } from "@cmumaps/common";
-import { prisma } from "../../prisma/index.ts";
+import { building as buildingTable } from "@cmumaps/db/schema";
+import { db } from "../db.ts";
 import { getRoute, parseWaypoint, waypointToNodes } from "../utils/path/pathfinder.ts";
 
-export type Buildings = Awaited<ReturnType<typeof prisma.building.findMany>>;
+export type Buildings = (typeof buildingTable.$inferSelect)[];
 
 const OUTSIDE_MULTIPLIER = 100;
 // Cache the graph
@@ -12,11 +13,11 @@ let graphCache: GeoNodes | null = null;
 async function getOrBuildGraph(): Promise<GeoNodes> {
   if (!graphCache) {
     console.log("Building graph cache...");
-    const dbNodes = await prisma.node.findMany({
-      include: {
+    const dbNodes = await db.query.node.findMany({
+      with: {
         outEdges: {
-          include: {
-            outNode: { select: { buildingCode: true, floorLevel: true } },
+          with: {
+            outNode: { columns: { buildingCode: true, floorLevel: true } },
           },
         },
         floor: true,
@@ -83,7 +84,7 @@ export const pathService = {
     const startWaypoint = parseWaypoint(start);
     const endWaypoint = parseWaypoint(end);
 
-    const buildings = await prisma.building.findMany();
+    const buildings = await db.query.building.findMany();
     const startNodes = waypointToNodes(startWaypoint, graph, buildings);
     const endNodes = waypointToNodes(endWaypoint, graph, buildings);
 
@@ -125,7 +126,7 @@ export const pathService = {
     const startWaypoint = parseWaypoint(start);
     const endWaypoint = parseWaypoint(end);
 
-    const buildings = await prisma.building.findMany();
+    const buildings = await db.query.building.findMany();
     const startNodes = waypointToNodes(startWaypoint, graph, buildings);
     const endNodes = waypointToNodes(endWaypoint, graph, buildings);
 

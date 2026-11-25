@@ -8,7 +8,7 @@ import type { ErrorRequestHandler } from "express";
 import express from "express";
 import swaggerUi, { type JsonObject } from "swagger-ui-express";
 import { RegisterRoutes } from "../build/routes.ts";
-import { prisma } from "../prisma/index.ts";
+import { db } from "./db.ts";
 import { env } from "./env.ts";
 import { auth } from "./lib/auth.ts";
 import { errorHandler } from "./middleware/errorHandler.ts";
@@ -59,6 +59,6 @@ app.listen(port, () => {
 });
 
 process.on("SIGINT", async () => {
-  await prisma.$disconnect();
+  await db.$client.end();
   process.exit();
 });

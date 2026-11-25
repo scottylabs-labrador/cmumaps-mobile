@@ -2,9 +2,6 @@
 FROM oven/bun:latest AS base
 WORKDIR /app
 
-# Install any needed system packages (e.g. OpenSSL for Prisma)
-RUN apt-get update && apt-get install -y openssl
-
 # Build stage
 FROM base AS builder
 WORKDIR /app
@@ -15,8 +12,8 @@ COPY . .
 # Install deps from bun.lock
 RUN bun install --frozen-lockfile
 
-# Generate DB schema and OpenAPI spec
-RUN cd apps/server && bun run db-generate && bun run tsoa && bun run openapi
+# Generate the OpenAPI spec
+RUN cd apps/server && bun run tsoa && bun run openapi
 
 # Build the project
 RUN bun run build --filter=@cmumaps/server...
@@ -43,15 +40,6 @@ COPY --from=builder --chown=server:nodejs \
 COPY --from=builder --chown=server:nodejs \
   /app/apps/server/node_modules/swagger-ui-dist \
   /app/apps/server/node_modules/swagger-ui-dist
-
-# Copy Prisma engines
-# (which can be either in apps/node_modules or apps/server/node_modules)
-# COPY --from=builder --chown=server:nodejs \
-#   /app/apps/node_modules/prisma \
-#   /tmp/prisma-engines
-COPY --from=builder --chown=server:nodejs \
-  /app/apps/server/node_modules/prisma \
-  /tmp/prisma-engines
 
 # Copy only what's needed to run the server
 COPY --from=builder --chown=server:nodejs \

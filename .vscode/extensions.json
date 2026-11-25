@@ -7,7 +7,7 @@
     "mkhl.shfmt",
     "redhat.vscode-yaml",
     "tamasfe.even-better-toml",
-    "prisma.prisma",
+    "rphlmr.vscode-drizzle-orm",
     "oxc.oxc-vscode"
   ]
 }

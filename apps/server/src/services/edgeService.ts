@@ -1,25 +1,20 @@
-/** biome-ignore-all lint/style/useNamingConvention: Prisma uses snake_case */
-import { prisma } from "../../prisma/index.ts";
+import { edge as edgeTable } from "@cmumaps/db/schema";
+import { and, eq, or } from "drizzle-orm";
+import { db } from "../db.ts";
 
 export const edgeService = {
   createEdge: async (inNodeId: string, outNodeId: string) => {
-    await prisma.edge.create({
-      data: { inNodeId, outNodeId },
-    });
-    await prisma.edge.create({
-      data: { inNodeId: outNodeId, outNodeId: inNodeId },
-    });
+    await db.insert(edgeTable).values({ inNodeId, outNodeId });
+    await db.insert(edgeTable).values({ inNodeId: outNodeId, outNodeId: inNodeId });
   },
 
   deleteEdge: async (inNodeId: string, outNodeId: string) => {
-    await prisma.edge.delete({
-      where: { inNodeId_outNodeId: { inNodeId, outNodeId } },
-    });
-    await prisma.edge.delete({
-      where: {
-        inNodeId_outNodeId: { inNodeId: outNodeId, outNodeId: inNodeId },
-      },
-    });
+    await db
+      .delete(edgeTable)
+      .where(and(eq(edgeTable.inNodeId, inNodeId), eq(edgeTable.outNodeId, outNodeId)));
+    await db
+      .delete(edgeTable)
+      .where(and(eq(edgeTable.inNodeId, outNodeId), eq(edgeTable.outNodeId, inNodeId)));
   },
 
   createEdges: async (nodeId: string, neighborIds: string[]) => {
@@ -30,8 +25,8 @@ export const edgeService = {
 
   // delete all edges connected to a node
   deleteEdges: async (nodeId: string) => {
-    await prisma.edge.deleteMany({
-      where: { OR: [{ inNodeId: nodeId }, { outNodeId: nodeId }] },
-    });
+    await db
+      .delete(edgeTable)
+      .where(or(eq(edgeTable.inNodeId, nodeId), eq(edgeTable.outNodeId, nodeId)));
   },
 };

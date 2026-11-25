@@ -4,7 +4,7 @@
 
 ### Overview
 
-CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `apps/dataflow`) and 1 shared package (`packages/common`). See `README.md` for general project info. Domain language lives in `docs/GLOSSARY.md`. ADRs live in `docs/adr/`.
+CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `apps/dataflow`) and 2 shared packages (`packages/common`, `packages/db`). See `README.md` for general project info. Domain language lives in `docs/GLOSSARY.md`. ADRs live in `docs/adr/`.
 
 ### Services
 
@@ -16,9 +16,10 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 
 ### Key gotchas
 
-- **`DATABASE_URL` in shell env**: The local connection string is the `local` profile default in `apps/server/secretspec.toml`. A stale shell `DATABASE_URL` (for example `postgres:5432` from Docker Compose) can still override it. `unset DATABASE_URL` before starting the server.
+- **`DATABASE_URL` in shell env**: The local connection string is the `local` profile default in both `apps/server/secretspec.toml` and `packages/db/secretspec.toml`. A stale shell `DATABASE_URL` (for example `postgres:5432` from Docker Compose) can still override it. `unset DATABASE_URL` before starting the server or running `bun run db:migrate`.
 - **`SERVER_PORT`**: The local SecretSpec profile sets `SERVER_PORT` to `8080` because this Mac cannot bind port 80 without sudo. The schema coerces that string. `SERVER_URL` is `http://localhost:8080`.
-- **Code generation before check/build**: Before running `bun run check` or `bun run build`, generate the server's build artifacts: `cd apps/server && bun run db-generate && bun run tsoa && bun run openapi` (or use `bun run sync` from the root).
+- **Database**: `@cmumaps/db` owns the Drizzle schema. `bun run db:migrate` applies the SQL in `packages/db/drizzle`.
+- **Code generation before check/build**: Before running `bun run check` or `bun run build`, generate the server's OpenAPI artifacts: `cd apps/server && bun run tsoa && bun run openapi` (or use `bun run sync` from the root).
 - **Pre-commit hooks** (`.vite-hooks/pre-commit`): Runs `editorconfig-checker`, `syncpack lint`, `vp check`, and `uv run lint` for Python when `apps/dataflow` changes. Vite+ installs the hook dispatcher on `prepare`.
 
 ### Populating the database

@@ -20,8 +20,10 @@
   "scripts": {
     "build": "turbo build",
     "check": "vp check",
+    "db:generate": "cd packages/db && bun run db:generate",
+    "db:migrate": "cd packages/db && bun run db:migrate",
     "db:populate": "cd apps/dataflow && secretspec run -P local -- uv run populate-database",
-    "db:studio": "cd apps/server && bunx prisma studio",
+    "db:studio": "cd packages/db && bun run db:studio",
     "dev": "turbo dev",
     "dev:mobile": "turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server",
     "dev:server": "turbo dev --filter=@cmumaps/server",
@@ -29,7 +31,7 @@
     "prepare": "vp config --hooks --no-agent",
     "secrets": "BAO_ADDR=https://bao.scottylabs.org bao login -method=oidc",
     "start": "turbo start",
-    "sync": "cd apps/server && bun run db-generate && bun run tsoa && bun run openapi",
+    "sync": "cd apps/server && bun run tsoa && bun run openapi",
     "syncpack": "syncpack lint",
     "syncpack:fix": "syncpack format && syncpack fix-mismatches",
     "syncpack:update": "syncpack update"

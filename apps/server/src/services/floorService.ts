@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/style/useNamingConvention: Prisma uses snake_case */
 import type {
   EdgeInfo,
   GeoCoordinate,
@@ -19,8 +18,34 @@ import {
   pdfCoordsToGeoCoords,
   pdfPolygonToGeoPolygon,
 } from "@cmumaps/common";
-import type { InputJsonValue } from "@prisma/client/runtime/library";
-import { prisma } from "../../prisma/index.ts";
+import {
+  floor as floorTable,
+  node as nodeTable,
+  poi as poiTable,
+  room as roomTable,
+} from "@cmumaps/db/schema";
+import { and, eq, isNull, type SQL } from "drizzle-orm";
+import { db } from "../db.ts";
+
+function nodeFloorWhere(buildingCode: string | null, floorLevel: string | null): SQL | undefined {
+  if (buildingCode === null || floorLevel === null) {
+    return and(isNull(nodeTable.buildingCode), isNull(nodeTable.floorLevel));
+  }
+  return and(eq(nodeTable.buildingCode, buildingCode), eq(nodeTable.floorLevel, floorLevel));
+}
+
+const outEdgesWithFloor = {
+  outEdges: {
+    with: {
+      outNode: {
+        columns: {
+          buildingCode: true,
+          floorLevel: true,
+        },
+      },
+    },
+  },
+} as const;
 
 export const floorService = {
   getFloorGraph: async (floorCode: string, placement: Placement) => {
@@ -29,22 +54,10 @@ export const floorService = {
     const geoCoordsToPdfCoordsHelper = geoCoordsToPdfCoords(placement);
 
     // Get all nodes on the floor with their neighbors
-    const dbNodes = await prisma.node.findMany({
-      where: { buildingCode, floorLevel },
+    const dbNodes = await db.query.node.findMany({
+      where: nodeFloorWhere(buildingCode, floorLevel),
       // include the out floor code of each neighbor
-      // include the element of each node (both in and out)
-      include: {
-        outEdges: {
-          include: {
-            outNode: {
-              select: {
-                buildingCode: true,
-                floorLevel: true,
-              },
-            },
-          },
-        },
-      },
+      with: outEdgesWithFloor,
     });
 
     // Convert the nodes to the format expected by the frontend
@@ -94,12 +107,9 @@ export const floorService = {
     const geoCoordsToPdfCoordsHelper = geoCoordsToPdfCoords(placement);
 
     // Get all rooms on the floor from the database
-    const dbRooms = await prisma.room.findMany({
-      where: {
-        buildingCode,
-        floorLevel,
-      },
-      include: {
+    const dbRooms = await db.query.room.findMany({
+      where: and(eq(roomTable.buildingCode, buildingCode), eq(roomTable.floorLevel, floorLevel)),
+      with: {
         aliases: true,
       },
     });
@@ -127,8 +137,8 @@ export const floorService = {
     const buildingCode = extractBuildingCode(floorCode);
     const floorLevel = extractFloorLevel(floorCode);
 
-    const dbPois = await prisma.poi.findMany({
-      where: { buildingCode, floorLevel },
+    const dbPois = await db.query.poi.findMany({
+      where: and(eq(poiTable.buildingCode, buildingCode), eq(poiTable.floorLevel, floorLevel)),
     });
 
     const pois: Pois = {};
@@ -149,8 +159,8 @@ export const floorService = {
     const buildingCode = extractBuildingCode(floorCode);
     const floorLevel = extractFloorLevel(floorCode);
 
-    const floor = await prisma.floor.findUnique({
-      where: { buildingCode_floorLevel: { buildingCode, floorLevel } },
+    const floor = await db.query.floor.findFirst({
+      where: and(eq(floorTable.buildingCode, buildingCode), eq(floorTable.floorLevel, floorLevel)),
     });
 
     if (!floor) {
@@ -175,10 +185,16 @@ export const floorService = {
     const buildingCode = extractBuildingCode(floorCode);
     const floorLevel = extractFloorLevel(floorCode);
 
-    await prisma.$transaction(async (tx) => {
-      const floor = await tx.floor.findUniqueOrThrow({
-        where: { buildingCode_floorLevel: { buildingCode, floorLevel } },
+    await db.transaction(async (tx) => {
+      const floor = await tx.query.floor.findFirst({
+        where: and(
+          eq(floorTable.buildingCode, buildingCode),
+          eq(floorTable.floorLevel, floorLevel),
+        ),
       });
+      if (!floor) {
+        throw new Error("Floor not found");
+      }
 
       // get the old placement, which is used to update the nodes and rooms
       const oldPlacement = {
@@ -192,39 +208,41 @@ export const floorService = {
       };
 
       // update the floor placement
-      await tx.floor.update({
-        where: { buildingCode_floorLevel: { buildingCode, floorLevel } },
-        data: {
+      await tx
+        .update(floorTable)
+        .set({
           centerLatitude: placement.geoCenter.latitude,
           centerLongitude: placement.geoCenter.longitude,
           centerX: placement.pdfCenter.x,
           centerY: placement.pdfCenter.y,
           scale: placement.scale,
           angle: placement.angle,
-        },
-      });
+        })
+        .where(
+          and(eq(floorTable.buildingCode, buildingCode), eq(floorTable.floorLevel, floorLevel)),
+        );
 
       // update all the nodes on the floor
-      const nodes = await tx.node.findMany({
-        where: { buildingCode, floorLevel },
+      const nodes = await tx.query.node.findMany({
+        where: and(eq(nodeTable.buildingCode, buildingCode), eq(nodeTable.floorLevel, floorLevel)),
       });
 
       for (const node of nodes) {
         const pos = { latitude: node.latitude, longitude: node.longitude };
         const pdfCoords = geoCoordsToPdfCoords(oldPlacement)(pos);
         const geoCoords = pdfCoordsToGeoCoords(placement)(pdfCoords);
-        await tx.node.update({
-          where: { nodeId: node.nodeId },
-          data: {
+        await tx
+          .update(nodeTable)
+          .set({
             latitude: geoCoords.latitude,
             longitude: geoCoords.longitude,
-          },
-        });
+          })
+          .where(eq(nodeTable.nodeId, node.nodeId));
       }
 
       // update all the rooms on the floor
-      const rooms = await tx.room.findMany({
-        where: { buildingCode, floorLevel },
+      const rooms = await tx.query.room.findMany({
+        where: and(eq(roomTable.buildingCode, buildingCode), eq(roomTable.floorLevel, floorLevel)),
       });
 
       for (const room of rooms) {
@@ -238,14 +256,14 @@ export const floorService = {
         const polygon = room.polygon as unknown as GeoCoordinate[][];
         const pdfPolygon = geoPolygonToPdfPolygon(polygon, oldPlacement);
         const geoPolygon = pdfPolygonToGeoPolygon(pdfPolygon, placement);
-        await tx.room.update({
-          where: { roomId: room.roomId },
-          data: {
+        await tx
+          .update(roomTable)
+          .set({
             labelLatitude: geoCoords.latitude,
             labelLongitude: geoCoords.longitude,
-            polygon: geoPolygon as unknown as InputJsonValue,
-          },
-        });
+            polygon: geoPolygon,
+          })
+          .where(eq(roomTable.roomId, room.roomId));
       }
     });
   },
@@ -255,13 +273,8 @@ export const floorService = {
     const floorLevel = extractFloorLevel(floorCode);
 
     // Get floor data for Floor type
-    const floor = await prisma.floor.findUnique({
-      where: {
-        buildingCode_floorLevel: {
-          buildingCode,
-          floorLevel,
-        },
-      },
+    const floor = await db.query.floor.findFirst({
+      where: and(eq(floorTable.buildingCode, buildingCode), eq(floorTable.floorLevel, floorLevel)),
     });
 
     if (!floor) {
@@ -269,12 +282,9 @@ export const floorService = {
     }
 
     // Get all rooms on the floor from the database
-    const dbRooms = await prisma.room.findMany({
-      where: {
-        buildingCode,
-        floorLevel,
-      },
-      include: {
+    const dbRooms = await db.query.room.findMany({
+      where: and(eq(roomTable.buildingCode, buildingCode), eq(roomTable.floorLevel, floorLevel)),
+      with: {
         aliases: true,
       },
     });
@@ -311,22 +321,10 @@ export const floorService = {
     }
 
     // Get all nodes on the floor with their neighbors
-    const dbNodes = await prisma.node.findMany({
-      where: { buildingCode, floorLevel },
+    const dbNodes = await db.query.node.findMany({
+      where: nodeFloorWhere(buildingCode, floorLevel),
       // include the out floor code of each neighbor
-      // include the element of each node (both in and out)
-      include: {
-        outEdges: {
-          include: {
-            outNode: {
-              select: {
-                buildingCode: true,
-                floorLevel: true,
-              },
-            },
-          },
-        },
-      },
+      with: outEdgesWithFloor,
     });
 
     // Convert thGeoNodeses to the format expected by the frontend

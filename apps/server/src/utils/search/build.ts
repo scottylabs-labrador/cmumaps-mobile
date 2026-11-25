@@ -1,5 +1,5 @@
 import type { Buildings, GeoCoordinate, RoomType } from "@cmumaps/common";
-import { prisma } from "../../../prisma/index.ts";
+import { db } from "../../db.ts";
 import { buildingService } from "../../services/buildingService.ts";
 import { parseQuery } from "./parse.ts";
 import type { Document, FloorPlans, SearchIndex } from "./types.ts";
@@ -117,8 +117,8 @@ export function floorToDocument({
 }
 
 export async function getFloorplans(): Promise<FloorPlans> {
-  const allRooms = await prisma.room.findMany({
-    include: {
+  const allRooms = await db.query.room.findMany({
+    with: {
       aliases: true,
     },
   });

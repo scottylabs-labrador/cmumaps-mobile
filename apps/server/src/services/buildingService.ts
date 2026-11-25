@@ -1,13 +1,15 @@
 import type { Building, BuildingMetadata, Buildings, GeoCoordinate } from "@cmumaps/common";
 import { ERROR_CODES } from "@cmumaps/common";
-import { prisma } from "../../prisma/index.ts";
+import { building as buildingTable, floor as floorTable } from "@cmumaps/db/schema";
+import { and, eq } from "drizzle-orm";
 import { BuildingError } from "../errors/error.ts";
+import { db } from "../db.ts";
 
 export const buildingService = {
   async getBuildings(): Promise<Buildings> {
     // get all buildings and their floors and default floor
-    const dbBuildings = await prisma.building.findMany({
-      include: { floors: true },
+    const dbBuildings = await db.query.building.findMany({
+      with: { floors: true },
     });
 
     const buildings: Buildings = {};
@@ -30,9 +32,9 @@ export const buildingService = {
   },
 
   async getBuilding(buildingCode: string): Promise<Building> {
-    const building = await prisma.building.findUnique({
-      where: { buildingCode },
-      include: { floors: true },
+    const building = await db.query.building.findFirst({
+      where: eq(buildingTable.buildingCode, buildingCode),
+      with: { floors: true },
     });
 
     if (!building) {
@@ -54,12 +56,12 @@ export const buildingService = {
   },
 
   async getBuildingsMetadata(): Promise<BuildingMetadata[]> {
-    const buildings = await prisma.building.findMany({
-      select: {
+    const buildings = await db.query.building.findMany({
+      columns: {
         buildingCode: true,
         name: true,
-        floors: { select: { isDefault: true, floorLevel: true } },
       },
+      with: { floors: { columns: { isDefault: true, floorLevel: true } } },
     });
     return buildings
       .sort((a, b) => a.name.localeCompare(b.name))
@@ -71,16 +73,16 @@ export const buildingService = {
   },
 
   async getBuildingName(buildingCode: string) {
-    const building = await prisma.building.findUnique({
-      where: { buildingCode },
-      select: { name: true },
+    const building = await db.query.building.findFirst({
+      where: eq(buildingTable.buildingCode, buildingCode),
+      columns: { name: true },
     });
     return building?.name;
   },
 
   async getDefaultFloor(buildingCode: string) {
-    const floor = await prisma.floor.findFirst({
-      where: { buildingCode, isDefault: true },
+    const floor = await db.query.floor.findFirst({
+      where: and(eq(floorTable.buildingCode, buildingCode), eq(floorTable.isDefault, true)),
     });
 
     if (!floor) {
@@ -119,9 +121,9 @@ export const buildingService = {
   },
 
   async getBuildingFloors(buildingCode: string) {
-    const floors = await prisma.floor.findMany({
-      where: { buildingCode },
-      select: { floorLevel: true },
+    const floors = await db.query.floor.findMany({
+      where: eq(floorTable.buildingCode, buildingCode),
+      columns: { floorLevel: true },
     });
 
     return this.sortFloors(floors.map((floor) => floor.floorLevel));

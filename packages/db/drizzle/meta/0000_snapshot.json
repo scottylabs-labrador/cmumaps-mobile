@@ -1,0 +1,547 @@
+{
+  "id": "ed21cc59-730e-429d-b7db-993b0ac5647b",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.Alias": {
+      "name": "Alias",
+      "schema": "",
+      "columns": {
+        "alias": {
+          "name": "alias",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "isDisplayAlias": {
+          "name": "isDisplayAlias",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "roomId": {
+          "name": "roomId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Alias_roomId_fkey": {
+          "name": "Alias_roomId_fkey",
+          "tableFrom": "Alias",
+          "tableTo": "Room",
+          "columnsFrom": ["roomId"],
+          "columnsTo": ["roomId"],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "Alias_pkey": {
+          "name": "Alias_pkey",
+          "columns": ["roomId", "alias"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Building": {
+      "name": "Building",
+      "schema": "",
+      "columns": {
+        "buildingCode": {
+          "name": "buildingCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "osmId": {
+          "name": "osmId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "labelLatitude": {
+          "name": "labelLatitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "labelLongitude": {
+          "name": "labelLongitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shape": {
+          "name": "shape",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hitbox": {
+          "name": "hitbox",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "defaultOrdinal": {
+          "name": "defaultOrdinal",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "Building_pkey": {
+          "name": "Building_pkey",
+          "columns": ["buildingCode"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Edge": {
+      "name": "Edge",
+      "schema": "",
+      "columns": {
+        "inNodeId": {
+          "name": "inNodeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outNodeId": {
+          "name": "outNodeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Edge_inNodeId_fkey": {
+          "name": "Edge_inNodeId_fkey",
+          "tableFrom": "Edge",
+          "tableTo": "Node",
+          "columnsFrom": ["inNodeId"],
+          "columnsTo": ["nodeId"],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "Edge_outNodeId_fkey": {
+          "name": "Edge_outNodeId_fkey",
+          "tableFrom": "Edge",
+          "tableTo": "Node",
+          "columnsFrom": ["outNodeId"],
+          "columnsTo": ["nodeId"],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "Edge_pkey": {
+          "name": "Edge_pkey",
+          "columns": ["inNodeId", "outNodeId"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Floor": {
+      "name": "Floor",
+      "schema": "",
+      "columns": {
+        "buildingCode": {
+          "name": "buildingCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "floorLevel": {
+          "name": "floorLevel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "isDefault": {
+          "name": "isDefault",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "centerX": {
+          "name": "centerX",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "centerY": {
+          "name": "centerY",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "centerLatitude": {
+          "name": "centerLatitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "centerLongitude": {
+          "name": "centerLongitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scale": {
+          "name": "scale",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "angle": {
+          "name": "angle",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "altitude": {
+          "name": "altitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Floor_buildingCode_fkey": {
+          "name": "Floor_buildingCode_fkey",
+          "tableFrom": "Floor",
+          "tableTo": "Building",
+          "columnsFrom": ["buildingCode"],
+          "columnsTo": ["buildingCode"],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "Floor_pkey": {
+          "name": "Floor_pkey",
+          "columns": ["buildingCode", "floorLevel"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Node": {
+      "name": "Node",
+      "schema": "",
+      "columns": {
+        "nodeId": {
+          "name": "nodeId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "buildingCode": {
+          "name": "buildingCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "floorLevel": {
+          "name": "floorLevel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roomId": {
+          "name": "roomId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "Node_buildingCode_floorLevel_idx": {
+          "name": "Node_buildingCode_floorLevel_idx",
+          "columns": [
+            {
+              "expression": "buildingCode",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "floorLevel",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "Node_buildingCode_floorLevel_fkey": {
+          "name": "Node_buildingCode_floorLevel_fkey",
+          "tableFrom": "Node",
+          "tableTo": "Floor",
+          "columnsFrom": ["buildingCode", "floorLevel"],
+          "columnsTo": ["buildingCode", "floorLevel"],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "Node_roomId_fkey": {
+          "name": "Node_roomId_fkey",
+          "tableFrom": "Node",
+          "tableTo": "Room",
+          "columnsFrom": ["roomId"],
+          "columnsTo": ["roomId"],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "Node_pkey": {
+          "name": "Node_pkey",
+          "columns": ["nodeId"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Poi": {
+      "name": "Poi",
+      "schema": "",
+      "columns": {
+        "poiId": {
+          "name": "poiId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "buildingCode": {
+          "name": "buildingCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "floorLevel": {
+          "name": "floorLevel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "Poi_buildingCode_floorLevel_idx": {
+          "name": "Poi_buildingCode_floorLevel_idx",
+          "columns": [
+            {
+              "expression": "buildingCode",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "floorLevel",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "Poi_buildingCode_floorLevel_fkey": {
+          "name": "Poi_buildingCode_floorLevel_fkey",
+          "tableFrom": "Poi",
+          "tableTo": "Floor",
+          "columnsFrom": ["buildingCode", "floorLevel"],
+          "columnsTo": ["buildingCode", "floorLevel"],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "Poi_pkey": {
+          "name": "Poi_pkey",
+          "columns": ["poiId"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.Room": {
+      "name": "Room",
+      "schema": "",
+      "columns": {
+        "roomId": {
+          "name": "roomId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "labelLatitude": {
+          "name": "labelLatitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "labelLongitude": {
+          "name": "labelLongitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "polygon": {
+          "name": "polygon",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "buildingCode": {
+          "name": "buildingCode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "floorLevel": {
+          "name": "floorLevel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "Room_buildingCode_floorLevel_idx": {
+          "name": "Room_buildingCode_floorLevel_idx",
+          "columns": [
+            {
+              "expression": "buildingCode",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "floorLevel",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "Room_buildingCode_floorLevel_fkey": {
+          "name": "Room_buildingCode_floorLevel_fkey",
+          "tableFrom": "Room",
+          "tableTo": "Floor",
+          "columnsFrom": ["buildingCode", "floorLevel"],
+          "columnsTo": ["buildingCode", "floorLevel"],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "Room_pkey": {
+          "name": "Room_pkey",
+          "columns": ["roomId"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

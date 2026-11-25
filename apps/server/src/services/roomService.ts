@@ -5,8 +5,9 @@ import {
   pdfCoordsToGeoCoords,
   pdfPolygonToGeoPolygon,
 } from "@cmumaps/common";
-import type { InputJsonValue } from "@prisma/client/runtime/library";
-import { prisma } from "../../prisma/index.ts";
+import { node as nodeTable, room as roomTable } from "@cmumaps/db/schema";
+import { eq } from "drizzle-orm";
+import { db } from "../db.ts";
 
 export const roomService = {
   createRoom: async (
@@ -24,35 +25,26 @@ export const roomService = {
     const geoPolygon = pdfPolygonToGeoPolygon(polygon, placement);
 
     // also need to add room id to every node in this room
-    await prisma.$transaction(async (tx) => {
-      await prisma.room.create({
-        data: {
-          roomId,
-          type: roomInfo.type,
-          buildingCode,
-          floorLevel,
-          name: roomInfo.name,
-          labelLatitude: geoCoords.latitude,
-          labelLongitude: geoCoords.longitude,
-          polygon: geoPolygon as unknown as InputJsonValue,
-        },
+    await db.transaction(async (tx) => {
+      await tx.insert(roomTable).values({
+        roomId,
+        type: roomInfo.type,
+        buildingCode,
+        floorLevel,
+        name: roomInfo.name,
+        labelLatitude: geoCoords.latitude,
+        labelLongitude: geoCoords.longitude,
+        polygon: geoPolygon,
       });
 
       for (const nodeId of roomNodes) {
-        await tx.node.update({
-          where: { nodeId },
-          data: { roomId },
-        });
+        await tx.update(nodeTable).set({ roomId }).where(eq(nodeTable.nodeId, nodeId));
       }
     });
   },
 
   deleteRoom: async (roomId: string) => {
-    await prisma.$transaction(async (tx) => {
-      await tx.room.delete({
-        where: { roomId },
-      });
-    });
+    await db.delete(roomTable).where(eq(roomTable.roomId, roomId));
   },
 
   updateRoom: async (roomId: string, roomInfo: Partial<RoomInfo>, placement: Placement) => {
@@ -61,16 +53,14 @@ export const roomService = {
 
     const geoPolygon = polygon ? pdfPolygonToGeoPolygon(polygon, placement) : undefined;
 
-    const data = {
-      name: roomInfo.name,
-      labelLatitude: geoCoords?.latitude,
-      labelLongitude: geoCoords?.longitude,
-      polygon: geoPolygon as InputJsonValue | undefined,
-    };
-
-    await prisma.room.update({
-      where: { roomId },
-      data,
-    });
+    await db
+      .update(roomTable)
+      .set({
+        name: roomInfo.name,
+        labelLatitude: geoCoords?.latitude,
+        labelLongitude: geoCoords?.longitude,
+        polygon: geoPolygon,
+      })
+      .where(eq(roomTable.roomId, roomId));
   },
 };

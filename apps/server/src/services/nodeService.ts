@@ -1,12 +1,19 @@
 import type { NodeInfo, Placement } from "@cmumaps/common";
 import { extractBuildingCode, extractFloorLevel, pdfCoordsToGeoCoords } from "@cmumaps/common";
-import { prisma } from "../../prisma/index.ts";
+import { node as nodeTable } from "@cmumaps/db/schema";
+import { eq } from "drizzle-orm";
+import { db } from "../db.ts";
 
 export const nodeService = {
-  getNode: async (nodeId: string) =>
-    await prisma.node.findUniqueOrThrow({
-      where: { nodeId },
-    }),
+  getNode: async (nodeId: string) => {
+    const node = await db.query.node.findFirst({
+      where: eq(nodeTable.nodeId, nodeId),
+    });
+    if (!node) {
+      throw new Error(`Node not found: ${nodeId}`);
+    }
+    return node;
+  },
 
   upsertNode: async (
     floorCode: string,
@@ -27,17 +34,19 @@ export const nodeService = {
       ...(roomId ? { roomId } : {}),
     };
 
-    await prisma.node.upsert({
-      where: { nodeId },
-      create: {
+    await db
+      .insert(nodeTable)
+      .values({
         nodeId,
         ...data,
-      },
-      update: data,
-    });
+      })
+      .onConflictDoUpdate({
+        target: nodeTable.nodeId,
+        set: data,
+      });
   },
 
   deleteNode: async (nodeId: string) => {
-    await prisma.node.delete({ where: { nodeId } });
+    await db.delete(nodeTable).where(eq(nodeTable.nodeId, nodeId));
   },
 };

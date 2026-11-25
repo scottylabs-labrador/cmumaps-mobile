@@ -20,13 +20,11 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 - **`SERVER_PORT`**: The local SecretSpec profile sets `SERVER_PORT` to `8080` because this Mac cannot bind port 80 without sudo. The schema coerces that string. `SERVER_URL` is `http://localhost:8080`.
 - **Database**: `@cmumaps/db` owns the Drizzle schema. `bun run --filter @cmumaps/db db:migrate` applies the SQL in `packages/db/drizzle`.
 - **Code generation before check/build**: Before running `bun run check` or `bun run build`, generate the server's OpenAPI artifacts: `cd apps/server && bun run tsoa && bun run openapi` (or use `bun run sync` from the root).
-- **Pre-commit hooks** (`.vite-hooks/pre-commit`): Runs `editorconfig-checker`, `syncpack lint`, `vp check`, and `uv run lint` for Python when `apps/dataflow` changes. Vite+ installs the hook dispatcher on `prepare`.
+- **Pre-commit hooks** (`.vite-hooks/pre-commit`): Runs `editorconfig-checker`, `syncpack lint`, and `vp check`. Vite+ installs the hook dispatcher on `prepare`.
 
 ### Populating the database
 
-From `apps/dataflow`, `secretspec run -P local -- uv run populate-database` fills the database. The server must already be running. The client requests a Keycloak client-credentials token, and `/populate-table` requires the `cmumaps-admins` group. `AUTH_CLIENT_ID` and `AUTH_CLIENT_SECRET` come from the OpenBao item `cmumaps-mobile/generated/local`. The local issuer is `https://idp.scottylabs.org/realms/labrador`.
-
-When `S3_ENDPOINT` is unset, populate reads `data/floorplans/` and refills Building, Floor, Room, Alias, Node, and Edge. It leaves Poi untouched. When `S3_ENDPOINT` is set, it reads the same objects from S3, including `floorplans/osm-pois.json`. After populating, restart the server to rebuild the in-memory search index and graph cache.
+`bun run --filter @cmumaps/dataflow populate` reads `floorplans/buildings.json`, `placements.json`, `floorplans.json`, `all-graph.json`, and `osm-pois.json` from the `cmumaps` S3 bucket and refills Building, Floor, Room, Alias, Node, Edge, and Poi. The server does not need to be running. `S3_ENDPOINT`, `S3_ACCESS_KEY`, and `S3_SECRET_KEY` are required. Populate writes through the Drizzle client in `@cmumaps/db`, which reads `DATABASE_URL`. Restart the server afterward so the in-memory search index and graph cache rebuild.
 
 ### Testing the mobile app on the iOS simulator
 
@@ -49,7 +47,6 @@ When `S3_ENDPOINT` is unset, populate reads `data/floorplans/` and refills Build
 ### Standard commands
 
 - **Lint/check**: `bun run check` runs `vp check` (Oxfmt, Oxlint, and tsrs typecheck).
-- **Python lint**: `cd apps/dataflow && uv run lint`
 - **Build**: `bun run build`
 - **Dev**: `bun run dev` runs every package `dev` script: Postgres, the server, Expo, web, and the visualizer
 - **Dev (server + mobile)**: `turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server`

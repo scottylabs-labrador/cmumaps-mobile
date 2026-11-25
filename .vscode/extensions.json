@@ -1,8 +1,5 @@
 {
   "recommendations": [
-    "charliermarsh.ruff",
-    "ms-python.mypy-type-checker",
-    "astral-sh.ty",
     "vscode-icons-team.vscode-icons",
     "mkhl.shfmt",
     "redhat.vscode-yaml",

@@ -8,9 +8,6 @@
     "source.fixAll": "explicit"
   },
 
-  // Python interpreter path
-  "python.defaultInterpreterPath": "apps/dataflow/.venv/bin/python3",
-
   // File associations
   "files.associations": {
     ".env.*": "properties"
@@ -41,9 +38,6 @@
   },
   "[css]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
-  },
-  "[python]": {
-    "editor.defaultFormatter": "charliermarsh.ruff"
   },
   "[shellscript]": {
     "editor.defaultFormatter": "mkhl.shfmt"

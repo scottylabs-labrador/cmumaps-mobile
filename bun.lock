@@ -15,6 +15,15 @@
         "vite-plus": "^1.8.0",
       },
     },
+    "apps/dataflow": {
+      "name": "@cmumaps/dataflow",
+      "version": "0.0.0",
+      "dependencies": {
+        "@cmumaps/db": "workspace:*",
+        "drizzle-orm": "^0.45.2",
+        "zod": "^4.1.12",
+      },
+    },
     "apps/mobile": {
       "name": "@cmumaps/mobile",
       "version": "0.0.0",
@@ -274,6 +283,8 @@
     "@blazediff/core": ["@blazediff/core@1.10.0", "", {}, "sha512-AOQff0zgR7cGsZL+4E7hVkmujoPUpm0J9xzWGWZj5wCjd3gmxESXAPfKyuzs93VdpQNFhHlBhfOjrcZ+XTERtQ=="],
 
     "@cmumaps/common": ["@cmumaps/common@workspace:packages/common"],
+
+    "@cmumaps/dataflow": ["@cmumaps/dataflow@workspace:apps/dataflow"],
 
     "@cmumaps/db": ["@cmumaps/db@workspace:packages/db"],
 

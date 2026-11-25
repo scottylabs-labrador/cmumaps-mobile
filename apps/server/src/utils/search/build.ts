@@ -1,5 +1,5 @@
 import type { Buildings, GeoCoordinate, RoomType } from "@cmumaps/common";
-import { db } from "../../db.ts";
+import { db } from "@cmumaps/db/client";
 import { buildingService } from "../../services/buildingService.ts";
 import { parseQuery } from "./parse.ts";
 import type { Document, FloorPlans, SearchIndex } from "./types.ts";

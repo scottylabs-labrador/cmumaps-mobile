@@ -5,9 +5,9 @@ import {
   pdfCoordsToGeoCoords,
   pdfPolygonToGeoPolygon,
 } from "@cmumaps/common";
+import { db } from "@cmumaps/db/client";
 import { node as nodeTable, room as roomTable } from "@cmumaps/db/schema";
 import { eq } from "drizzle-orm";
-import { db } from "../db.ts";
 
 export const roomService = {
   createRoom: async (

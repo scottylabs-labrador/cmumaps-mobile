@@ -1,9 +1,9 @@
 import type { Building, BuildingMetadata, Buildings, GeoCoordinate } from "@cmumaps/common";
 import { ERROR_CODES } from "@cmumaps/common";
+import { db } from "@cmumaps/db/client";
 import { building as buildingTable, floor as floorTable } from "@cmumaps/db/schema";
 import { and, eq } from "drizzle-orm";
 import { BuildingError } from "../errors/error.ts";
-import { db } from "../db.ts";
 
 export const buildingService = {
   async getBuildings(): Promise<Buildings> {

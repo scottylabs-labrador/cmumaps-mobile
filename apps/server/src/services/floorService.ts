@@ -18,6 +18,7 @@ import {
   pdfCoordsToGeoCoords,
   pdfPolygonToGeoPolygon,
 } from "@cmumaps/common";
+import { db } from "@cmumaps/db/client";
 import {
   floor as floorTable,
   node as nodeTable,
@@ -25,7 +26,6 @@ import {
   room as roomTable,
 } from "@cmumaps/db/schema";
 import { and, eq, isNull, type SQL } from "drizzle-orm";
-import { db } from "../db.ts";
 
 function nodeFloorWhere(buildingCode: string | null, floorLevel: string | null): SQL | undefined {
   if (buildingCode === null || floorLevel === null) {

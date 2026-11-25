@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/style/useNamingConvention: TODO: use the right naming convention */
 import type { GeoNodes, PreciseRoute } from "@cmumaps/common";
+import { db } from "@cmumaps/db/client";
 import { building as buildingTable } from "@cmumaps/db/schema";
-import { db } from "../db.ts";
 import { getRoute, parseWaypoint, waypointToNodes } from "../utils/path/pathfinder.ts";
 
 export type Buildings = (typeof buildingTable.$inferSelect)[];

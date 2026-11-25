@@ -11,7 +11,6 @@ const envSchema = z.object({
   AUTH_ISSUER: z.string(),
   AUTH_JWKS_URI: z.string(),
   BETTER_AUTH_URL: z.url(), // https://www.better-auth.com/docs/installation#set-environment-variables
-  DATABASE_URL: z.string(),
   SERVER_PORT: z.coerce.number().default(80),
   SERVER_URL: z.url(),
 });

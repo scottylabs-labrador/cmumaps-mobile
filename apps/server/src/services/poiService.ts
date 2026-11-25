@@ -1,7 +1,7 @@
 import type { PoiInfo, PoiType } from "@cmumaps/common";
+import { db } from "@cmumaps/db/client";
 import { poi as poiTable } from "@cmumaps/db/schema";
 import { eq } from "drizzle-orm";
-import { db } from "../db.ts";
 
 export const poiService = {
   createPoi: async (poiId: string, poiInfo: PoiInfo) => {

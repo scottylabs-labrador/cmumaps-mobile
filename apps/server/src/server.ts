@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { db } from "@cmumaps/db/client";
 import { toNodeHandler } from "better-auth/node";
 import { YAML } from "bun";
 import cors, { type CorsOptions } from "cors";
@@ -8,7 +9,6 @@ import type { ErrorRequestHandler } from "express";
 import express from "express";
 import swaggerUi, { type JsonObject } from "swagger-ui-express";
 import { RegisterRoutes } from "../build/routes.ts";
-import { db } from "./db.ts";
 import { env } from "./env.ts";
 import { auth } from "./lib/auth.ts";
 import { errorHandler } from "./middleware/errorHandler.ts";

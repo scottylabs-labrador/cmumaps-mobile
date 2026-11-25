@@ -1,6 +1,6 @@
+import { db } from "@cmumaps/db/client";
 import { edge as edgeTable } from "@cmumaps/db/schema";
 import { and, eq, or } from "drizzle-orm";
-import { db } from "../db.ts";
 
 export const edgeService = {
   createEdge: async (inNodeId: string, outNodeId: string) => {

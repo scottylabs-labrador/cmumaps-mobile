@@ -1,8 +1,8 @@
 import type { NodeInfo, Placement } from "@cmumaps/common";
 import { extractBuildingCode, extractFloorLevel, pdfCoordsToGeoCoords } from "@cmumaps/common";
+import { db } from "@cmumaps/db/client";
 import { node as nodeTable } from "@cmumaps/db/schema";
 import { eq } from "drizzle-orm";
-import { db } from "../db.ts";
 
 export const nodeService = {
   getNode: async (nodeId: string) => {

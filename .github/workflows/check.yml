@@ -19,13 +19,6 @@ jobs:
       - name: Run EditorConfig checker
         run: editorconfig-checker --exclude '(^LICENSE|^apps/rust-server/.*)'
 
-  markdownlint:
-    name: Markdown Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: DavidAnson/markdownlint-cli2-action@v22
-
   syncpack:
     name: Syncpack Lint
     runs-on: ubuntu-latest

@@ -8,11 +8,11 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 
 ### Services
 
-| Service | Port | How to start |
-| --- | --- | --- |
-| PostgreSQL 18 (Homebrew) | 5432 | Database `cmumaps` at `postgresql://postgres:donotuseinprod@localhost:5432/cmumaps`. `compose.dev.yml` remains for other machines. |
-| Server (`@cmumaps/server`) | 8080 | `cd apps/server && secretspec run -P local -- bun run --watch src/server.ts` |
-| Mobile app (`@cmumaps/mobile`) | 8081 | `bun run dev:mobile` from the repo root |
+| Service                        | Port | How to start                                                                                                                       |
+| ------------------------------ | ---- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| PostgreSQL 18 (Homebrew)       | 5432 | Database `cmumaps` at `postgresql://postgres:donotuseinprod@localhost:5432/cmumaps`. `compose.dev.yml` remains for other machines. |
+| Server (`@cmumaps/server`)     | 8080 | `cd apps/server && secretspec run -P local -- bun run --watch src/server.ts`                                                       |
+| Mobile app (`@cmumaps/mobile`) | 8081 | `bun run dev:mobile` from the repo root                                                                                            |
 
 ### Key gotchas
 

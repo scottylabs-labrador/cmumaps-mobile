@@ -1,4 +1,4 @@
-export default {
+export default /** @satisfies {import("syncpack").RcFile} */ ({
   // https://stackoverflow.com/questions/79470698/with-syncpack-on-a-turborepo-how-to-set-app-version-dependencies-through-a-packa/79477388#79477388
   versionGroups: [
     {
@@ -30,4 +30,4 @@ export default {
       range: "^",
     },
   ],
-};
+});

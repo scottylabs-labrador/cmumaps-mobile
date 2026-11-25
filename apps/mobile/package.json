@@ -31,9 +31,7 @@
   "main": "expo-router/entry",
   "private": true,
   "scripts": {
-    "check": "tsc --noEmit",
     "dev": "expo start",
-    "start": "expo start",
-    "tsc": "tsc --noEmit"
+    "start": "expo start"
   }
 }

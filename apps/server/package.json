@@ -40,7 +40,6 @@
   "license": "ISC",
   "scripts": {
     "build": "bun build src/server.ts --outdir=dist --target=bun --sourcemap",
-    "check": "tsc -b",
     "db-generate": "prisma generate",
     "dev": "concurrently 'bun run server' 'bun run tsoa:watch' 'bun run openapi:watch'",
     "dev:watch": "concurrently 'bun run server' 'bun run tsoa:watch' 'bun run openapi:watch'",
@@ -48,7 +47,6 @@
     "openapi:watch": "onchange './build/swagger.yaml' -- bun run openapi",
     "server": "secretspec run -P local -- bun run --watch src/server.ts",
     "start": "bun dist/server.js",
-    "tsc": "tsc -b",
     "tsoa": "tsoa spec-and-routes",
     "tsoa:watch": "onchange 'src/controllers/*.ts' 'tsoa.json' -- bun run tsoa"
   },

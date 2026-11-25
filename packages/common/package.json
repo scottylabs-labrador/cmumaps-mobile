@@ -6,9 +6,5 @@
     "typescript": "^5.9.3"
   },
   "main": "src/index.ts",
-  "scripts": {
-    "check": "tsc -b",
-    "tsc": "tsc -b"
-  },
   "type": "module"
 }

@@ -12,6 +12,9 @@ __pycache__/
 .mypy_cache/
 .turbo/
 
+# Generated Vite+ git hook dispatcher
+.vite-hooks/_
+
 # Build
 dist/
 build/

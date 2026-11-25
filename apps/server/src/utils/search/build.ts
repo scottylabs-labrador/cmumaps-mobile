@@ -281,6 +281,6 @@ export async function getSearchContext() {
     buildingService.getBuildings(),
     getFloorplans(),
   ]);
-  const { index, documents } = await buildSearchIndex(floorplans, buildings);
+  const { index, documents } = buildSearchIndex(floorplans, buildings);
   return { index, documents, buildings, floorplans };
 }

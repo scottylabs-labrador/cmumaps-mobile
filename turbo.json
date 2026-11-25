@@ -17,12 +17,6 @@
     },
     "transit": {
       "dependsOn": ["^transit"]
-    },
-    "tsc": {
-      "dependsOn": ["transit"]
-    },
-    "check": {
-      "dependsOn": ["transit"]
     }
   }
 }

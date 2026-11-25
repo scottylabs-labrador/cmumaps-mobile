@@ -56,6 +56,11 @@ jobs:
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Install Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.x
+
       - name: Install dependencies, generaet DB schema and OpenAPI spec
         run: |
           bun install

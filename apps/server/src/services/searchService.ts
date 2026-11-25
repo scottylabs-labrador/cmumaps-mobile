@@ -111,7 +111,7 @@ export const searchService = {
     console.log(`Overall scores calculated at ${Date.now() - startTime}ms`);
 
     // Return the documents (without scores)
-    return topResults.map(([docId, _]) => documents[docId]);
+    return topResults.map(([docId]) => documents[docId]);
   },
 };
 

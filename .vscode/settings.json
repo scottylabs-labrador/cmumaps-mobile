@@ -14,6 +14,9 @@
   },
 
   // Formatters
+  // Bun does not hoist oxfmt into node_modules/.bin, so the Oxc extension
+  // never starts and cannot format TypeScript until this path is set.
+  "oxc.path.oxfmt": "node_modules/.bun/node_modules/oxfmt/bin/oxfmt",
   "oxc.fmt.disableNestedConfig": true,
   "[javascript]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"

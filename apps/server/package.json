@@ -28,7 +28,6 @@
     "esbuild": "^0.25.12",
     "globals": "^16.5.0",
     "onchange": "^7.1.0",
-    "openapi-typescript": "^7.10.1",
     "tsoa": "^6.6.0",
     "tsx": "^4.20.6",
     "typescript": "^7.0.2"
@@ -39,7 +38,7 @@
     "build": "bun build src/server.ts --outdir=dist --target=bun --sourcemap",
     "dev": "concurrently 'bun run server' 'bun run tsoa:watch' 'bun run openapi:watch'",
     "dev:watch": "concurrently 'bun run server' 'bun run tsoa:watch' 'bun run openapi:watch'",
-    "openapi": "openapi-typescript ./build/swagger.yaml -o ./build/swagger.d.ts",
+    "openapi": "cd ../.. && bun --filter @cmumaps/openapi-codegen openapi",
     "openapi:watch": "onchange './build/swagger.yaml' -- bun run openapi",
     "server": "secretspec run -P local -f ../../packages/db/secretspec.toml -- secretspec run -P local -- bun run --watch src/server.ts",
     "start": "bun dist/server.js",

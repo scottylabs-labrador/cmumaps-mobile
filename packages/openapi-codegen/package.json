@@ -1,0 +1,14 @@
+{
+  "name": "@cmumaps/openapi-codegen",
+  "description": "Generate server OpenAPI types with the TypeScript 5 compiler API.",
+  "version": "0.0.0",
+  "dependencies": {
+    "openapi-typescript": "^7.10.1",
+    "typescript": "5.9.3"
+  },
+  "private": true,
+  "scripts": {
+    "openapi": "openapi-typescript ../../apps/server/build/swagger.yaml -o ../../apps/server/build/swagger.d.ts"
+  },
+  "type": "module"
+}

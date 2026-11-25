@@ -12,11 +12,9 @@
       "outputs": ["dist/**"]
     },
     "start": {
-      "dependsOn": ["^start", "^build"],
+      "dependsOn": ["^build", "build"],
+      "cache": false,
       "persistent": true
-    },
-    "transit": {
-      "dependsOn": ["^transit"]
     }
   }
 }

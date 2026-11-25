@@ -8,29 +8,29 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 
 ### Services
 
-| Service                        | Port | How to start                                                                                                                              |
-| ------------------------------ | ---- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| PostgreSQL 18 (Homebrew)       | 5432 | Database `cmumaps` at `postgresql://postgres:donotuseinprod@localhost:5432/cmumaps`. `docker/compose.dev.yml` remains for other machines. |
-| Server (`@cmumaps/server`)     | 8080 | `cd apps/server && secretspec run -P local -- bun run --watch src/server.ts`                                                              |
-| Mobile app (`@cmumaps/mobile`) | 8081 | `bun run dev:mobile` from the repo root                                                                                                   |
+| Service                        | Port | How to start                                                                                                                                |
+| ------------------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| PostgreSQL (`@cmumaps/db`)     | 5432 | `bun run --filter @cmumaps/db dev` from the repo root. Database `cmumaps` at `postgresql://postgres:donotuseinprod@localhost:5432/cmumaps`. |
+| Server (`@cmumaps/server`)     | 8080 | `bun run --filter @cmumaps/server dev` from the repo root                                                                                   |
+| Mobile app (`@cmumaps/mobile`) | 8081 | `turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server` from the repo root                                                            |
 
 ### Key gotchas
 
-- **`DATABASE_URL` in shell env**: The local connection string is the `local` profile default in both `apps/server/secretspec.toml` and `packages/db/secretspec.toml`. A stale shell `DATABASE_URL` (for example `postgres:5432` from Docker Compose) can still override it. `unset DATABASE_URL` before starting the server or running `bun run db:migrate`.
+- **`DATABASE_URL` in shell env**: The local connection string is the `local` profile default in both `apps/server/secretspec.toml` and `packages/db/secretspec.toml`. A stale shell `DATABASE_URL` (for example `postgres:5432` from Docker Compose) can still override it. `unset DATABASE_URL` before starting the server or running `bun run --filter @cmumaps/db db:migrate`.
 - **`SERVER_PORT`**: The local SecretSpec profile sets `SERVER_PORT` to `8080` because this Mac cannot bind port 80 without sudo. The schema coerces that string. `SERVER_URL` is `http://localhost:8080`.
-- **Database**: `@cmumaps/db` owns the Drizzle schema. `bun run db:migrate` applies the SQL in `packages/db/drizzle`.
+- **Database**: `@cmumaps/db` owns the Drizzle schema. `bun run --filter @cmumaps/db db:migrate` applies the SQL in `packages/db/drizzle`.
 - **Code generation before check/build**: Before running `bun run check` or `bun run build`, generate the server's OpenAPI artifacts: `cd apps/server && bun run tsoa && bun run openapi` (or use `bun run sync` from the root).
 - **Pre-commit hooks** (`.vite-hooks/pre-commit`): Runs `editorconfig-checker`, `syncpack lint`, `vp check`, and `uv run lint` for Python when `apps/dataflow` changes. Vite+ installs the hook dispatcher on `prepare`.
 
 ### Populating the database
 
-`bun run db:populate` runs `secretspec run -P local -- uv run populate-database` in `apps/dataflow`. The server must already be running. The client requests a Keycloak client-credentials token, and `/populate-table` requires the `cmumaps-admins` group. `AUTH_CLIENT_ID` and `AUTH_CLIENT_SECRET` come from the OpenBao item `cmumaps-mobile/generated/local`. The local issuer is `https://idp.scottylabs.org/realms/labrador`.
+From `apps/dataflow`, `secretspec run -P local -- uv run populate-database` fills the database. The server must already be running. The client requests a Keycloak client-credentials token, and `/populate-table` requires the `cmumaps-admins` group. `AUTH_CLIENT_ID` and `AUTH_CLIENT_SECRET` come from the OpenBao item `cmumaps-mobile/generated/local`. The local issuer is `https://idp.scottylabs.org/realms/labrador`.
 
 When `S3_ENDPOINT` is unset, populate reads `data/floorplans/` and refills Building, Floor, Room, Alias, Node, and Edge. It leaves Poi untouched. When `S3_ENDPOINT` is set, it reads the same objects from S3, including `floorplans/osm-pois.json`. After populating, restart the server to rebuild the in-memory search index and graph cache.
 
 ### Testing the mobile app on the iOS simulator
 
-`bun run dev:mobile` starts the server and Expo together. In dev, the app calls port 8080 on the host Metro reports.
+`turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server` starts the server and Expo together. In dev, the app calls port 8080 on the host Metro reports.
 
 #### Setup
 
@@ -42,7 +42,7 @@ When `S3_ENDPOINT` is unset, populate reads `data/floorplans/` and refills Build
 
 #### Running
 
-1. From the repo root, `bun run dev:mobile`. Done when Expo prints a Metro URL on port 8081 and the server is listening on 8080.
+1. From the repo root, `turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server`. Done when Expo prints a Metro URL on port 8081 and the server is listening on 8080.
 2. Open the project with `xcrun simctl openurl booted exp://127.0.0.1:8081`.
 3. Done when the CMU Maps search field is on the map. The location card is the app asking for permission.
 
@@ -51,6 +51,7 @@ When `S3_ENDPOINT` is unset, populate reads `data/floorplans/` and refills Build
 - **Lint/check**: `bun run check` runs `vp check` (Oxfmt, Oxlint, and tsrs typecheck).
 - **Python lint**: `cd apps/dataflow && uv run lint`
 - **Build**: `bun run build`
-- **Dev (server + mobile)**: `bun run dev` starts the server and Expo through Turbo
-- **Dev (server only)**: `bun run dev:server`
+- **Dev**: `bun run dev` runs every package `dev` script: Postgres, the server, Expo, web, and the visualizer
+- **Dev (server + mobile)**: `turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server`
+- **Dev (server only)**: `bun run --filter @cmumaps/server dev`
 - See `package.json` scripts for the full list.

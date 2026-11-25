@@ -17,7 +17,8 @@
   "scripts": {
     "db:generate": "secretspec run -P local -- bunx drizzle-kit generate",
     "db:migrate": "secretspec run -P local -- bunx drizzle-kit migrate",
-    "db:studio": "secretspec run -P local -- bunx drizzle-kit studio"
+    "db:studio": "secretspec run -P local -- bunx drizzle-kit studio",
+    "dev": "docker compose -f ../../docker/compose.dev.yml up"
   },
   "type": "module"
 }

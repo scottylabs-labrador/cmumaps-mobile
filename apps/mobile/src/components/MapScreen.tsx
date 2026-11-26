@@ -722,6 +722,7 @@ export const MapScreen = () => {
             place={place}
             title={placeTitle(place, buildings.data, rooms.data)}
             subtitle={building ? `${building.code}` : ""}
+            roomType={place.kind === "room" ? rooms.data?.[place.roomName]?.type : undefined}
             detail={
               place.kind === "room"
                 ? `${rooms.data?.[place.roomName]?.type ?? "Room"} in ${building?.name ?? place.buildingCode}`

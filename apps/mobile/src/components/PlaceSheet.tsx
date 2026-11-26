@@ -1,5 +1,6 @@
 import { useMemo, useRef } from "react";
 import { Animated, Image, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
+import { ArrowRightIcon, DoorIcon, ShareIcon } from "@/components/Icons";
 import { locationImage } from "@/lib/locationImage";
 import type { Place } from "@/lib/place";
 import type { SheetState } from "@/store";
@@ -10,6 +11,7 @@ interface Props {
   title: string;
   subtitle: string;
   detail: string;
+  roomType?: string;
   sheet: SheetState;
   onCycle: () => void;
   onClose: () => void;
@@ -24,6 +26,7 @@ export const PlaceSheet = ({
   title,
   subtitle,
   detail,
+  roomType,
   sheet,
   onCycle,
   onClose,
@@ -87,76 +90,177 @@ export const PlaceSheet = ({
       : undefined;
   const roomName = place.kind === "room" ? place.roomName : undefined;
   const photo = locationImage(buildingCode, roomName);
+  const showHero = Boolean(photo && sheet !== "collapsed");
+  const roomPrefix =
+    place.kind === "room" && title.startsWith(`${place.buildingCode} `) ? place.buildingCode : null;
 
   return (
-    <Animated.View
-      style={[
-        styles.sheet,
-        sheet === "collapsed" ? styles.collapsed : null,
-        { transform: [{ translateY: dragY }] },
-      ]}
-      {...pan.panHandlers}
-    >
-      <Pressable onPress={onCycle} style={styles.handle} accessibilityRole="button">
-        <View style={styles.grabber} />
-      </Pressable>
-      {photo && sheet !== "collapsed" ? <Image source={photo} style={styles.hero} /> : null}
-      <View style={styles.titleRow}>
-        <Text style={styles.title}>{title}</Text>
-        {sheet === "collapsed" && !needsSignIn ? (
-          <Pressable accessibilityLabel="Share" onPress={onShare} style={styles.shareIcon}>
-            <Text style={styles.shareIconText}>↗</Text>
-          </Pressable>
-        ) : null}
-      </View>
-      {sheet !== "collapsed" ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-      {sheet === "expanded" ? <Text style={styles.detail}>{detail}</Text> : null}
-      {needsSignIn ? (
-        <Pressable style={styles.primary} onPress={onSignIn}>
-          <Text style={styles.primaryText}>Sign in to see this floor</Text>
-        </Pressable>
-      ) : (
-        <View style={styles.actions}>
-          <Pressable style={styles.primary} onPress={onDirections}>
-            <Text style={styles.primaryText}>→ Directions</Text>
-          </Pressable>
-          {sheet !== "collapsed" ? (
-            <Pressable style={styles.secondary} onPress={onShare}>
-              <Text style={styles.secondaryText}>Share</Text>
+    <Animated.View style={[styles.shadowWrap, { transform: [{ translateY: dragY }] }]}>
+      <View
+        style={[styles.sheet, sheet === "collapsed" ? styles.collapsed : null]}
+        {...pan.panHandlers}
+      >
+        {showHero && photo ? (
+          <View style={styles.heroWrap}>
+            <Image source={photo} style={styles.hero} resizeMode="cover" />
+            <Pressable
+              onPress={onCycle}
+              style={styles.heroHandle}
+              accessibilityRole="button"
+              accessibilityLabel="Resize sheet"
+            >
+              <View style={styles.heroGrabber} />
             </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            onPress={onCycle}
+            style={styles.handle}
+            accessibilityRole="button"
+            accessibilityLabel="Resize sheet"
+          >
+            <View style={styles.grabber} />
+          </Pressable>
+        )}
+
+        <View style={[styles.body, showHero ? styles.bodyWithHero : null]}>
+          {place.kind === "room" && roomType && sheet !== "collapsed" ? (
+            <View style={styles.roomBadge}>
+              <DoorIcon size={15} color={theme.brandDark} />
+              <Text style={styles.roomBadgeText}>{roomType}</Text>
+            </View>
           ) : null}
+
+          <View style={styles.titleRow}>
+            <Text style={styles.title} numberOfLines={2}>
+              {roomPrefix ? (
+                <>
+                  <Text style={styles.roomCodeUnderline}>{roomPrefix}</Text>
+                  {title.slice(roomPrefix.length)}
+                </>
+              ) : (
+                title
+              )}
+            </Text>
+            {sheet === "collapsed" && !needsSignIn ? (
+              <Pressable accessibilityLabel="Share" onPress={onShare} style={styles.shareIcon}>
+                <ShareIcon size={19} color={theme.ink} />
+              </Pressable>
+            ) : null}
+          </View>
+
+          {sheet !== "collapsed" && subtitle ? (
+            <Text style={styles.subtitle}>{subtitle}</Text>
+          ) : null}
+          {sheet === "expanded" && detail ? <Text style={styles.detail}>{detail}</Text> : null}
+
+          {needsSignIn ? (
+            <View style={styles.actions}>
+              <Pressable style={styles.signInButton} onPress={onSignIn}>
+                <Text style={styles.primaryText}>Sign in to see this floor</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.actions}>
+              <Pressable style={styles.primary} onPress={onDirections}>
+                <ArrowRightIcon size={18} color="#ffffff" />
+                <Text style={styles.primaryText}>Directions</Text>
+              </Pressable>
+              {sheet !== "collapsed" ? (
+                <Pressable accessibilityLabel="Share" onPress={onShare} style={styles.shareIcon}>
+                  <ShareIcon size={19} color={theme.ink} />
+                </Pressable>
+              ) : null}
+            </View>
+          )}
         </View>
-      )}
+      </View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
+  shadowWrap: {
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
+    elevation: 8,
+  },
   sheet: {
     backgroundColor: theme.paper,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 28,
-    paddingHorizontal: 20,
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+    overflow: "hidden",
   },
   collapsed: {
-    paddingBottom: 16,
+    paddingBottom: 8,
+  },
+  heroWrap: {
+    height: 184,
+    position: "relative",
+    width: "100%",
+  },
+  hero: {
+    height: "100%",
+    width: "100%",
+  },
+  heroHandle: {
+    alignItems: "center",
+    left: 0,
+    paddingTop: 10,
+    paddingBottom: 18,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  heroGrabber: {
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
+    borderRadius: 3,
+    height: 4.5,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.28,
+    shadowRadius: 2,
+    width: 50,
   },
   handle: {
     alignItems: "center",
-    paddingVertical: 10,
+    paddingBottom: 6,
+    paddingTop: 10,
   },
   grabber: {
-    backgroundColor: theme.line,
-    borderRadius: 4,
-    height: 4,
-    width: 48,
+    backgroundColor: "#8e8e8e",
+    borderRadius: 3,
+    height: 5,
+    width: 50,
   },
-  hero: {
-    borderRadius: 12,
-    height: 140,
-    marginBottom: 12,
-    width: "100%",
+  body: {
+    paddingBottom: 28,
+    paddingHorizontal: 18,
+    paddingTop: 6,
+  },
+  bodyWithHero: {
+    paddingTop: 14,
+  },
+  roomBadge: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    borderColor: theme.line,
+    borderRadius: 4,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 5,
+    marginBottom: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  roomBadgeText: {
+    color: theme.brandDark,
+    fontSize: 13,
+    fontWeight: "500",
   },
   titleRow: {
     alignItems: "center",
@@ -167,7 +271,11 @@ const styles = StyleSheet.create({
     color: theme.ink,
     flex: 1,
     fontSize: 22,
-    fontWeight: "700",
+    fontWeight: "600",
+    lineHeight: 28,
+  },
+  roomCodeUnderline: {
+    textDecorationLine: "underline",
   },
   shareIcon: {
     alignItems: "center",
@@ -177,44 +285,42 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 38,
   },
-  shareIconText: {
-    color: theme.ink,
-    fontSize: 18,
-    fontWeight: "700",
-  },
   subtitle: {
     color: theme.muted,
+    fontSize: 14,
     marginTop: 4,
   },
   detail: {
     color: theme.ink,
-    marginTop: 12,
+    fontSize: 14,
     lineHeight: 20,
+    marginTop: 10,
   },
   actions: {
+    alignItems: "center",
     flexDirection: "row",
-    gap: 8,
-    marginTop: 12,
+    justifyContent: "space-between",
+    marginTop: 14,
   },
   primary: {
+    alignItems: "center",
     backgroundColor: theme.green,
-    borderRadius: 20,
+    borderRadius: 100,
+    flexDirection: "row",
+    gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
+  signInButton: {
+    alignItems: "center",
+    backgroundColor: theme.brand,
+    borderRadius: 100,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+  },
   primaryText: {
     color: "#ffffff",
-    fontWeight: "700",
-  },
-  secondary: {
-    borderColor: theme.line,
-    borderRadius: 20,
-    borderWidth: 1,
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-  secondaryText: {
-    color: theme.ink,
+    fontSize: 15,
     fontWeight: "600",
   },
 });

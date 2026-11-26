@@ -87,6 +87,7 @@ export const MapScreen = () => {
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [mapFloor, setMapFloor] = useState<{
     buildingCode: string;
     floor: string;
@@ -521,29 +522,33 @@ export const MapScreen = () => {
       ) : (
         <View style={[styles.searchWrap, { top: searchTop }]}>
           <View style={styles.searchRow}>
-            <TextInput
-              value={searchQuery}
-              placeholder="Search CMU Maps"
-              placeholderTextColor={theme.muted}
-              style={styles.search}
-              onFocus={() => {
-                setNavEdit(null);
-                setSearchOpen(true);
-              }}
-              onChangeText={(value) => {
-                setSearchQuery(value);
-                setSearchOpen(true);
-              }}
-            />
-            {searchOpen || searchQuery.length > 0 ? (
-              <Pressable
-                accessibilityLabel="Clear search"
-                onPress={clearSearch}
-                style={styles.clearButton}
-              >
-                <Text style={styles.clearText}>✕</Text>
-              </Pressable>
-            ) : null}
+            <View style={styles.searchPill}>
+              <TextInput
+                value={searchQuery}
+                placeholder="Search CMU Maps"
+                placeholderTextColor={theme.muted}
+                style={styles.search}
+                onFocus={() => {
+                  setNavEdit(null);
+                  setSearchOpen(true);
+                  setSearchFocused(true);
+                }}
+                onBlur={() => setSearchFocused(false)}
+                onChangeText={(value) => {
+                  setSearchQuery(value);
+                  setSearchOpen(true);
+                }}
+              />
+              {searchFocused || searchQuery.length > 0 ? (
+                <Pressable
+                  accessibilityLabel="Clear search"
+                  onPress={clearSearch}
+                  style={styles.clearButton}
+                >
+                  <Text style={styles.clearText}>✕</Text>
+                </Pressable>
+              ) : null}
+            </View>
             <AccountDial
               open={gearOpen}
               signedIn={signedIn}
@@ -562,7 +567,7 @@ export const MapScreen = () => {
           </View>
         </View>
       )}
-      {!searchOpen && building ? (
+      {!showSearchResults && building ? (
         <View style={[styles.floors, { top: searchTop + 64 }]}>
           <FloorSwitcher
             floors={building.floors}
@@ -676,6 +681,7 @@ export const MapScreen = () => {
             <SearchResults
               query={searchQuery}
               signedIn={signedIn}
+              onClose={clearSearch}
               pickingDestination={navEdit === "dst" || (Boolean(src) && !dst)}
               onPick={(value) => {
                 if (navEdit === "src") {
@@ -740,26 +746,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  search: {
+  searchPill: {
+    alignItems: "center",
     backgroundColor: theme.paper,
     borderRadius: 24,
+    flex: 1,
+    flexDirection: "row",
+    paddingLeft: 16,
+    paddingRight: 8,
+  },
+  search: {
     color: theme.ink,
     flex: 1,
     fontSize: 16,
-    paddingHorizontal: 16,
     paddingVertical: 12,
   },
   clearButton: {
     alignItems: "center",
-    backgroundColor: theme.paper,
-    borderRadius: 18,
-    height: 36,
+    backgroundColor: theme.canvas,
+    borderRadius: 16,
+    height: 32,
     justifyContent: "center",
-    width: 36,
+    width: 32,
   },
   clearText: {
     color: theme.muted,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
   },
   banner: {

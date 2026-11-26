@@ -12,6 +12,7 @@ interface Props {
   onNeedSignIn: (path: string) => void;
   pickingDestination: boolean;
   onPick: (value: string) => void;
+  onClose: () => void;
 }
 
 export const SearchResults = ({
@@ -23,20 +24,33 @@ export const SearchResults = ({
   onNeedSignIn,
   pickingDestination,
   onPick,
+  onClose,
 }: Props) => {
   const results = useSearch(query);
+  const trimmed = query.trim();
 
-  if (!query.trim()) {
+  if (!trimmed) {
     return null;
   }
 
   return (
     <View style={styles.sheet}>
-      <ScrollView keyboardShouldPersistTaps="handled">
+      <View style={styles.handleRow}>
+        <View style={styles.grabber} />
+      </View>
+      <View style={styles.header}>
+        <Text style={styles.heading} numberOfLines={1}>
+          {trimmed}
+        </Text>
+        <Pressable accessibilityLabel="Close search" onPress={onClose} style={styles.closeButton}>
+          <Text style={styles.closeText}>✕</Text>
+        </Pressable>
+      </View>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.list}>
         {results.data?.map((result) => (
           <Pressable
             key={`${result.type}-${result.id}`}
-            style={styles.row}
+            style={styles.card}
             onPress={() => {
               if (result.type === "building") {
                 if (pickingDestination) {
@@ -86,6 +100,9 @@ export const SearchResults = ({
           </Pressable>
         ))}
         {results.isError ? <Text style={styles.meta}>Search is unavailable.</Text> : null}
+        {results.isSuccess && (results.data?.length ?? 0) === 0 ? (
+          <Text style={styles.meta}>No places match that search.</Text>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -93,25 +110,76 @@ export const SearchResults = ({
 
 const styles = StyleSheet.create({
   sheet: {
-    maxHeight: 360,
     backgroundColor: theme.paper,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: "58%",
+    maxHeight: "58%",
+    paddingBottom: 12,
   },
-  row: {
+  handleRow: {
+    alignItems: "center",
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  grabber: {
+    backgroundColor: theme.line,
+    borderRadius: 4,
+    height: 4,
+    width: 48,
+  },
+  header: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
     paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  heading: {
+    color: theme.ink,
+    flex: 1,
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  closeButton: {
+    alignItems: "center",
+    backgroundColor: theme.canvas,
+    borderRadius: 18,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  closeText: {
+    color: theme.muted,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  list: {
+    gap: 10,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  card: {
+    backgroundColor: theme.paper,
+    borderColor: theme.line,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: theme.line,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
   },
   title: {
     color: theme.ink,
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   meta: {
     color: theme.muted,
-    marginTop: 2,
+    marginTop: 4,
     textTransform: "capitalize",
   },
 });

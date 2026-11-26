@@ -3,6 +3,7 @@ import { getRoomTypeDetails } from "@cmumaps/common";
 import { useEffect, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polygon, Polyline, type Region } from "react-native-maps";
+import { isInPolygon } from "@/lib/geometry";
 import { theme } from "@/theme";
 
 interface CameraTarget {
@@ -26,7 +27,7 @@ interface Props {
   /** Stable key for when to animate; same intent must not re-zoom. */
   cameraIntent: string;
   onSelectBuilding: (code: string) => void;
-  onSelectRoom: (roomName: string) => void;
+  onSelectRoom: (buildingCode: string, roomName: string) => void;
   onPressMap?: () => void;
   onLongPress: (coordinate: GeoCoordinate) => void;
   onRegionChangeComplete: (region: Region) => void;
@@ -87,6 +88,14 @@ export const CampusMap = ({
 }: Props) => {
   const mapRef = useRef<MapView>(null);
   const lastCameraIntent = useRef("");
+  const lastFeaturePressAt = useRef(0);
+
+  const hasRoomAt = (point: GeoCoordinate | undefined) => {
+    if (!point || !rooms) {
+      return false;
+    }
+    return Object.values(rooms).some((room) => isInPolygon(point, room.points[0] ?? []));
+  };
 
   useEffect(() => {
     if (!camera || !cameraIntent || !mapRef.current) {
@@ -107,10 +116,19 @@ export const CampusMap = ({
       ref={mapRef}
       style={StyleSheet.absoluteFill}
       initialRegion={initialRegion}
+      cameraZoomRange={{ minCenterCoordinateDistance: 5 }}
       showsUserLocation={Boolean(userPosition)}
       showsBuildings={false}
       pitchEnabled={false}
-      onPress={() => onPressMap?.()}
+      onPress={(event) => {
+        if (
+          event.nativeEvent.action === "marker-press" ||
+          Date.now() - lastFeaturePressAt.current < 150
+        ) {
+          return;
+        }
+        onPressMap?.();
+      }}
       onLongPress={(event) => onLongPress(event.nativeEvent.coordinate)}
       onRegionChangeComplete={onRegionChangeComplete}
     >
@@ -130,7 +148,13 @@ export const CampusMap = ({
                   .map((hole) => ring(hole))
                   .filter((hole) => hole.length >= 3)}
                 tappable
-                onPress={() => onSelectBuilding(code)}
+                onPress={(event) => {
+                  lastFeaturePressAt.current = Date.now();
+                  if (hasRoomAt(event.nativeEvent.coordinate)) {
+                    return;
+                  }
+                  onSelectBuilding(code);
+                }}
                 strokeColor={selected ? theme.green : "#475569"}
                 fillColor={selected ? "rgba(14,160,65,0.22)" : "rgba(100,116,139,0.24)"}
                 strokeWidth={selected ? 2.5 : 1}
@@ -139,23 +163,31 @@ export const CampusMap = ({
           })
         : null}
       {rooms
-        ? Object.entries(rooms).map(([roomName, room]) => {
+        ? Object.entries(rooms).map(([roomKey, room]) => {
+            const roomName = roomKey.includes(":")
+              ? roomKey.slice(roomKey.indexOf(":") + 1)
+              : roomKey;
             const outer = ring(room.points[0]);
             if (outer.length < 3) {
               return null;
             }
             const colors = getRoomTypeDetails(room.type);
-            const selected = roomName === selectedRoom;
+            const selected =
+              roomName === selectedRoom &&
+              (!selectedBuilding || room.floor.buildingCode === selectedBuilding);
             return (
               <Polygon
-                key={roomName}
+                key={room.id || roomKey}
                 coordinates={outer}
                 holes={room.points
                   .slice(1)
                   .map((hole) => ring(hole))
                   .filter((hole) => hole.length >= 3)}
                 tappable
-                onPress={() => onSelectRoom(roomName)}
+                onPress={() => {
+                  lastFeaturePressAt.current = Date.now();
+                  onSelectRoom(room.floor.buildingCode, roomName);
+                }}
                 strokeColor={selected ? "#d97706" : solid(colors.border)}
                 fillColor={solid(colors.background)}
                 strokeWidth={selected ? 3 : 1}
@@ -175,7 +207,10 @@ export const CampusMap = ({
                   latitude: building.labelLatitude,
                   longitude: building.labelLongitude,
                 }}
-                onPress={() => onSelectBuilding(code)}
+                onPress={() => {
+                  lastFeaturePressAt.current = Date.now();
+                  onSelectBuilding(code);
+                }}
                 tracksViewChanges={false}
               >
                 <View style={styles.roundel}>

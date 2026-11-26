@@ -70,6 +70,7 @@ export const MapScreen = () => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [mapFloor, setMapFloor] = useState<FloorRef | null>(null);
   const [viewRegion, setViewRegion] = useState<Region | null>(null);
+  const [focusKey, setFocusKey] = useState(0);
   const promptedBuilding = useRef<string | null>(null);
 
   const sheet = useMapStore((state) => state.sheet);
@@ -130,10 +131,17 @@ export const MapScreen = () => {
     if (inViewFloorCodes.length === 0) {
       return base;
     }
-    const merged = { ...base };
+    const merged: Record<string, NonNullable<typeof base>[string]> = {};
+    if (base) {
+      for (const [roomName, room] of Object.entries(base)) {
+        merged[`${room.floor.buildingCode}:${roomName}`] = room;
+      }
+    }
     for (const result of inViewFloorplans) {
       if (result.data) {
-        Object.assign(merged, result.data);
+        for (const [roomName, room] of Object.entries(result.data)) {
+          merged[`${room.floor.buildingCode}:${roomName}`] = room;
+        }
       }
     }
     return Object.keys(merged).length > 0 ? merged : base;
@@ -153,6 +161,7 @@ export const MapScreen = () => {
     instructionIndex,
     src,
     dst,
+    focusKey,
   });
 
   useEffect(() => {
@@ -210,12 +219,16 @@ export const MapScreen = () => {
       });
   };
 
-  const selectBuilding = (code: string) => open(`/${code}`);
+  const selectBuilding = (code: string) => {
+    setFocusKey((key) => key + 1);
+    open(`/${code}`);
+  };
   const selectFloor = (code: string, level: string) => {
     if (!canViewFloor(code, signedIn)) {
       startSignIn(`/${code}-${level}`);
       return;
     }
+    setFocusKey((key) => key + 1);
     open(`/${code}-${level}`);
   };
   const selectRoom = (code: string, roomName: string) => {
@@ -223,6 +236,7 @@ export const MapScreen = () => {
       startSignIn(`/${code}-${roomName}`);
       return;
     }
+    setFocusKey((key) => key + 1);
     open(`/${code}-${roomName}`);
   };
 
@@ -307,9 +321,10 @@ export const MapScreen = () => {
         camera={camera.region}
         cameraIntent={camera.intent}
         onSelectBuilding={selectBuilding}
-        onSelectRoom={(roomName) => {
-          if (targetBuilding || buildingCode) {
-            selectRoom(targetBuilding ?? buildingCode ?? "", roomName);
+        onSelectRoom={(roomBuildingCode, roomName) => {
+          const code = roomBuildingCode || targetBuilding || buildingCode;
+          if (code) {
+            selectRoom(code, roomName);
           }
         }}
         onPressMap={() => {
@@ -581,6 +596,7 @@ export const MapScreen = () => {
               }}
               onSelectTarget={(nextTarget) => {
                 clearSearch();
+                setFocusKey((key) => key + 1);
                 open(targetPath(nextTarget));
               }}
               onNeedSignIn={startSignIn}

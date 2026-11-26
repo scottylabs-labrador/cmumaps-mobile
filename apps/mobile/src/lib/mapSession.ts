@@ -14,7 +14,13 @@ import {
   formatFloorCode,
   targetBuildingCode,
 } from "./campusTarget";
-import { buildingAt, buildingsInView, FLOOR_ZOOM_DENSITY, regionForCoordinates } from "./geometry";
+import {
+  buildingAt,
+  buildingsInView,
+  FLOOR_ZOOM_DENSITY,
+  regionForBuilding,
+  regionForCoordinates,
+} from "./geometry";
 import { type RoutePlan, type RouteSummary, summarizeDistance, summarizeRoute } from "./routePlan";
 
 export type ActiveModal =
@@ -221,9 +227,21 @@ export const deriveCamera = (input: {
   instructionIndex: number;
   src: string;
   dst: string;
+  focusKey?: number;
 }): { intent: string; region: CameraRegion | null } => {
-  const { target, buildings, rooms, navOpen, navigating, plan, step, instructionIndex, src, dst } =
-    input;
+  const {
+    target,
+    buildings,
+    rooms,
+    navOpen,
+    navigating,
+    plan,
+    step,
+    instructionIndex,
+    src,
+    dst,
+    focusKey = 0,
+  } = input;
 
   if (navigating) {
     const intent = `nav:${plan.selectedKind}:${instructionIndex}`;
@@ -250,7 +268,7 @@ export const deriveCamera = (input: {
 
   if (target.kind === "coordinate") {
     return {
-      intent: `coord:${target.latitude},${target.longitude}`,
+      intent: `coord:${target.latitude},${target.longitude}:${focusKey}`,
       region: {
         latitude: target.latitude,
         longitude: target.longitude,
@@ -263,13 +281,13 @@ export const deriveCamera = (input: {
   if (target.kind === "room") {
     const room = rooms?.[target.roomName];
     return {
-      intent: `room:${target.buildingCode}-${target.roomName}`,
+      intent: `room:${target.buildingCode}-${target.roomName}:${focusKey}`,
       region: room
         ? {
             latitude: room.labelPosition.latitude,
             longitude: room.labelPosition.longitude,
-            latitudeDelta: 0.0015,
-            longitudeDelta: 0.0015,
+            latitudeDelta: 0.0005,
+            longitudeDelta: 0.0005,
           }
         : null,
     };
@@ -279,29 +297,15 @@ export const deriveCamera = (input: {
   const building = code ? buildings?.[code] : undefined;
   if (target.kind === "floor") {
     return {
-      intent: `floor:${target.buildingCode}-${target.floor}`,
-      region: building
-        ? {
-            latitude: building.labelLatitude,
-            longitude: building.labelLongitude,
-            latitudeDelta: 0.004,
-            longitudeDelta: 0.004,
-          }
-        : null,
+      intent: `floor:${target.buildingCode}-${target.floor}:${focusKey}`,
+      region: building ? regionForBuilding(building) : null,
     };
   }
 
   if (target.kind === "building") {
     return {
-      intent: `building:${target.buildingCode}`,
-      region: building
-        ? {
-            latitude: building.labelLatitude,
-            longitude: building.labelLongitude,
-            latitudeDelta: 0.004,
-            longitudeDelta: 0.004,
-          }
-        : null,
+      intent: `building:${target.buildingCode}:${focusKey}`,
+      region: building ? regionForBuilding(building) : null,
     };
   }
 

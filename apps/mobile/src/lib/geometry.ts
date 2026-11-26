@@ -1,4 +1,4 @@
-import type { Buildings, GeoCoordinate } from "@cmumaps/common";
+import type { Building, Buildings, GeoCoordinate } from "@cmumaps/common";
 
 // Same cutoff the website uses: screen width divided by longitude span.
 export const FLOOR_ZOOM_DENSITY = 350_000;
@@ -31,6 +31,7 @@ export const buildingAt = (buildings: Buildings, point: GeoCoordinate) =>
 export const regionForCoordinates = (
   coords: GeoCoordinate[],
   padding = 1.4,
+  minDelta = 0.0012,
 ): {
   latitude: number;
   longitude: number;
@@ -50,13 +51,26 @@ export const regionForCoordinates = (
     minLon = Math.min(minLon, point.longitude);
     maxLon = Math.max(maxLon, point.longitude);
   }
-  const latitudeDelta = Math.max((maxLat - minLat) * padding, 0.0012);
-  const longitudeDelta = Math.max((maxLon - minLon) * padding, 0.0012);
+  const latitudeDelta = Math.max((maxLat - minLat) * padding, minDelta);
+  const longitudeDelta = Math.max((maxLon - minLon) * padding, minDelta);
   return {
     latitude: (minLat + maxLat) / 2,
     longitude: (minLon + maxLon) / 2,
     latitudeDelta,
     longitudeDelta,
+  };
+};
+
+export const regionForBuilding = (building: Building) => {
+  const shapeRegion = regionForCoordinates(building.shape.flat(), 1.25, 0.0006);
+  if (shapeRegion) {
+    return shapeRegion;
+  }
+  return {
+    latitude: building.labelLatitude,
+    longitude: building.labelLongitude,
+    latitudeDelta: 0.0012,
+    longitudeDelta: 0.0012,
   };
 };
 

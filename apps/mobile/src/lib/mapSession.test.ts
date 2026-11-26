@@ -197,9 +197,14 @@ describe("mapSession", () => {
       instructionIndex: 0,
       src: "",
       dst: "",
+      focusKey: 2,
     });
-    expect(buildingCam.intent).toBe("building:CUC");
-    expect(buildingCam.region?.latitude).toBe(40.4435);
+    expect(buildingCam.intent).toBe("building:CUC:2");
+    expect(buildingCam.region?.latitude).toBeCloseTo(40.4435, 4);
+    expect(buildingCam.region?.longitude).toBeCloseTo(-79.942, 4);
+    expect(buildingCam.region!.latitudeDelta).toBeCloseTo(0.00125, 5);
+    expect(buildingCam.region!.longitudeDelta).toBeCloseTo(0.0025, 5);
+    expect(buildingCam.region!.latitudeDelta).toBeLessThan(0.004);
   });
 
   test("keeps AccountDial, PlaceSheet, and NavPanel mutually exclusive", () => {

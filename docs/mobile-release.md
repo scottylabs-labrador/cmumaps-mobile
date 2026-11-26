@@ -7,7 +7,7 @@ The fingerprint decides the release. `version`, `ios.buildNumber`, and `android.
 - A platform with a production build for its fingerprint: publish that platform's over-the-air update. Binaries built with the committed version receive it.
 - A platform with no production build for its fingerprint, including the first release: build and submit that platform. Today the first version is `1.0.0`.
 
-Android goes live on the Play production track. iOS is uploaded to TestFlight. After an iOS submit, the workflow runs `eas metadata:push` from [apps/mobile/store.config.json](../apps/mobile/store.config.json) (Apple only). A person submits the iOS build for App Review. Pull requests, `staging`, and other branches do not release.
+Android uploads a draft release on the Play production track (`releaseStatus: "draft"` in [apps/mobile/eas.json](../apps/mobile/eas.json)) until the Play Console app is fully set up. After that, switch `releaseStatus` to `completed` so later submits go live on production. iOS is uploaded to TestFlight. After an iOS submit, the workflow runs `eas metadata:push` from [apps/mobile/store.config.json](../apps/mobile/store.config.json) (Apple only). A person submits the iOS build for App Review. Pull requests, `staging`, and other branches do not release.
 
 The store version and the runtime version are the committed `version`. EAS `autoIncrement` sets `ios.buildNumber` and `android.versionCode`. Those build numbers stay off the runtime version.
 
@@ -35,7 +35,7 @@ Run the EAS commands from `apps/mobile`.
    ```
 
 5. Create the App Store Connect app and the Play Console app for `org.scottylabs.cmumaps`. Finish the store listing: description, screenshots, privacy policy, and age rating. Put the numeric Apple ID into `submit.production.ios.ascAppId` in [apps/mobile/eas.json](../apps/mobile/eas.json), replacing `REPLACE_WITH_APP_STORE_CONNECT_APP_ID`.
-6. Upload the first Android App Bundle in Play Console by hand. Later native releases submit to the production track on their own.
+6. Finish the Play Console app listing (store listing, content rating, privacy policy, target audience). Until that is done, keep `submit.production.android.releaseStatus` as `draft` so EAS can upload the AAB. After the first draft lands and the app leaves draft-only setup, set `releaseStatus` to `completed` for production rollouts.
 
 The `production` channel on `@scottylabs/cmumaps` points at the `production` branch. If the project moves to another Expo account, update the project id and the updates URL, then point the channel at that branch again:
 

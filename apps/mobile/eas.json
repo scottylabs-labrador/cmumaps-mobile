@@ -19,7 +19,7 @@
     "production": {
       "android": {
         "track": "production",
-        "releaseStatus": "completed"
+        "releaseStatus": "draft"
       },
       "ios": {
         "ascAppId": "6839466073",

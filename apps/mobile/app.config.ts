@@ -36,6 +36,7 @@ const config: ExpoConfig = {
   scheme: slug,
   version: "1.0.0",
   orientation: "portrait",
+  icon: "./assets/icon.png",
   userInterfaceStyle: "light",
   ios: {
     bundleIdentifier,
@@ -49,6 +50,10 @@ const config: ExpoConfig = {
   },
   android: {
     package: bundleIdentifier,
+    adaptiveIcon: {
+      foregroundImage: "./assets/icon.png",
+      backgroundColor: "#ffffff",
+    },
     permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
     intentFilters: [
       {

@@ -60,7 +60,7 @@ export const AccountDial = ({
         <Pressable
           accessibilityLabel="About"
           onPress={onAbout}
-          style={[styles.circle, styles.circleSecondary]}
+          style={[styles.circle, styles.circleQuestion]}
         >
           <Image
             source={require("../../assets/icons/plus_button_menu/question-mark.png")}
@@ -249,9 +249,15 @@ const styles = StyleSheet.create({
   circleSecondary: {
     backgroundColor: theme.dialSecondary,
   },
+  circleQuestion: {
+    backgroundColor: "transparent",
+    elevation: 0,
+    overflow: "hidden",
+    shadowOpacity: 0,
+  },
   question: {
-    height: 28,
-    width: 28,
+    height: 48,
+    width: 48,
   },
   modalBackdrop: {
     alignItems: "center",

@@ -18,6 +18,7 @@ import {
   buildingAt,
   buildingsInView,
   FLOOR_ZOOM_DENSITY,
+  ROOM_LABEL_ZOOM_DENSITY,
   regionForBuilding,
   regionForCoordinates,
 } from "./geometry";
@@ -192,6 +193,50 @@ export const resolveViewportFloor = (
     kind: "floor",
     floor: { buildingCode: hit.code, floor: level },
   };
+};
+
+export interface VisibleRoomLabel {
+  key: string;
+  buildingCode: string;
+  roomName: string;
+  alias?: string;
+  coordinate: GeoCoordinate;
+}
+
+export const visibleRoomLabels = (
+  rooms: GeoRooms | undefined,
+  region: CameraRegion | null,
+  screenWidth: number,
+): VisibleRoomLabel[] => {
+  if (!rooms || !region || screenWidth / region.longitudeDelta < ROOM_LABEL_ZOOM_DENSITY) {
+    return [];
+  }
+  const halfLat = (region.latitudeDelta * 1.2) / 2;
+  const halfLon = (region.longitudeDelta * 1.2) / 2;
+  const minLat = region.latitude - halfLat;
+  const maxLat = region.latitude + halfLat;
+  const minLon = region.longitude - halfLon;
+  const maxLon = region.longitude + halfLon;
+
+  const labels: VisibleRoomLabel[] = [];
+  for (const [rawKey, room] of Object.entries(rooms)) {
+    const roomName = rawKey.includes(":") ? rawKey.slice(rawKey.indexOf(":") + 1) : rawKey;
+    if (!roomName) {
+      continue;
+    }
+    const { latitude, longitude } = room.labelPosition;
+    if (latitude < minLat || latitude > maxLat || longitude < minLon || longitude > maxLon) {
+      continue;
+    }
+    labels.push({
+      key: room.id || `${room.floor.buildingCode}:${roomName}`,
+      buildingCode: room.floor.buildingCode,
+      roomName,
+      alias: room.alias || undefined,
+      coordinate: room.labelPosition,
+    });
+  }
+  return labels;
 };
 
 export const visibleAdjacentFloorCodes = (

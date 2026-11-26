@@ -1,11 +1,12 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { Buildings, PreciseRoute } from "@cmumaps/common";
+import type { Buildings, GeoRooms, PreciseRoute } from "@cmumaps/common";
 import {
   clampInstructionIndex,
   deriveCamera,
   deriveChromeVisibility,
   resolveNavigationStep,
   resolveViewportFloor,
+  visibleRoomLabels,
 } from "./mapSession";
 import { buildRoutePlan } from "./routePlan";
 
@@ -237,5 +238,49 @@ describe("mapSession", () => {
       showDialBackdrop: false,
       bottomPanel: "place",
     });
+  });
+
+  test("shows room numbers only when zoomed in on a floor and within viewport", () => {
+    const floorRooms: GeoRooms = {
+      "CUC:121": {
+        id: "room-121",
+        alias: "McConomy Auditorium",
+        type: "Auditorium",
+        labelPosition: { latitude: 40.4435, longitude: -79.9421 },
+        points: [],
+        floor: { buildingCode: "CUC", level: "1" },
+      },
+      "CUC:999": {
+        id: "room-999",
+        type: "Office",
+        labelPosition: { latitude: 40.45, longitude: -79.95 },
+        points: [],
+        floor: { buildingCode: "CUC", level: "1" },
+      },
+    };
+
+    const buildingZoom = {
+      latitude: 40.4435,
+      longitude: -79.9421,
+      latitudeDelta: 0.0008,
+      longitudeDelta: 0.0008,
+    };
+    expect(visibleRoomLabels(floorRooms, buildingZoom, 400)).toEqual([]);
+
+    const floorZoom = {
+      latitude: 40.4435,
+      longitude: -79.9421,
+      latitudeDelta: 0.0004,
+      longitudeDelta: 0.0004,
+    };
+    expect(visibleRoomLabels(floorRooms, floorZoom, 400)).toEqual([
+      {
+        key: "room-121",
+        buildingCode: "CUC",
+        roomName: "121",
+        alias: "McConomy Auditorium",
+        coordinate: { latitude: 40.4435, longitude: -79.9421 },
+      },
+    ]);
   });
 });

@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polygon, Polyline, type Region } from "react-native-maps";
 import { isInPolygon } from "@/lib/geometry";
+import type { VisibleRoomLabel } from "@/lib/mapSession";
 import { theme } from "@/theme";
 
 interface CameraTarget {
@@ -16,6 +17,7 @@ interface CameraTarget {
 interface Props {
   buildings: Buildings | undefined;
   rooms: GeoRooms | undefined;
+  roomLabels?: VisibleRoomLabel[];
   pois: Pois | undefined;
   line: GeoCoordinate[];
   completedLine?: GeoCoordinate[];
@@ -71,6 +73,7 @@ const solid = (color: string) => {
 export const CampusMap = ({
   buildings,
   rooms,
+  roomLabels,
   pois,
   line,
   completedLine,
@@ -195,6 +198,39 @@ export const CampusMap = ({
             );
           })
         : null}
+      {roomLabels
+        ? roomLabels.map((label) => {
+            const selected =
+              label.roomName === selectedRoom &&
+              (!selectedBuilding || label.buildingCode === selectedBuilding);
+            return (
+              <Marker
+                key={`room-label-${label.key}`}
+                coordinate={label.coordinate}
+                anchor={{ x: 0.5, y: 0.5 }}
+                onPress={() => {
+                  lastFeaturePressAt.current = Date.now();
+                  onSelectRoom(label.buildingCode, label.roomName);
+                }}
+                tracksViewChanges={false}
+              >
+                <View style={styles.roomLabel}>
+                  <Text
+                    style={[styles.roomLabelNumber, selected ? styles.roomLabelSelected : null]}
+                    numberOfLines={1}
+                  >
+                    {label.roomName}
+                  </Text>
+                  {label.alias ? (
+                    <Text style={styles.roomLabelAlias} numberOfLines={2}>
+                      {label.alias}
+                    </Text>
+                  ) : null}
+                </View>
+              </Marker>
+            );
+          })
+        : null}
       {buildings
         ? Object.entries(buildings).map(([code, building]) => {
             if (rooms && Object.keys(rooms).length > 0 && code === selectedBuilding) {
@@ -269,5 +305,34 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: "700",
     letterSpacing: -0.3,
+  },
+  roomLabel: {
+    alignItems: "center",
+    maxWidth: 76,
+    paddingHorizontal: 2,
+  },
+  roomLabelNumber: {
+    color: theme.ink,
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.1,
+    textAlign: "center",
+    textShadowColor: "rgba(255, 255, 255, 0.95)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 3,
+  },
+  roomLabelSelected: {
+    color: "#9a3412",
+    fontWeight: "700",
+  },
+  roomLabelAlias: {
+    color: "#334155",
+    fontSize: 9.5,
+    fontStyle: "italic",
+    lineHeight: 11,
+    textAlign: "center",
+    textShadowColor: "rgba(255, 255, 255, 0.95)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 3,
   },
 });

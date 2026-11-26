@@ -50,6 +50,7 @@ import {
   resolveNavigationStep,
   resolveViewportFloor,
   visibleAdjacentFloorCodes,
+  visibleRoomLabels,
 } from "@/lib/mapSession";
 import { useMapStore } from "@/store";
 import { theme } from "@/theme";
@@ -146,6 +147,7 @@ export const MapScreen = () => {
     }
     return Object.keys(merged).length > 0 ? merged : base;
   })();
+  const roomLabels = visibleRoomLabels(mergedRooms, viewRegion, screenWidth);
 
   const { start, end, plan } = useRoutes(src, dst, selectedRoute);
   const navOpen = Boolean(src || dst);
@@ -311,6 +313,7 @@ export const MapScreen = () => {
       <CampusMap
         buildings={buildings.data}
         rooms={mergedRooms}
+        roomLabels={roomLabels}
         pois={canSeeFloor ? pois.data : undefined}
         line={plan.line}
         completedLine={step.progressLines?.completed}

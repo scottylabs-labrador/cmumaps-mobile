@@ -2,6 +2,7 @@ import type { Building, Buildings, GeoCoordinate } from "@cmumaps/common";
 
 // Same cutoff the website uses: screen width divided by longitude span.
 export const FLOOR_ZOOM_DENSITY = 350_000;
+export const ROOM_LABEL_ZOOM_DENSITY = 750_000;
 
 export const isInPolygon = (point: GeoCoordinate, vertices: GeoCoordinate[]) => {
   const x = point.longitude;

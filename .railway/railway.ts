@@ -23,7 +23,6 @@ export default defineRailway(() => {
     },
     networking: { privateNetworkEndpoint: "cmumaps" },
     env: {
-      ALLOWED_ORIGINS_REGEX: preserve(),
       AUTH_CLIENT_ID: preserve(),
       AUTH_CLIENT_SECRET: preserve(),
       AUTH_ISSUER: preserve(),

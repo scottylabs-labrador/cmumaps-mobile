@@ -4,7 +4,6 @@ import process from "node:process";
 import { db } from "@cmumaps/db/client";
 import { toNodeHandler } from "better-auth/node";
 import { YAML } from "bun";
-import cors, { type CorsOptions } from "cors";
 import type { ErrorRequestHandler } from "express";
 import express from "express";
 import swaggerUi, { type JsonObject } from "swagger-ui-express";
@@ -17,14 +16,6 @@ import { notFoundHandler } from "./middleware/notFoundHandler.ts";
 const app = express();
 app.use(express.json({ limit: "1mb" }));
 
-// Define CORS options
-const corsOptions: CorsOptions = {
-  origin: env.ALLOWED_ORIGINS_REGEX?.split(",").map((origin) => new RegExp(origin, "u")),
-  credentials: true,
-};
-app.use(cors(corsOptions));
-
-// Setup Authentication
 // Setup Authentication: https://www.better-auth.com/docs/integrations/express
 app.all("/api/auth/*splat", toNodeHandler(auth));
 

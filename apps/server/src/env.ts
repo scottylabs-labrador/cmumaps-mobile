@@ -5,7 +5,6 @@ import { z } from "zod";
 // Define the schema as an object with all of the env
 // variables and their types
 const envSchema = z.object({
-  ALLOWED_ORIGINS_REGEX: z.string(),
   AUTH_CLIENT_ID: z.string(),
   AUTH_CLIENT_SECRET: z.string(),
   AUTH_ISSUER: z.string(),

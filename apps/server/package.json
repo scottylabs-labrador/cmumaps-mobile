@@ -7,7 +7,6 @@
     "@cmumaps/db": "workspace:*",
     "@tsoa/runtime": "^6.6.0",
     "better-auth": "^1.7.7",
-    "cors": "^2.8.5",
     "drizzle-orm": "^0.45.2",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
@@ -18,7 +17,6 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.9.2",

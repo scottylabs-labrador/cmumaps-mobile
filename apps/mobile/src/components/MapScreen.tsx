@@ -240,6 +240,7 @@ export const MapScreen = () => {
 
   const mapReady = place.kind !== "pending";
   const searchTop = insets.top + 16;
+  const showSearchResults = searchOpen && searchQuery.trim().length > 0;
   const clearSearch = () => {
     setSearchQuery("");
     setSearchOpen(false);
@@ -360,21 +361,9 @@ export const MapScreen = () => {
         />
       </View>
       <View style={styles.bottom}>
-        {searchOpen ? (
-          <SearchResults
-            query={searchQuery}
-            signedIn={signedIn}
-            pickingDestination={Boolean(src) && !dst}
-            onPick={(value) => open(pathname === "/" ? "/" : pathname, src, value)}
-            onSelectBuilding={selectBuilding}
-            onSelectFloor={selectFloor}
-            onSelectRoom={selectRoom}
-            onNeedSignIn={askSignIn}
-          />
-        ) : null}
-        {aboutOpen && !searchOpen ? (
+        {aboutOpen ? (
           <AboutPanel visible onClose={() => setAboutOpen(false)} />
-        ) : navOpen && !searchOpen ? (
+        ) : navOpen && !showSearchResults ? (
           <NavPanel
             srcLabel={start.label}
             dstLabel={end.label}
@@ -403,7 +392,7 @@ export const MapScreen = () => {
             }}
             onSwap={() => open(pathname, dst, src)}
           />
-        ) : !searchOpen ? (
+        ) : !showSearchResults ? (
           <PlaceSheet
             place={place}
             title={placeTitle(place, buildings.data, rooms.data)}
@@ -437,6 +426,20 @@ export const MapScreen = () => {
               }).catch(() => undefined);
             }}
           />
+        ) : null}
+        {showSearchResults ? (
+          <View style={styles.searchOverlay}>
+            <SearchResults
+              query={searchQuery}
+              signedIn={signedIn}
+              pickingDestination={Boolean(src) && !dst}
+              onPick={(value) => open(pathname === "/" ? "/" : pathname, src, value)}
+              onSelectBuilding={selectBuilding}
+              onSelectFloor={selectFloor}
+              onSelectRoom={selectRoom}
+              onNeedSignIn={askSignIn}
+            />
+          </View>
         ) : null}
       </View>
     </View>
@@ -506,6 +509,12 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   bottom: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
+  searchOverlay: {
     bottom: 0,
     left: 0,
     position: "absolute",

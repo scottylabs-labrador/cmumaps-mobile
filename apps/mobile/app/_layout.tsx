@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Slot } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -14,9 +14,7 @@ export default function RootLayout() {
         <StatusBar style="dark" />
         <View style={styles.fill}>
           <MapScreen />
-          <View style={styles.routeSlot} pointerEvents="none">
-            <Stack screenOptions={{ headerShown: false, animation: "none" }} />
-          </View>
+          <Slot />
         </View>
       </QueryClientProvider>
     </SafeAreaProvider>
@@ -26,9 +24,5 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   fill: {
     flex: 1,
-  },
-  routeSlot: {
-    ...StyleSheet.absoluteFill,
-    opacity: 0,
   },
 });

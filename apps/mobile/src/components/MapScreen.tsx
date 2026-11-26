@@ -47,6 +47,7 @@ import {
 import {
   deriveCamera,
   deriveChromeVisibility,
+  mapFloorAfterClosingPlaceSheet,
   resolveNavigationStep,
   resolveViewportFloor,
   visibleAdjacentFloorCodes,
@@ -547,7 +548,7 @@ export const MapScreen = () => {
             sheet={sheet}
             onCycle={cycleSheet}
             onClose={() => {
-              setMapFloor(null);
+              setMapFloor((current) => mapFloorAfterClosingPlaceSheet(activeFloor, current));
               open("/");
             }}
             needsSignIn={needsSignIn}

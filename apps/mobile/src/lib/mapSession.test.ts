@@ -4,6 +4,7 @@ import {
   clampInstructionIndex,
   deriveCamera,
   deriveChromeVisibility,
+  mapFloorAfterClosingPlaceSheet,
   resolveNavigationStep,
   resolveViewportFloor,
   visibleAdjacentFloorCodes,
@@ -218,6 +219,18 @@ describe("mapSession", () => {
     expect(buildingCam.region!.latitudeDelta).toBeCloseTo(0.00125, 5);
     expect(buildingCam.region!.longitudeDelta).toBeCloseTo(0.0025, 5);
     expect(buildingCam.region!.latitudeDelta).toBeLessThan(0.004);
+  });
+
+  test("keeps the focused floor when PlaceSheet is dismissed", () => {
+    expect(mapFloorAfterClosingPlaceSheet({ buildingCode: "CUC", floor: "1" }, null)).toEqual({
+      buildingCode: "CUC",
+      floor: "1",
+    });
+    expect(mapFloorAfterClosingPlaceSheet(null, { buildingCode: "GHC", floor: "4" })).toEqual({
+      buildingCode: "GHC",
+      floor: "4",
+    });
+    expect(mapFloorAfterClosingPlaceSheet(null, null)).toBeNull();
   });
 
   test("keeps AccountDial, PlaceSheet, and NavPanel mutually exclusive", () => {

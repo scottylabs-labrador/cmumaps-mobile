@@ -31,7 +31,8 @@ export type ActiveModal =
   | "about"
   | "steps"
   | "reviewSignIn"
-  | "report";
+  | "report"
+  | "login";
 
 export interface CameraRegion {
   latitude: number;
@@ -383,3 +384,12 @@ export const deriveChromeVisibility = (input: {
     bottomPanel,
   };
 };
+
+/**
+ * Dismissing PlaceSheet clears the selected target but should keep the indoor
+ * floor visible until the user zooms or pans away.
+ */
+export const mapFloorAfterClosingPlaceSheet = (
+  activeFloor: FloorRef | null,
+  previousMapFloor: FloorRef | null,
+): FloorRef | null => activeFloor ?? previousMapFloor;

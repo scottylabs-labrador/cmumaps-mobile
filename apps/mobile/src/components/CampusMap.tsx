@@ -23,6 +23,7 @@ interface Props {
   camera: CameraTarget | null;
   onSelectBuilding: (code: string) => void;
   onSelectRoom: (roomName: string) => void;
+  onPressMap?: () => void;
   onLongPress: (coordinate: GeoCoordinate) => void;
   onRegionChangeComplete: (region: Region) => void;
 }
@@ -73,6 +74,7 @@ export const CampusMap = ({
   camera,
   onSelectBuilding,
   onSelectRoom,
+  onPressMap,
   onLongPress,
   onRegionChangeComplete,
 }: Props) => {
@@ -104,6 +106,7 @@ export const CampusMap = ({
       showsUserLocation={Boolean(userPosition)}
       showsBuildings={false}
       pitchEnabled={false}
+      onPress={() => onPressMap?.()}
       onLongPress={(event) => onLongPress(event.nativeEvent.coordinate)}
       onRegionChangeComplete={onRegionChangeComplete}
     >

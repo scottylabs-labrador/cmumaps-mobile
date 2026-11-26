@@ -1,14 +1,14 @@
 import type { Buildings, GeoCoordinate, GeoRooms } from "@cmumaps/common";
 import { router, useGlobalSearchParams, usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Dimensions, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { Dimensions, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import type { Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBuildings, useFloorplan, usePois } from "@/api/client";
 import { signIn, signOut } from "@/auth/client";
 import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
-import { GearMenu, PromptCard } from "@/components/GearMenu";
+import { AccountDial, PromptCard } from "@/components/GearMenu";
 import { NavPanel } from "@/components/NavPanel";
 import { PlaceSheet } from "@/components/PlaceSheet";
 import { SearchResults } from "@/components/SearchResults";
@@ -186,7 +186,6 @@ export const MapScreen = () => {
   const building = buildingCode ? buildings.data?.[buildingCode] : undefined;
   const needsSignIn = Boolean(floor) && !canSeeFloor;
   const navOpen = Boolean(src && dst);
-  const sheetOpen = searchOpen || navOpen || (place.kind !== "home" && place.kind !== "pending");
   const line = routeLine(routes.data, selectedRoute);
   const currentInstruction = routes.data?.[selectedRoute]?.instructions[instructionIndex];
 
@@ -257,6 +256,7 @@ export const MapScreen = () => {
               selectRoom(buildingCode, roomName);
             }
           }}
+          onPressMap={() => setGearOpen(false)}
           onLongPress={(coordinate: GeoCoordinate) =>
             open(`/${coordinate.latitude},${coordinate.longitude}`)
           }
@@ -274,17 +274,35 @@ export const MapScreen = () => {
         </View>
       ) : (
         <View style={[styles.searchWrap, { top: insets.top + 8 }]}>
-          <TextInput
-            value={searchQuery}
-            placeholder="Search CMU Maps"
-            placeholderTextColor={theme.muted}
-            style={styles.search}
-            onFocus={() => setSearchOpen(true)}
-            onChangeText={(value) => {
-              setSearchQuery(value);
-              setSearchOpen(true);
-            }}
-          />
+          <View style={styles.searchRow}>
+            <TextInput
+              value={searchQuery}
+              placeholder="Search CMU Maps"
+              placeholderTextColor={theme.muted}
+              style={styles.search}
+              onFocus={() => setSearchOpen(true)}
+              onChangeText={(value) => {
+                setSearchQuery(value);
+                setSearchOpen(true);
+              }}
+            />
+            <AccountDial
+              open={gearOpen}
+              signedIn={signedIn}
+              onToggle={() => setGearOpen((open) => !open)}
+              onSignIn={() => {
+                setGearOpen(false);
+                signIn(href(pathname, src || undefined, dst || undefined)).catch(() => {
+                  setSignInVisible(true);
+                });
+              }}
+              onSignOut={() => {
+                setGearOpen(false);
+                signOut().catch(() => undefined);
+              }}
+              onAbout={() => setGearOpen(false)}
+            />
+          </View>
         </View>
       )}
       {!searchOpen && !navigating && building ? (
@@ -296,26 +314,6 @@ export const MapScreen = () => {
           />
         </View>
       ) : null}
-      <View style={[styles.gear, { bottom: insets.bottom + (sheetOpen ? 300 : 24) }]}>
-        <Pressable style={styles.gearButton} onPress={() => setGearOpen((open) => !open)}>
-          <Text style={styles.gearText}>⚙</Text>
-        </Pressable>
-        <GearMenu
-          visible={gearOpen}
-          email={user?.email}
-          onClose={() => setGearOpen(false)}
-          onSignIn={() => {
-            setGearOpen(false);
-            signIn(href(pathname, src || undefined, dst || undefined)).catch(() => {
-              setSignInVisible(true);
-            });
-          }}
-          onSignOut={() => {
-            setGearOpen(false);
-            signOut().catch(() => undefined);
-          }}
-        />
-      </View>
       <View style={[styles.prompts, { top: insets.top + 72 }]}>
         <PromptCard
           visible={locationPromptVisible && !navOpen}
@@ -429,11 +427,18 @@ const styles = StyleSheet.create({
     left: 16,
     position: "absolute",
     right: 16,
+    zIndex: 20,
+  },
+  searchRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
   },
   search: {
     backgroundColor: theme.paper,
     borderRadius: 24,
     color: theme.ink,
+    flex: 1,
     fontSize: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -458,21 +463,6 @@ const styles = StyleSheet.create({
   floors: {
     position: "absolute",
     right: 12,
-  },
-  gear: {
-    left: 16,
-    position: "absolute",
-  },
-  gearButton: {
-    alignItems: "center",
-    backgroundColor: theme.paper,
-    borderRadius: 22,
-    height: 44,
-    justifyContent: "center",
-    width: 44,
-  },
-  gearText: {
-    fontSize: 18,
   },
   prompts: {
     left: 16,

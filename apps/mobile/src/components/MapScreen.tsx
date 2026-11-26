@@ -773,7 +773,15 @@ export const MapScreen = () => {
           <PlaceSheet
             place={place}
             title={placeTitle(place, buildings.data, rooms.data)}
-            subtitle={building ? `${building.code}` : ""}
+            subtitle={
+              place.kind === "room"
+                ? rooms.data?.[place.roomName]?.alias
+                  ? `${place.buildingCode} ${place.roomName}${building ? ` · ${building.name}` : ""}`
+                  : (building?.name ?? place.buildingCode)
+                : building
+                  ? `${building.code}`
+                  : ""
+            }
             roomType={place.kind === "room" ? rooms.data?.[place.roomName]?.type : undefined}
             detail={
               place.kind === "room"

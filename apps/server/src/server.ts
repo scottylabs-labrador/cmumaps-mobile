@@ -10,7 +10,7 @@ import express from "express";
 import swaggerUi, { type JsonObject } from "swagger-ui-express";
 import { RegisterRoutes } from "../build/routes.ts";
 import { env } from "./env.ts";
-import { auth } from "./lib/auth.ts";
+import { auth, ensureAppReviewUser } from "./lib/auth.ts";
 import { errorHandler } from "./middleware/errorHandler.ts";
 import { notFoundHandler } from "./middleware/notFoundHandler.ts";
 
@@ -56,6 +56,9 @@ app.use(notFoundHandler);
 const port = env.SERVER_PORT;
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
+  ensureAppReviewUser().catch((error: unknown) => {
+    console.error("Failed to seed App Review user", error);
+  });
 });
 
 process.on("SIGINT", async () => {

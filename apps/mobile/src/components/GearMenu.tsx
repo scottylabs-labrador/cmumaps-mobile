@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { Animated, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { theme } from "@/theme";
 
@@ -16,11 +16,20 @@ interface Props {
   signedIn: boolean;
   onToggle: () => void;
   onSignIn: () => void;
+  onReviewSignIn: () => void;
   onSignOut: () => void;
   onAbout: () => void;
 }
 
-export const AccountDial = ({ open, signedIn, onToggle, onSignIn, onSignOut, onAbout }: Props) => {
+export const AccountDial = ({
+  open,
+  signedIn,
+  onToggle,
+  onSignIn,
+  onReviewSignIn,
+  onSignOut,
+  onAbout,
+}: Props) => {
   const progress = useRef(new Animated.Value(open ? 1 : 0)).current;
 
   useEffect(() => {
@@ -68,6 +77,8 @@ export const AccountDial = ({ open, signedIn, onToggle, onSignIn, onSignOut, onA
         <Pressable
           accessibilityLabel={signedIn ? "Sign out" : "Sign in"}
           onPress={signedIn ? onSignOut : onSignIn}
+          onLongPress={signedIn ? undefined : onReviewSignIn}
+          delayLongPress={600}
           style={[styles.circle, styles.circleSecondary]}
         >
           <SvgXml xml={signedIn ? signOutXml : signInXml} width={22} height={22} />
@@ -108,6 +119,68 @@ export const PromptCard = ({ visible, title, body, action, onAction, onDismiss }
         <Text style={styles.close}>Not now</Text>
       </Pressable>
     </View>
+  );
+};
+
+interface ReviewProps {
+  visible: boolean;
+  error: string | null;
+  busy: boolean;
+  onSubmit: (password: string) => void;
+  onDismiss: () => void;
+}
+
+export const ReviewPasswordPrompt = ({
+  visible,
+  error,
+  busy,
+  onSubmit,
+  onDismiss,
+}: ReviewProps) => {
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    if (!visible) {
+      setPassword("");
+    }
+  }, [visible]);
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
+      <Pressable style={styles.modalBackdrop} onPress={onDismiss}>
+        <Pressable style={styles.modalCard} onPress={(event) => event.stopPropagation()}>
+          <Text style={styles.title}>App Review sign-in</Text>
+          <Text style={styles.body}>Enter the review password from App Store Connect notes.</Text>
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!busy}
+            placeholder="Password"
+            placeholderTextColor={theme.muted}
+            style={styles.passwordInput}
+            onSubmitEditing={() => {
+              if (password.length > 0 && !busy) {
+                onSubmit(password);
+              }
+            }}
+          />
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <Pressable
+            disabled={busy || password.length === 0}
+            onPress={() => onSubmit(password)}
+            style={[styles.button, (busy || password.length === 0) && styles.buttonDisabled]}
+          >
+            <Text style={styles.buttonText}>{busy ? "Signing in…" : "Sign in"}</Text>
+          </Pressable>
+          <Pressable onPress={onDismiss} disabled={busy}>
+            <Text style={styles.close}>Cancel</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 };
 
@@ -174,5 +247,36 @@ const styles = StyleSheet.create({
   close: {
     color: theme.muted,
     marginTop: 10,
+  },
+  modalBackdrop: {
+    alignItems: "center",
+    backgroundColor: "rgba(15, 23, 42, 0.45)",
+    flex: 1,
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: theme.paper,
+    borderRadius: 16,
+    padding: 16,
+    width: "100%",
+    maxWidth: 320,
+  },
+  passwordInput: {
+    borderColor: "#cbd5e1",
+    borderRadius: 12,
+    borderWidth: 1,
+    color: theme.ink,
+    fontSize: 16,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  error: {
+    color: "#b91c1c",
+    marginTop: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
 });

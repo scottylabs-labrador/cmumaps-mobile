@@ -50,6 +50,10 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 2. Set a campus coordinate on the simulator: `xcrun simctl location booted set 40.4433,-79.9436` (or Simulator → Features → Location → Custom Location near campus).
 3. After grant, `userPosition` should fill and Directions from “Your location” should return a real route (not 0 ft). Do not rely on an in-app fake GPS for local testing.
 
+#### App Review sign-in (non-Keycloak)
+
+Apple reviewers cannot use CMU Keycloak. Long-press the dial **Sign in** control, enter the review password, and Better Auth signs in with the demo email/password account (seeded on server boot from `APP_REVIEW_EMAIL` / `APP_REVIEW_PASSWORD`). Local defaults: email `review@cmumaps.com`, password `CMUMaps-AppReview-2026`. Put the same values in App Store Connect review notes and on Railway for production. A normal tap still opens Keycloak. Zooming into a non-public floor starts Keycloak sign-in immediately (no intermediate prompt).
+
 ### Standard commands
 
 - **Lint/check**: `bun run check` runs `vp check` (Oxfmt, Oxlint, and tsrs typecheck).

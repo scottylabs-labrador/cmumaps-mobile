@@ -22,6 +22,11 @@ export const auth = betterAuth({
     // Cloudflare Tunnel sets X-Forwarded-Proto / Host.
     trustedProxyHeaders: !isProd,
   },
+  // App Store review path — seeded on boot; public email signup stays closed.
+  emailAndPassword: {
+    enabled: true,
+    disableSignUp: true,
+  },
   plugins: [
     expo(),
     genericOAuth({
@@ -37,3 +42,36 @@ export const auth = betterAuth({
     }),
   ],
 });
+
+/** Ensure the App Store demo account exists (memory adapter resets on restart). */
+export const ensureAppReviewUser = async () => {
+  const email = env.APP_REVIEW_EMAIL;
+  const password = env.APP_REVIEW_PASSWORD;
+  if (!email || !password) {
+    return;
+  }
+  const ctx = await auth.$context;
+  const existing = await ctx.internalAdapter.findUserByEmail(email);
+  if (existing) {
+    return;
+  }
+  const user = await ctx.internalAdapter.createUser(
+    {
+      email,
+      name: "App Review",
+      emailVerified: true,
+    },
+    { method: "email-password" },
+  );
+  if (!user) {
+    throw new Error("Failed to create App Review user");
+  }
+  const hash = await ctx.password.hash(password);
+  await ctx.internalAdapter.createAccount({
+    userId: user.id,
+    accountId: user.id,
+    providerId: "credential",
+    password: hash,
+  });
+  console.log(`App Review user ready (${email})`);
+};

@@ -16,7 +16,6 @@ interface MapState {
   instructionIndex: number;
   selectedRoute: RouteKind;
   userPosition: Position | null;
-  signInVisible: boolean;
   locationPromptVisible: boolean;
   setSheet: (sheet: SheetState) => void;
   cycleSheet: () => void;
@@ -26,7 +25,6 @@ interface MapState {
   setInstructionIndex: (instructionIndex: number) => void;
   setSelectedRoute: (selectedRoute: RouteKind) => void;
   setUserPosition: (userPosition: Position | null) => void;
-  setSignInVisible: (signInVisible: boolean) => void;
   setLocationPromptVisible: (locationPromptVisible: boolean) => void;
   resetNav: () => void;
 }
@@ -45,7 +43,6 @@ export const useMapStore = create<MapState>((set) => ({
   instructionIndex: 0,
   selectedRoute: "Fastest",
   userPosition: null,
-  signInVisible: false,
   locationPromptVisible: false,
   setSheet: (sheet) => set({ sheet }),
   cycleSheet: () => set((state) => ({ sheet: nextSheet[state.sheet] })),
@@ -55,7 +52,6 @@ export const useMapStore = create<MapState>((set) => ({
   setInstructionIndex: (instructionIndex) => set({ instructionIndex }),
   setSelectedRoute: (selectedRoute) => set({ selectedRoute }),
   setUserPosition: (userPosition) => set({ userPosition }),
-  setSignInVisible: (signInVisible) => set({ signInVisible }),
   setLocationPromptVisible: (locationPromptVisible) => set({ locationPromptVisible }),
   resetNav: () => set({ navigating: false, instructionIndex: 0 }),
 }));

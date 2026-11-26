@@ -5,11 +5,11 @@ import { Dimensions, Pressable, Share, StyleSheet, Text, TextInput, View } from 
 import type { Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBuildings, useFloorplan, useFloorplans, usePois } from "@/api/client";
-import { signIn, signOut } from "@/auth/client";
+import { APP_REVIEW_EMAIL, signIn, signInWithPassword, signOut } from "@/auth/client";
 import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
 import { AboutPanel } from "@/components/AboutPanel";
-import { AccountDial, PromptCard } from "@/components/GearMenu";
+import { AccountDial, PromptCard, ReviewPasswordPrompt } from "@/components/GearMenu";
 import { NavPanel } from "@/components/NavPanel";
 import { PlaceSheet } from "@/components/PlaceSheet";
 import { SearchResults } from "@/components/SearchResults";
@@ -81,7 +81,9 @@ export const MapScreen = () => {
   const [gearOpen, setGearOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [navEdit, setNavEdit] = useState<"src" | "dst" | null>(null);
-  const [returnPath, setReturnPath] = useState("/");
+  const [reviewPromptOpen, setReviewPromptOpen] = useState(false);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const [mapFloor, setMapFloor] = useState<{
     buildingCode: string;
     floor: string;
@@ -147,8 +149,6 @@ export const MapScreen = () => {
   const selectedRoute = useMapStore((state) => state.selectedRoute);
   const setSelectedRoute = useMapStore((state) => state.setSelectedRoute);
   const userPosition = useMapStore((state) => state.userPosition);
-  const signInVisible = useMapStore((state) => state.signInVisible);
-  const setSignInVisible = useMapStore((state) => state.setSignInVisible);
   const locationPromptVisible = useMapStore((state) => state.locationPromptVisible);
   const setLocationPromptVisible = useMapStore((state) => state.setLocationPromptVisible);
   const resetNav = useMapStore((state) => state.resetNav);
@@ -193,23 +193,48 @@ export const MapScreen = () => {
     setSearchQuery("");
   };
 
-  const askSignIn = (path: string) => {
-    setReturnPath(path);
-    setSignInVisible(true);
+  const startSignIn = (path: string) => {
     setSearchOpen(false);
+    setGearOpen(false);
+    void signIn(path);
+  };
+
+  const openReviewSignIn = () => {
+    setGearOpen(false);
+    setReviewError(null);
+    setReviewPromptOpen(true);
+  };
+
+  const submitReviewSignIn = (password: string) => {
+    setReviewBusy(true);
+    setReviewError(null);
+    void signInWithPassword(APP_REVIEW_EMAIL, password)
+      .then(({ error }) => {
+        if (error) {
+          setReviewError("Sign-in failed. Check the review password.");
+          return;
+        }
+        setReviewPromptOpen(false);
+      })
+      .catch(() => {
+        setReviewError("Sign-in failed. Check the review password.");
+      })
+      .finally(() => {
+        setReviewBusy(false);
+      });
   };
 
   const selectBuilding = (code: string) => open(`/${code}`);
   const selectFloor = (code: string, level: string) => {
     if (!signedIn && !isPublicBuilding(code)) {
-      askSignIn(`/${code}-${level}`);
+      startSignIn(`/${code}-${level}`);
       return;
     }
     open(`/${code}-${level}`);
   };
   const selectRoom = (code: string, roomName: string) => {
     if (!signedIn && !isPublicBuilding(code)) {
-      askSignIn(`/${code}-${roomName}`);
+      startSignIn(`/${code}-${roomName}`);
       return;
     }
     open(`/${code}-${roomName}`);
@@ -236,7 +261,7 @@ export const MapScreen = () => {
       setMapFloor((current) => (current ? null : current));
       if (promptedBuilding.current !== hit.code) {
         promptedBuilding.current = hit.code;
-        askSignIn(`/${hit.code}-${level}`);
+        startSignIn(`/${hit.code}-${level}`);
       }
       return;
     }
@@ -443,12 +468,8 @@ export const MapScreen = () => {
               open={gearOpen}
               signedIn={signedIn}
               onToggle={() => setGearOpen((open) => !open)}
-              onSignIn={() => {
-                setGearOpen(false);
-                signIn(href(pathname, src || undefined, dst || undefined)).catch(() => {
-                  setSignInVisible(true);
-                });
-              }}
+              onSignIn={() => startSignIn(href(pathname, src || undefined, dst || undefined))}
+              onReviewSignIn={openReviewSignIn}
               onSignOut={() => {
                 setGearOpen(false);
                 signOut().catch(() => undefined);
@@ -490,12 +511,8 @@ export const MapScreen = () => {
               open={gearOpen}
               signedIn={signedIn}
               onToggle={() => setGearOpen((open) => !open)}
-              onSignIn={() => {
-                setGearOpen(false);
-                signIn(href(pathname, src || undefined, dst || undefined)).catch(() => {
-                  setSignInVisible(true);
-                });
-              }}
+              onSignIn={() => startSignIn(href(pathname, src || undefined, dst || undefined))}
+              onReviewSignIn={openReviewSignIn}
               onSignOut={() => {
                 setGearOpen(false);
                 signOut().catch(() => undefined);
@@ -528,18 +545,19 @@ export const MapScreen = () => {
           }}
           onDismiss={() => setLocationPromptVisible(false)}
         />
-        <PromptCard
-          visible={signInVisible}
-          title="Sign in"
-          body="Indoor floors outside CUC need the same CMU sign-in as the website."
-          action="Sign in"
-          onAction={() => {
-            setSignInVisible(false);
-            signIn(returnPath).catch(() => setSignInVisible(true));
-          }}
-          onDismiss={() => setSignInVisible(false)}
-        />
       </View>
+      <ReviewPasswordPrompt
+        visible={reviewPromptOpen}
+        error={reviewError}
+        busy={reviewBusy}
+        onSubmit={submitReviewSignIn}
+        onDismiss={() => {
+          if (!reviewBusy) {
+            setReviewPromptOpen(false);
+            setReviewError(null);
+          }
+        }}
+      />
       <View style={styles.bottom}>
         {aboutOpen ? (
           <AboutPanel visible onClose={() => setAboutOpen(false)} />
@@ -586,7 +604,7 @@ export const MapScreen = () => {
             sheet={sheet}
             onCycle={cycleSheet}
             needsSignIn={needsSignIn}
-            onSignIn={() => askSignIn(pathname)}
+            onSignIn={() => startSignIn(pathname)}
             onDirections={() => {
               const nextDst = destinationForPlace();
               if (!nextDst) {
@@ -653,7 +671,7 @@ export const MapScreen = () => {
                 }
                 selectRoom(code, roomName);
               }}
-              onNeedSignIn={askSignIn}
+              onNeedSignIn={startSignIn}
             />
           </View>
         ) : null}

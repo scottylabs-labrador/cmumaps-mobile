@@ -7,67 +7,96 @@ interface Props {
   onSelect: (floor: string) => void;
 }
 
-const WHEEL_WIDTH = 178;
-const WHEEL_HEIGHT = 208;
+const WHEEL_SIZE = 208;
 const ACTIVE_SIZE = 46;
-const CENTER_LEFT = 126;
+const CENTER_LEFT = 156;
 const CENTER_TOP = 81;
 const STEP_PX = 58;
 const ARC_RADIUS = 76;
 const ANGLE_STEP = (50 * Math.PI) / 180;
 
 const DELTAS = [2, 1.5, 1, 0.5, 0, -0.5, -1, -1.5, -2];
-const ARC_X = DELTAS.map((delta) => Math.round(ARC_RADIUS * (Math.cos(delta * ANGLE_STEP) - 1)));
-const ARC_Y = DELTAS.map((delta) => Math.round(ARC_RADIUS * Math.sin(delta * ANGLE_STEP)));
+const ARC_X = DELTAS.map((delta) => ARC_RADIUS * (Math.cos(delta * ANGLE_STEP) - 1));
+const ARC_Y = DELTAS.map((delta) => ARC_RADIUS * Math.sin(delta * ANGLE_STEP));
 const SCALES = [0.65, 0.74, 0.83, 0.94, 1, 0.94, 0.83, 0.74, 0.65];
 const OPACITIES = [0, 0.25, 1, 1, 1, 1, 1, 0.25, 0];
 
 export const FloorSwitcher = ({ floors, current, onSelect }: Props) => {
   const index = Math.max(0, floors.indexOf(current ?? ""));
   const progress = useRef(new Animated.Value(index)).current;
+  const progressValue = useRef(index);
   const dragStart = useRef(index);
+  const dragging = useRef(false);
+  const floorsRef = useRef(floors);
+  const currentRef = useRef(current);
+  const onSelectRef = useRef(onSelect);
+  floorsRef.current = floors;
+  currentRef.current = current;
+  onSelectRef.current = onSelect;
 
   useEffect(() => {
+    const id = progress.addListener(({ value }) => {
+      progressValue.current = value;
+    });
+    return () => progress.removeListener(id);
+  }, [progress]);
+
+  useEffect(() => {
+    if (dragging.current) {
+      return;
+    }
+    if (Math.abs(progressValue.current - index) < 0.01) {
+      return;
+    }
     Animated.timing(progress, {
       toValue: index,
       duration: 220,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
   }, [index, progress]);
+
+  const settleToNearest = useRef(() => {
+    const max = Math.max(0, floorsRef.current.length - 1);
+    const value = progressValue.current;
+    const target = Math.max(0, Math.min(max, Math.round(value)));
+    Animated.timing(progress, {
+      toValue: target,
+      duration: Math.max(80, Math.abs(value - target) * 180),
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      dragging.current = false;
+      if (!finished) {
+        return;
+      }
+      progressValue.current = target;
+      const floor = floorsRef.current[target];
+      if (floor && floor !== currentRef.current) {
+        onSelectRef.current(floor);
+      }
+    });
+  }).current;
 
   const pan = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 6,
         onPanResponderGrant: () => {
+          dragging.current = true;
           progress.stopAnimation((value) => {
+            progressValue.current = value;
             dragStart.current = value;
           });
+          dragStart.current = progressValue.current;
         },
         onPanResponderMove: (_, gesture) => {
-          const next = Math.max(
-            0,
-            Math.min(floors.length - 1, dragStart.current - gesture.dy / STEP_PX),
-          );
+          const max = Math.max(0, floorsRef.current.length - 1);
+          const next = Math.max(0, Math.min(max, dragStart.current - gesture.dy / STEP_PX));
           progress.setValue(next);
         },
-        onPanResponderRelease: () => {
-          progress.stopAnimation((value) => {
-            const target = Math.max(0, Math.min(floors.length - 1, Math.round(value)));
-            Animated.timing(progress, {
-              toValue: target,
-              duration: Math.max(80, Math.abs(value - target) * 180),
-              useNativeDriver: true,
-            }).start(() => {
-              const floor = floors[target];
-              if (floor && floor !== current) {
-                onSelect(floor);
-              }
-            });
-          });
-        },
+        onPanResponderRelease: settleToNearest,
+        onPanResponderTerminate: settleToNearest,
       }),
-    [current, floors, onSelect, progress],
+    [progress, settleToNearest],
   );
 
   if (floors.length === 0) {
@@ -139,21 +168,21 @@ export const FloorSwitcher = ({ floors, current, onSelect }: Props) => {
 
 const styles = StyleSheet.create({
   shadowWrap: {
-    borderRadius: WHEEL_HEIGHT / 2,
-    height: WHEEL_HEIGHT,
+    borderRadius: WHEEL_SIZE / 2,
+    height: WHEEL_SIZE,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    width: WHEEL_WIDTH,
+    width: WHEEL_SIZE,
     elevation: 6,
   },
   wheel: {
     backgroundColor: "#ffffff",
-    borderRadius: WHEEL_HEIGHT / 2,
-    height: WHEEL_HEIGHT,
+    borderRadius: WHEEL_SIZE / 2,
+    height: WHEEL_SIZE,
     overflow: "hidden",
-    width: WHEEL_WIDTH,
+    width: WHEEL_SIZE,
   },
   item: {
     height: ACTIVE_SIZE,

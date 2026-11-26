@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
     width: 28,
   },
   floors: {
-    left: -70,
+    left: -100,
     position: "absolute",
     zIndex: 20,
   },

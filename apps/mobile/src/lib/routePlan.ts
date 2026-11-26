@@ -32,15 +32,9 @@ export interface RoutePlan {
   canGo: boolean;
 }
 
-export const summarizeRoute = (
-  route: PreciseRoute | undefined,
-  now = Date.now(),
-): RouteSummary | null => {
-  if (!route) {
-    return null;
-  }
-  const feet = Math.round(route.path.distance);
-  const minutes = Math.max(1, Math.round(feet / 250));
+export const summarizeDistance = (distance: number, now = Date.now()): RouteSummary => {
+  const feet = Math.max(0, Math.round(distance));
+  const minutes = feet <= 0 ? 0 : Math.max(1, Math.round(feet / 250));
   const arrival = new Date(now + minutes * 60 * 1000).toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
@@ -49,6 +43,16 @@ export const summarizeRoute = (
   const distanceValue = feet >= 1000 ? (feet / 5280).toFixed(1) : String(feet);
   const distanceUnit = feet >= 1000 ? "mi" : "ft";
   return { feet, distanceValue, distanceUnit, minutes, arrival };
+};
+
+export const summarizeRoute = (
+  route: PreciseRoute | undefined,
+  now = Date.now(),
+): RouteSummary | null => {
+  if (!route) {
+    return null;
+  }
+  return summarizeDistance(route.path.distance, now);
 };
 
 export const resolveWaypointData = (

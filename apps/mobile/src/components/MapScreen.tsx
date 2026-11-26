@@ -489,6 +489,7 @@ export const MapScreen = () => {
       <StepsSheet
         visible={activeModal === "steps" && navigating}
         plan={plan}
+        summary={step.summary}
         index={instructionIndex}
         destinationLabel={end.label || "Destination"}
         onSelectStep={(stepIdx) => jumpToStep(stepIdx, step.instructions.length)}
@@ -511,6 +512,7 @@ export const MapScreen = () => {
         ) : chrome.bottomPanel === "nav" ? (
           <NavPanel
             plan={plan}
+            summary={step.summary}
             navigating={navigating}
             onSelect={setSelectedRoute}
             onGo={startNavigation}

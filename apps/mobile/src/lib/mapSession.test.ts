@@ -84,26 +84,45 @@ const route: PreciseRoute = {
 };
 
 describe("mapSession", () => {
-  test("resolves navigation step node, floor, and progress split including arrived state", () => {
-    const startStep = resolveNavigationStep(route, 0, true);
+  test("resolves navigation step node, floor, remaining summary, and progress split including arrived state", () => {
+    const fixedNow = Date.UTC(2026, 10, 26, 15, 0);
+    const longRoute: PreciseRoute = {
+      ...route,
+      path: {
+        ...route.path,
+        distance: 1000,
+      },
+    };
+
+    const startStep = resolveNavigationStep(longRoute, 0, true, fixedNow);
     expect(startStep.arrived).toBe(false);
     expect(startStep.stepNode?.id).toBe("n0");
     expect(startStep.stepFloor).toEqual({ buildingCode: "GHC", floor: "4" });
     expect(startStep.progressLines?.completed).toHaveLength(1);
     expect(startStep.progressLines?.remaining).toHaveLength(3);
+    expect(startStep.summary?.feet).toBe(1000);
+    expect(startStep.summary?.minutes).toBe(4);
 
-    const midStep = resolveNavigationStep(route, 1, true);
+    const midStep = resolveNavigationStep(longRoute, 1, true, fixedNow);
     expect(midStep.arrived).toBe(false);
     expect(midStep.stepNode?.id).toBe("n1");
     expect(midStep.stepFloor).toEqual({ buildingCode: "CUC", floor: "1" });
     expect(midStep.progressLines?.completed).toHaveLength(2);
     expect(midStep.progressLines?.remaining).toHaveLength(2);
+    expect(midStep.summary!.feet).toBeGreaterThan(0);
+    expect(midStep.summary!.feet).toBeLessThan(startStep.summary!.feet);
+    expect(midStep.summary!.minutes).toBeLessThan(startStep.summary!.minutes);
+    expect(midStep.summary!.arrival).not.toBe(startStep.summary!.arrival);
 
-    const arrivedStep = resolveNavigationStep(route, 2, true);
+    const arrivedStep = resolveNavigationStep(longRoute, 2, true, fixedNow);
     expect(arrivedStep.arrived).toBe(true);
     expect(arrivedStep.stepFloor).toEqual({ buildingCode: "CUC", floor: "2" });
     expect(arrivedStep.progressLines?.completed).toHaveLength(3);
     expect(arrivedStep.progressLines?.remaining).toEqual([]);
+    expect(arrivedStep.summary?.feet).toBe(0);
+    expect(arrivedStep.summary?.distanceValue).toBe("0");
+    expect(arrivedStep.summary?.minutes).toBe(0);
+    expect(arrivedStep.summary?.arrival).not.toBe(midStep.summary!.arrival);
 
     expect(clampInstructionIndex(-5, 2)).toBe(0);
     expect(clampInstructionIndex(10, 2)).toBe(2);

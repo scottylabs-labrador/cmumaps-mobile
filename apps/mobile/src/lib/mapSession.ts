@@ -1,10 +1,11 @@
-import type {
-  Buildings,
-  GeoCoordinate,
-  GeoRooms,
-  Instruction,
-  NavPathNode,
-  PreciseRoute,
+import {
+  type Buildings,
+  dist,
+  type GeoCoordinate,
+  type GeoRooms,
+  type Instruction,
+  type NavPathNode,
+  type PreciseRoute,
 } from "@cmumaps/common";
 import {
   canViewFloor,
@@ -14,7 +15,7 @@ import {
   targetBuildingCode,
 } from "./campusTarget";
 import { buildingAt, buildingsInView, FLOOR_ZOOM_DENSITY, regionForCoordinates } from "./geometry";
-import type { RoutePlan } from "./routePlan";
+import { type RoutePlan, type RouteSummary, summarizeDistance, summarizeRoute } from "./routePlan";
 
 export type ActiveModal =
   | "none"
@@ -39,6 +40,7 @@ export interface NavigationStepState {
   stepNode: NavPathNode | undefined;
   stepFloor: FloorRef | null;
   progressLines: { completed: GeoCoordinate[]; remaining: GeoCoordinate[] } | null;
+  summary: RouteSummary | null;
 }
 
 export type ViewportFloorResolution =
@@ -53,10 +55,47 @@ export const clampInstructionIndex = (index: number, instructionCount: number): 
   return Math.max(0, Math.min(instructionCount, index));
 };
 
+const segmentDistance = (from: NavPathNode, to: NavPathNode): number => {
+  if (
+    from.floor &&
+    to.floor &&
+    from.floor.buildingCode === to.floor.buildingCode &&
+    from.floor.level !== to.floor.level
+  ) {
+    return 25;
+  }
+  const neighborDist = from.neighbors[to.id]?.dist;
+  if (typeof neighborDist === "number" && Number.isFinite(neighborDist)) {
+    return neighborDist;
+  }
+  return dist(from.coordinate, to.coordinate);
+};
+
+const remainingRouteDistance = (route: PreciseRoute, splitIndex: number): number => {
+  const path = route.path.path;
+  if (splitIndex <= 0) {
+    return route.path.distance;
+  }
+  if (splitIndex >= path.length - 1) {
+    return 0;
+  }
+  let totalEdgeDist = 0;
+  let remainingEdgeDist = 0;
+  for (let i = 0; i < path.length - 1; i++) {
+    const edgeDist = segmentDistance(path[i]!, path[i + 1]!);
+    totalEdgeDist += edgeDist;
+    if (i >= splitIndex) {
+      remainingEdgeDist += edgeDist;
+    }
+  }
+  return totalEdgeDist > 0 ? (remainingEdgeDist / totalEdgeDist) * route.path.distance : 0;
+};
+
 export const resolveNavigationStep = (
   route: PreciseRoute | undefined,
   instructionIndex: number,
   navigating: boolean,
+  now = Date.now(),
 ): NavigationStepState => {
   const instructions = route?.instructions ?? [];
   if (!route || !navigating) {
@@ -67,6 +106,7 @@ export const resolveNavigationStep = (
       stepNode: undefined,
       stepFloor: null,
       progressLines: null,
+      summary: summarizeRoute(route, now),
     };
   }
 
@@ -87,6 +127,7 @@ export const resolveNavigationStep = (
         completed: path.map((node) => node.coordinate),
         remaining: [],
       },
+      summary: summarizeDistance(0, now),
     };
   }
 
@@ -113,6 +154,7 @@ export const resolveNavigationStep = (
       ? { buildingCode: stepNode.floor.buildingCode, floor: stepNode.floor.level }
       : null,
     progressLines,
+    summary: summarizeDistance(remainingRouteDistance(route, splitIndex), now),
   };
 };
 

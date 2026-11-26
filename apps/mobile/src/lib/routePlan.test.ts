@@ -1,7 +1,12 @@
 import { describe, expect, test } from "vite-plus/test";
 import type { Buildings, GeoRooms, PreciseRoute } from "@cmumaps/common";
 import type { CampusDataAdapter } from "../api/adapter";
-import { buildRoutePlan, planRouteWithAdapter, summarizeRoute } from "./routePlan";
+import {
+  buildRoutePlan,
+  planRouteWithAdapter,
+  summarizeDistance,
+  summarizeRoute,
+} from "./routePlan";
 
 const buildings: Buildings = {
   CUC: {
@@ -91,6 +96,12 @@ describe("routePlan", () => {
     expect(long?.distanceValue).toBe("0.5");
     expect(long?.distanceUnit).toBe("mi");
     expect(long?.minutes).toBe(11);
+
+    const arrived = summarizeDistance(0, Date.UTC(2026, 10, 26, 15, 0));
+    expect(arrived.feet).toBe(0);
+    expect(arrived.distanceValue).toBe("0");
+    expect(arrived.distanceUnit).toBe("ft");
+    expect(arrived.minutes).toBe(0);
   });
 
   test("marks plan unavailable when user location is missing", () => {

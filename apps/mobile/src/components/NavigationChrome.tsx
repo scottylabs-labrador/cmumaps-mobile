@@ -22,7 +22,7 @@ import {
   TargetIcon,
   ZapIcon,
 } from "@/components/Icons";
-import { ROUTE_KINDS, type RouteKind, type RoutePlan } from "@/lib/routePlan";
+import { ROUTE_KINDS, type RouteKind, type RoutePlan, type RouteSummary } from "@/lib/routePlan";
 import { theme } from "@/theme";
 
 const MAX_STEPS_HEIGHT = Math.round(Dimensions.get("window").height * 0.8);
@@ -200,6 +200,7 @@ export const TurnByTurnBanner = ({
 interface StepsSheetProps {
   visible: boolean;
   plan: RoutePlan;
+  summary?: RouteSummary | null;
   index: number;
   destinationLabel: string;
   onSelectStep: (index: number) => void;
@@ -210,6 +211,7 @@ interface StepsSheetProps {
 export const StepsSheet = ({
   visible,
   plan,
+  summary,
   index,
   destinationLabel,
   onSelectStep,
@@ -219,7 +221,7 @@ export const StepsSheet = ({
   const instructions = plan.activeRoute?.instructions ?? [];
   const arrived = instructions.length > 0 && index >= instructions.length;
   const current = arrived ? null : instructions[index];
-  const stats = plan.summary;
+  const stats = summary === undefined ? plan.summary : summary;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -352,6 +354,7 @@ export const StepsSheet = ({
 
 interface NavPanelProps {
   plan: RoutePlan;
+  summary?: RouteSummary | null;
   navigating: boolean;
   onSelect: (route: RouteKind) => void;
   onGo: () => void;
@@ -361,14 +364,15 @@ interface NavPanelProps {
 
 export const NavPanel = ({
   plan,
+  summary,
   navigating,
   onSelect,
   onGo,
   onEnd,
   onOpenSteps,
 }: NavPanelProps) => {
-  const stats = plan.summary;
-  const ready = plan.canGo && Boolean(stats);
+  const stats = navigating && summary !== undefined ? summary : plan.summary;
+  const ready = plan.canGo && Boolean(plan.summary);
 
   if (navigating) {
     return (

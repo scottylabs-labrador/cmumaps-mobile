@@ -1,0 +1,103 @@
+name: Deploy to production
+
+on:
+  workflow_dispatch: {}
+
+defaults:
+  image: sdk-57
+  tools:
+    bun: "1.3.5"
+
+jobs:
+  fingerprint:
+    name: Fingerprint
+    type: fingerprint
+    environment: production
+
+  get_android_build:
+    name: Check for an existing Android build
+    needs: [fingerprint]
+    type: get-build
+    params:
+      fingerprint_hash: ${{ needs.fingerprint.outputs.android_fingerprint_hash }}
+      platform: android
+      profile: production
+      distribution: store
+      channel: production
+      wait_for_in_progress: true
+
+  get_ios_build:
+    name: Check for an existing iOS build
+    needs: [fingerprint]
+    type: get-build
+    params:
+      fingerprint_hash: ${{ needs.fingerprint.outputs.ios_fingerprint_hash }}
+      platform: ios
+      profile: production
+      distribution: store
+      channel: production
+      wait_for_in_progress: true
+
+  build_android:
+    name: Build Android
+    needs: [get_android_build]
+    if: ${{ !needs.get_android_build.outputs.build_id }}
+    type: build
+    params:
+      platform: android
+      profile: production
+
+  build_ios:
+    name: Build iOS
+    needs: [get_ios_build]
+    if: ${{ !needs.get_ios_build.outputs.build_id }}
+    type: build
+    params:
+      platform: ios
+      profile: production
+
+  submit_android:
+    name: Submit Android
+    needs: [build_android]
+    type: submit
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      profile: production
+
+  submit_ios:
+    name: Submit iOS
+    needs: [build_ios]
+    type: submit
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
+
+  push_metadata:
+    name: Push App Store metadata
+    needs: [submit_ios]
+    environment: production
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - name: Push store config
+        run: bunx eas-cli metadata:push --profile production --non-interactive
+
+  publish_android_update:
+    name: Publish Android update
+    needs: [get_android_build]
+    if: ${{ needs.get_android_build.outputs.build_id }}
+    type: update
+    environment: production
+    params:
+      branch: production
+      platform: android
+
+  publish_ios_update:
+    name: Publish iOS update
+    needs: [get_ios_build]
+    if: ${{ needs.get_ios_build.outputs.build_id }}
+    type: update
+    environment: production
+    params:
+      branch: production
+      platform: ios

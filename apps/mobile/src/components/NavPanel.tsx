@@ -11,6 +11,7 @@ interface Props {
   navigating: boolean;
   instructionIndex: number;
   error?: string;
+  canGo?: boolean;
   onSelect: (route: RouteKind) => void;
   onGo: () => void;
   onEnd: () => void;
@@ -39,6 +40,7 @@ export const NavPanel = ({
   navigating,
   instructionIndex,
   error,
+  canGo = true,
   onSelect,
   onGo,
   onEnd,
@@ -110,7 +112,11 @@ export const NavPanel = ({
           </Pressable>
         </View>
       ) : (
-        <Pressable onPress={onGo} style={styles.go} disabled={!route}>
+        <Pressable
+          onPress={onGo}
+          style={[styles.go, !(route && canGo) ? styles.goDisabled : null]}
+          disabled={!(route && canGo)}
+        >
           <Text style={styles.primaryText}>Go</Text>
         </Pressable>
       )}
@@ -209,6 +215,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     marginTop: 16,
     paddingVertical: 12,
+  },
+  goDisabled: {
+    opacity: 0.4,
   },
   end: {
     backgroundColor: theme.danger,

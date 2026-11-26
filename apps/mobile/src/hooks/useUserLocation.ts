@@ -2,6 +2,27 @@ import { useEffect } from "react";
 import * as Location from "expo-location";
 import { useMapStore } from "@/store";
 
+const watchOptions: Location.LocationOptions = {
+  accuracy: Location.Accuracy.Balanced,
+  distanceInterval: 8,
+};
+
+const startWatch = async (
+  setUserPosition: (position: { latitude: number; longitude: number } | null) => void,
+) => {
+  const position = await Location.getCurrentPositionAsync({});
+  setUserPosition({
+    latitude: position.coords.latitude,
+    longitude: position.coords.longitude,
+  });
+  return Location.watchPositionAsync(watchOptions, (next) => {
+    setUserPosition({
+      latitude: next.coords.latitude,
+      longitude: next.coords.longitude,
+    });
+  });
+};
+
 export const useUserLocation = () => {
   const setUserPosition = useMapStore((state) => state.setUserPosition);
   const setLocationPromptVisible = useMapStore((state) => state.setLocationPromptVisible);
@@ -20,18 +41,7 @@ export const useUserLocation = () => {
         return;
       }
       setLocationPromptVisible(false);
-      subscription = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.Balanced,
-          distanceInterval: 8,
-        },
-        (position) => {
-          setUserPosition({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-      );
+      subscription = await startWatch(setUserPosition);
     };
 
     watch().catch(() => {
@@ -50,11 +60,8 @@ export const requestUserLocation = async () => {
   if (result.status !== Location.PermissionStatus.GRANTED) {
     return false;
   }
-  const position = await Location.getCurrentPositionAsync({});
-  useMapStore.getState().setUserPosition({
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude,
-  });
+  const setUserPosition = useMapStore.getState().setUserPosition;
+  await startWatch(setUserPosition);
   useMapStore.getState().setLocationPromptVisible(false);
   return true;
 };

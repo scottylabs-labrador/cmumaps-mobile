@@ -44,6 +44,12 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 2. Open the project with `xcrun simctl openurl booted exp://127.0.0.1:8081`.
 3. Done when the CMU Maps search field is on the map. The location card is the app asking for permission.
 
+#### Location (Directions from “Your location”)
+
+1. Accept the in-app location prompt (“Enable location”) so Expo Go gets When In Use permission.
+2. Set a campus coordinate on the simulator: `xcrun simctl location booted set 40.4433,-79.9436` (or Simulator → Features → Location → Custom Location near campus).
+3. After grant, `userPosition` should fill and Directions from “Your location” should return a real route (not 0 ft). Do not rely on an in-app fake GPS for local testing.
+
 ### Standard commands
 
 - **Lint/check**: `bun run check` runs `vp check` (Oxfmt, Oxlint, and tsrs typecheck).

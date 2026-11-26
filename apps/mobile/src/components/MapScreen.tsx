@@ -188,8 +188,14 @@ export const MapScreen = () => {
   const building = buildingCode ? buildings.data?.[buildingCode] : undefined;
   const needsSignIn = Boolean(floor) && !canSeeFloor;
   const navOpen = Boolean(src && dst);
-  const line = routeLine(routes.data, selectedRoute);
+  const originReady = src !== "user" || Boolean(userPosition);
+  const line = originReady ? routeLine(routes.data, selectedRoute) : [];
   const currentInstruction = routes.data?.[selectedRoute]?.instructions[instructionIndex];
+  const navError = !originReady
+    ? "Turn on location or choose a start."
+    : routes.isError
+      ? "No route for that pair."
+      : (start.error ?? end.error);
 
   const camera = (() => {
     if (navigating && currentInstruction) {
@@ -394,7 +400,8 @@ export const MapScreen = () => {
             selected={selectedRoute}
             navigating={navigating}
             instructionIndex={instructionIndex}
-            error={routes.isError ? "No route for that pair." : (start.error ?? end.error)}
+            error={navError}
+            canGo={originReady && Boolean(routes.data?.[selectedRoute])}
             onSelect={setSelectedRoute}
             onGo={() => setNavigating(true)}
             onEnd={() => {

@@ -1,9 +1,9 @@
 import type { Buildings, GeoCoordinate, GeoRooms, Pois } from "@cmumaps/common";
 import { getRoomTypeDetails } from "@cmumaps/common";
 import { useEffect, useRef } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Dimensions, Platform, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polygon, Polyline, type Region } from "react-native-maps";
-import { isInPolygon } from "@/lib/geometry";
+import { cameraForRegion, isInPolygon } from "@/lib/geometry";
 import type { VisibleRoomLabel } from "@/lib/mapSession";
 import { theme } from "@/theme";
 
@@ -41,6 +41,21 @@ const initialRegion = {
   latitudeDelta: 0.006337455593801167,
   longitudeDelta: 0.011960061265583022,
 };
+
+// Fabric's RNMapsMapView passes maxCenterCoordinateDistance straight to
+// MKMapCameraZoomRange, where 0 (< min) makes the initializer return nil;
+// -1 is MKMapCameraZoomDefault (unbounded max zoom-out).
+const cameraZoomRange = {
+  minCenterCoordinateDistance: 5,
+  maxCenterCoordinateDistance: -1,
+};
+
+// Fabric never flips AIRMap.legacyZoomConstraintsEnabled off when setting
+// cameraZoomRange, so regionDidChange still runs applyLegacyZoomConstrains.
+// That path calls setRegion (which resets heading to north) whenever the
+// rotation-inflated getZoomLevel exceeds maxZoom (default 20). Raise it past
+// indoor zoom so rotate gestures stop getting yanked north.
+const iosMaxZoomLevel = 28;
 
 // GeoJSON rings repeat the first point. MapKit closes the shape itself, and the
 // duplicate vertex makes the fill drop out once the map is zoomed in.
@@ -108,7 +123,9 @@ export const CampusMap = ({
       return;
     }
     lastCameraIntent.current = cameraIntent;
-    mapRef.current.animateToRegion(camera, 400);
+    mapRef.current.animateCamera(cameraForRegion(camera, Dimensions.get("window")), {
+      duration: 400,
+    });
   }, [cameraIntent, camera]);
 
   const progressLines =
@@ -119,7 +136,8 @@ export const CampusMap = ({
       ref={mapRef}
       style={StyleSheet.absoluteFill}
       initialRegion={initialRegion}
-      cameraZoomRange={{ minCenterCoordinateDistance: 5 }}
+      cameraZoomRange={cameraZoomRange}
+      maxZoomLevel={Platform.OS === "ios" ? iosMaxZoomLevel : undefined}
       showsUserLocation={Boolean(userPosition)}
       showsBuildings={false}
       pitchEnabled={false}

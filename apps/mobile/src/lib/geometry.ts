@@ -4,6 +4,43 @@ import type { Building, Buildings, GeoCoordinate } from "@cmumaps/common";
 export const FLOOR_ZOOM_DENSITY = 500_000;
 export const ROOM_LABEL_ZOOM_DENSITY = 750_000;
 
+const METERS_PER_DEGREE_LAT = 111_320;
+// Apple MapKit uses a 30-degree vertical field of view at 0 pitch.
+const MAPKIT_HALF_FOV_TAN = Math.tan(Math.PI / 12);
+
+/**
+ * Converts a target region to `animateCamera` parameters (`altitude` for iOS
+ * MapKit, `zoom` for Android Google Maps) without `heading`, so programmatic
+ * camera moves preserve the user's current map rotation.
+ */
+export const cameraForRegion = (
+  region: {
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  },
+  viewport: { width: number; height: number },
+) => {
+  const cosLat = Math.max(Math.cos((region.latitude * Math.PI) / 180), 1e-6);
+  const latMeters = region.latitudeDelta * METERS_PER_DEGREE_LAT;
+  const lonMeters = region.longitudeDelta * METERS_PER_DEGREE_LAT * cosLat;
+  const aspect = viewport.width > 0 ? viewport.height / viewport.width : 1;
+  const altitude = Math.max(latMeters, lonMeters * aspect) / (2 * MAPKIT_HALF_FOV_TAN);
+
+  const zoomLon = Math.log2((360 * (Math.max(viewport.width, 1) / 256)) / region.longitudeDelta);
+  const zoomLat = Math.log2(
+    (360 * cosLat * (Math.max(viewport.height, 1) / 256)) / region.latitudeDelta,
+  );
+  const zoom = Math.min(zoomLon, zoomLat);
+
+  return {
+    center: { latitude: region.latitude, longitude: region.longitude },
+    altitude,
+    zoom,
+  };
+};
+
 export const isInPolygon = (point: GeoCoordinate, vertices: GeoCoordinate[]) => {
   const x = point.longitude;
   const y = point.latitude;

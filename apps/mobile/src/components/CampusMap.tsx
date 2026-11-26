@@ -23,6 +23,8 @@ interface Props {
   selectedBuilding?: string;
   userPosition: GeoCoordinate | null;
   camera: CameraTarget | null;
+  /** Stable key for when to animate; same intent must not re-zoom. */
+  cameraIntent: string;
   onSelectBuilding: (code: string) => void;
   onSelectRoom: (roomName: string) => void;
   onPressMap?: () => void;
@@ -76,6 +78,7 @@ export const CampusMap = ({
   selectedBuilding,
   userPosition,
   camera,
+  cameraIntent,
   onSelectBuilding,
   onSelectRoom,
   onPressMap,
@@ -83,17 +86,18 @@ export const CampusMap = ({
   onRegionChangeComplete,
 }: Props) => {
   const mapRef = useRef<MapView>(null);
-  const openBuilding = rooms ? Object.values(rooms)[0]?.floor.buildingCode : undefined;
-  const cameraKey = camera
-    ? `${camera.latitude}:${camera.longitude}:${camera.latitudeDelta}:${camera.longitudeDelta}`
-    : "";
+  const lastCameraIntent = useRef("");
 
   useEffect(() => {
-    if (!camera || !mapRef.current) {
+    if (!camera || !cameraIntent || !mapRef.current) {
       return;
     }
+    if (lastCameraIntent.current === cameraIntent) {
+      return;
+    }
+    lastCameraIntent.current = cameraIntent;
     mapRef.current.animateToRegion(camera, 400);
-  }, [cameraKey, camera]);
+  }, [cameraIntent, camera]);
 
   const progressLines =
     completedLine && remainingLine ? { completed: completedLine, remaining: remainingLine } : null;
@@ -102,7 +106,7 @@ export const CampusMap = ({
     <MapView
       ref={mapRef}
       style={StyleSheet.absoluteFill}
-      initialRegion={camera ?? initialRegion}
+      initialRegion={initialRegion}
       showsUserLocation={Boolean(userPosition)}
       showsBuildings={false}
       pitchEnabled={false}
@@ -113,7 +117,7 @@ export const CampusMap = ({
       {buildings
         ? Object.entries(buildings).map(([code, building]) => {
             const outer = ring(building.shape[0]);
-            if (outer.length < 3 || code === openBuilding) {
+            if (outer.length < 3) {
               return null;
             }
             const selected = code === selectedBuilding;

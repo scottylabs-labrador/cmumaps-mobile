@@ -108,6 +108,11 @@ export const MapScreen = () => {
   const place = parsePlace(suffix === "" && floorParam ? floorParam : suffix, buildings.data);
   const floor = focusedFloor(place, buildings.data);
   const activeFloor = floor ?? mapFloor;
+  const placeBuildingCode =
+    place.kind === "building" || place.kind === "floor" || place.kind === "room"
+      ? place.buildingCode
+      : undefined;
+  const buildingCode = placeBuildingCode ?? activeFloor?.buildingCode ?? floor?.buildingCode;
   const floorCode = activeFloor ? `${activeFloor.buildingCode}-${activeFloor.floor}` : null;
   const canSeeFloor =
     Boolean(activeFloor) && (signedIn || isPublicBuilding(activeFloor?.buildingCode));
@@ -146,6 +151,7 @@ export const MapScreen = () => {
   const { start, end, routes } = useRoutes(src, dst);
 
   const sheet = useMapStore((state) => state.sheet);
+  const setSheet = useMapStore((state) => state.setSheet);
   const cycleSheet = useMapStore((state) => state.cycleSheet);
   const searchOpen = useMapStore((state) => state.searchOpen);
   const setSearchOpen = useMapStore((state) => state.setSearchOpen);
@@ -167,6 +173,10 @@ export const MapScreen = () => {
       setSelectedRoute("Inside");
     }
   }, [routes.data, selectedRoute, setSelectedRoute]);
+
+  useEffect(() => {
+    setSheet("default");
+  }, [pathname, setSheet]);
 
   useEffect(() => {
     if (!navigating) {
@@ -281,10 +291,6 @@ export const MapScreen = () => {
     );
   };
 
-  const buildingCode =
-    place.kind === "building" || place.kind === "floor" || place.kind === "room"
-      ? place.buildingCode
-      : (activeFloor?.buildingCode ?? floor?.buildingCode);
   const building = buildingCode ? buildings.data?.[buildingCode] : undefined;
   const needsSignIn = Boolean(floor) && !canSeeFloor;
   const navOpen = Boolean(src && dst);
@@ -316,7 +322,32 @@ export const MapScreen = () => {
     return { completed, remaining };
   })();
 
+  const cameraIntent = (() => {
+    if (navigating) {
+      return `nav:${selectedRoute}:${instructionIndex}`;
+    }
+    if (navOpen && line.length > 1) {
+      return `route:${src}:${dst}:${selectedRoute}`;
+    }
+    if (place.kind === "coordinate") {
+      return `coord:${place.latitude},${place.longitude}`;
+    }
+    if (place.kind === "room") {
+      return `room:${place.buildingCode}-${place.roomName}`;
+    }
+    if (place.kind === "floor") {
+      return `floor:${place.buildingCode}-${place.floor}`;
+    }
+    if (place.kind === "building") {
+      return `building:${place.buildingCode}`;
+    }
+    return "";
+  })();
+
   const camera = (() => {
+    if (!cameraIntent) {
+      return null;
+    }
     if (navigating && currentInstruction) {
       const route = routes.data?.[selectedRoute];
       const node =
@@ -356,7 +387,7 @@ export const MapScreen = () => {
         };
       }
     }
-    if (building) {
+    if (placeBuildingCode && building) {
       return {
         latitude: building.labelLatitude,
         longitude: building.labelLongitude,
@@ -383,7 +414,6 @@ export const MapScreen = () => {
     return "";
   };
 
-  const mapReady = place.kind !== "pending";
   const searchTop = insets.top + 16;
   const showSearchResults = searchOpen && searchQuery.trim().length > 0;
   const clearSearch = () => {
@@ -394,39 +424,37 @@ export const MapScreen = () => {
 
   return (
     <View style={styles.fill}>
-      {mapReady ? (
-        <CampusMap
-          buildings={buildings.data}
-          rooms={mergedRooms}
-          pois={canSeeFloor ? pois.data : undefined}
-          line={line}
-          completedLine={progressLines?.completed}
-          remainingLine={progressLines?.remaining}
-          selectedBuilding={buildingCode}
-          selectedRoom={place.kind === "room" ? place.roomName : undefined}
-          userPosition={userPosition}
-          camera={camera}
-          onSelectBuilding={selectBuilding}
-          onSelectRoom={(roomName) => {
-            if (buildingCode) {
-              selectRoom(buildingCode, roomName);
-            }
-          }}
-          onPressMap={() => {
-            setGearOpen(false);
-            setAboutOpen(false);
-            if (!navigating && place.kind !== "home") {
-              open("/");
-            }
-          }}
-          onLongPress={(coordinate: GeoCoordinate) =>
-            open(`/${coordinate.latitude},${coordinate.longitude}`)
+      <CampusMap
+        buildings={buildings.data}
+        rooms={mergedRooms}
+        pois={canSeeFloor ? pois.data : undefined}
+        line={line}
+        completedLine={progressLines?.completed}
+        remainingLine={progressLines?.remaining}
+        selectedBuilding={placeBuildingCode}
+        selectedRoom={place.kind === "room" ? place.roomName : undefined}
+        userPosition={userPosition}
+        camera={camera}
+        cameraIntent={cameraIntent}
+        onSelectBuilding={selectBuilding}
+        onSelectRoom={(roomName) => {
+          if (placeBuildingCode || buildingCode) {
+            selectRoom(placeBuildingCode ?? buildingCode ?? "", roomName);
           }
-          onRegionChangeComplete={onRegionChangeComplete}
-        />
-      ) : (
-        <View style={StyleSheet.absoluteFill} />
-      )}
+        }}
+        onPressMap={() => {
+          setGearOpen(false);
+          setAboutOpen(false);
+          if (!navigating && place.kind !== "home") {
+            setMapFloor(null);
+            open("/");
+          }
+        }}
+        onLongPress={(coordinate: GeoCoordinate) =>
+          open(`/${coordinate.latitude},${coordinate.longitude}`)
+        }
+        onRegionChangeComplete={onRegionChangeComplete}
+      />
       {navigating && currentInstruction ? (
         <View style={[styles.banner, { top: searchTop }]}>
           <Text style={styles.bannerEyebrow}>Next</Text>

@@ -4,8 +4,6 @@ import type { RouteKind } from "@/store";
 import { theme } from "@/theme";
 
 interface Props {
-  srcLabel: string;
-  dstLabel: string;
   routes: Record<string, PreciseRoute> | undefined;
   selected: RouteKind;
   navigating: boolean;
@@ -14,8 +12,6 @@ interface Props {
   onSelect: (route: RouteKind) => void;
   onGo: () => void;
   onEnd: () => void;
-  onBack: () => void;
-  onSwap: () => void;
 }
 
 const summary = (route: PreciseRoute | undefined) => {
@@ -30,8 +26,6 @@ const summary = (route: PreciseRoute | undefined) => {
 };
 
 export const NavPanel = ({
-  srcLabel,
-  dstLabel,
   routes,
   selected,
   navigating,
@@ -40,8 +34,6 @@ export const NavPanel = ({
   onSelect,
   onGo,
   onEnd,
-  onBack,
-  onSwap,
 }: Props) => {
   const route = routes?.[selected];
   const stats = summary(route);
@@ -66,17 +58,6 @@ export const NavPanel = ({
       <View style={styles.handleRow}>
         <View style={styles.grabber} />
       </View>
-      <View style={styles.header}>
-        <Pressable onPress={onBack} accessibilityLabel="Back">
-          <Text style={styles.link}>Back</Text>
-        </Pressable>
-        <Pressable onPress={onSwap} accessibilityLabel="Swap start and destination">
-          <Text style={styles.link}>Swap</Text>
-        </Pressable>
-      </View>
-      <Text style={styles.routeLabel} numberOfLines={1}>
-        {srcLabel || "Choose a start"} → {dstLabel || "Choose a destination"}
-      </Text>
       <View style={styles.chips}>
         {(["Fastest", "Inside"] as const).map((kind) => {
           const available = Boolean(routes?.[kind]);
@@ -93,19 +74,26 @@ export const NavPanel = ({
           );
         })}
       </View>
-      <View style={styles.stats}>
-        <Stat value={stats.arrival} label="arrival" />
-        <Stat value={String(stats.minutes)} label="min" />
-        <Stat value={String(stats.distance)} label="ft" />
+      <View style={styles.footer}>
+        <View style={styles.stats}>
+          {error ? (
+            <Text style={styles.error}>{error}</Text>
+          ) : (
+            <>
+              <Stat value={stats.arrival} label="arrival" />
+              <Stat value={String(stats.minutes)} label="min" />
+              <Stat value={String(stats.distance)} label="ft" />
+            </>
+          )}
+        </View>
+        <Pressable
+          onPress={onGo}
+          style={[styles.go, !(route && canGo) ? styles.goDisabled : null]}
+          disabled={!(route && canGo)}
+        >
+          <Text style={styles.primaryText}>Go</Text>
+        </Pressable>
       </View>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Pressable
-        onPress={onGo}
-        style={[styles.go, !(route && canGo) ? styles.goDisabled : null]}
-        disabled={!(route && canGo)}
-      >
-        <Text style={styles.primaryText}>Go</Text>
-      </Pressable>
     </View>
   );
 };
@@ -153,24 +141,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 8,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  link: {
-    color: theme.greenDark,
-    fontWeight: "700",
-  },
-  routeLabel: {
-    color: theme.ink,
-    fontSize: 15,
-    fontWeight: "600",
-  },
   chips: {
     flexDirection: "row",
     gap: 8,
-    marginTop: 16,
+    marginTop: 4,
   },
   chip: {
     backgroundColor: theme.canvas,
@@ -188,11 +162,16 @@ const styles = StyleSheet.create({
   chipOff: {
     color: theme.muted,
   },
+  footer: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 16,
+  },
   stats: {
     flexDirection: "row",
     flex: 1,
     gap: 20,
-    marginTop: 16,
   },
   statValue: {
     color: theme.ink,
@@ -204,13 +183,14 @@ const styles = StyleSheet.create({
   },
   error: {
     color: theme.danger,
-    marginTop: 8,
+    flex: 1,
   },
   go: {
     alignItems: "center",
     backgroundColor: theme.green,
     borderRadius: 24,
-    marginTop: 16,
+    minWidth: 88,
+    paddingHorizontal: 24,
     paddingVertical: 14,
   },
   goDisabled: {

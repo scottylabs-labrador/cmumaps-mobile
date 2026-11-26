@@ -1,4 +1,14 @@
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMemo, useRef } from "react";
+import {
+  Animated,
+  Dimensions,
+  PanResponder,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSearch } from "@/api/client";
 import { isPublicBuilding } from "@/lib/publicBuilding";
 import { theme } from "@/theme";
@@ -30,14 +40,57 @@ export const SearchResults = ({
 }: Props) => {
   const results = useSearch(query);
   const trimmed = query.trim();
+  const dragY = useRef(new Animated.Value(0)).current;
+
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          gesture.dy > 8 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+        onPanResponderMove: (_, gesture) => {
+          if (gesture.dy > 0) {
+            dragY.setValue(gesture.dy);
+          }
+        },
+        onPanResponderRelease: (_, gesture) => {
+          const shouldClose = gesture.dy > 120 || gesture.vy > 1.1;
+          if (shouldClose) {
+            Animated.timing(dragY, {
+              toValue: SHEET_HEIGHT,
+              duration: 180,
+              useNativeDriver: true,
+            }).start(() => {
+              dragY.setValue(0);
+              onClose();
+            });
+            return;
+          }
+          Animated.spring(dragY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 4,
+          }).start();
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(dragY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 4,
+          }).start();
+        },
+      }),
+    [dragY, onClose],
+  );
 
   if (!trimmed) {
     return null;
   }
 
   return (
-    <View style={[styles.sheet, { height: SHEET_HEIGHT }]}>
-      <View style={styles.handleRow}>
+    <Animated.View
+      style={[styles.sheet, { height: SHEET_HEIGHT, transform: [{ translateY: dragY }] }]}
+    >
+      <View style={styles.handleRow} {...pan.panHandlers}>
         <View style={styles.grabber} />
       </View>
       <View style={styles.header}>
@@ -110,7 +163,7 @@ export const SearchResults = ({
           <Text style={styles.meta}>No places match that search.</Text>
         ) : null}
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 };
 

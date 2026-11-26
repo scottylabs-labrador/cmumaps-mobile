@@ -531,9 +531,10 @@ export const MapScreen = () => {
       ) : (
         <View style={[styles.searchWrap, { top: searchTop }]}>
           <View style={styles.searchPill}>
+            <Text style={styles.searchIcon}>⌕</Text>
             <TextInput
               value={searchQuery}
-              placeholder="Search CMU Maps"
+              placeholder="Search here"
               placeholderTextColor={theme.muted}
               style={styles.search}
               onFocus={() => {
@@ -624,8 +625,6 @@ export const MapScreen = () => {
           <AboutPanel visible onClose={() => setAboutOpen(false)} />
         ) : navOpen && !showSearchResults ? (
           <NavPanel
-            srcLabel={start.label}
-            dstLabel={end.label}
             routes={routes.data}
             selected={selectedRoute}
             navigating={navigating}
@@ -637,11 +636,6 @@ export const MapScreen = () => {
               resetNav();
               open(pathname);
             }}
-            onBack={() => {
-              resetNav();
-              open(pathname);
-            }}
-            onSwap={() => open(pathname, dst, src)}
           />
         ) : !showSearchResults ? (
           <PlaceSheet
@@ -752,8 +746,17 @@ const styles = StyleSheet.create({
     backgroundColor: theme.paper,
     borderRadius: 24,
     flexDirection: "row",
-    paddingLeft: 16,
+    paddingLeft: 14,
     paddingRight: 8,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  searchIcon: {
+    color: theme.muted,
+    fontSize: 20,
+    marginRight: 6,
   },
   gear: {
     left: 12,

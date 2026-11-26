@@ -101,7 +101,14 @@ export const PlaceSheet = ({
         <View style={styles.grabber} />
       </Pressable>
       {photo && sheet !== "collapsed" ? <Image source={photo} style={styles.hero} /> : null}
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{title}</Text>
+        {sheet === "collapsed" && !needsSignIn ? (
+          <Pressable accessibilityLabel="Share" onPress={onShare} style={styles.shareIcon}>
+            <Text style={styles.shareIconText}>↗</Text>
+          </Pressable>
+        ) : null}
+      </View>
       {sheet !== "collapsed" ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       {sheet === "expanded" ? <Text style={styles.detail}>{detail}</Text> : null}
       {needsSignIn ? (
@@ -111,11 +118,13 @@ export const PlaceSheet = ({
       ) : (
         <View style={styles.actions}>
           <Pressable style={styles.primary} onPress={onDirections}>
-            <Text style={styles.primaryText}>Directions</Text>
+            <Text style={styles.primaryText}>→ Directions</Text>
           </Pressable>
-          <Pressable style={styles.secondary} onPress={onShare}>
-            <Text style={styles.secondaryText}>Share</Text>
-          </Pressable>
+          {sheet !== "collapsed" ? (
+            <Pressable style={styles.secondary} onPress={onShare}>
+              <Text style={styles.secondaryText}>Share</Text>
+            </Pressable>
+          ) : null}
         </View>
       )}
     </Animated.View>
@@ -149,9 +158,28 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     width: "100%",
   },
+  titleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+  },
   title: {
     color: theme.ink,
+    flex: 1,
     fontSize: 22,
+    fontWeight: "700",
+  },
+  shareIcon: {
+    alignItems: "center",
+    backgroundColor: theme.canvas,
+    borderRadius: 19,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  shareIconText: {
+    color: theme.ink,
+    fontSize: 18,
     fontWeight: "700",
   },
   subtitle: {
@@ -166,12 +194,11 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: "row",
     gap: 8,
-    marginTop: 16,
+    marginTop: 12,
   },
   primary: {
     backgroundColor: theme.green,
     borderRadius: 20,
-    marginTop: 16,
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
@@ -184,7 +211,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     justifyContent: "center",
-    marginTop: 16,
     paddingHorizontal: 16,
   },
   secondaryText: {

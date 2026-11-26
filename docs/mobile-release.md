@@ -1,13 +1,13 @@
 # Release the mobile app
 
-A push to `main` whose Check workflow is green is a production release. The Release workflow runs [apps/mobile/.eas/workflows/deploy-production.yml](../apps/mobile/.eas/workflows/deploy-production.yml) for that commit. The committed `version` in [apps/mobile/app.config.ts](../apps/mobile/app.config.ts) is the store version. `runtimeVersion` uses policy `appVersion`, so that same value is the runtime version. An over-the-air update applies only to binaries built with that version. Leave `version` unchanged when the update should reach those binaries. Raise `version` when the native project changes, so the new binaries have their own runtime version.
+A push to `main` is a production release. The Release workflow runs [apps/mobile/.eas/workflows/deploy-production.yml](../apps/mobile/.eas/workflows/deploy-production.yml) for that commit. The committed `version` in [apps/mobile/app.config.ts](../apps/mobile/app.config.ts) is the store version. `runtimeVersion` uses policy `appVersion`, so that same value is the runtime version. An over-the-air update applies only to binaries built with that version. Leave `version` unchanged when the update should reach those binaries. Raise `version` when the native project changes, so the new binaries have their own runtime version.
 
 The fingerprint decides the release. `version`, `ios.buildNumber`, and `android.versionCode` stay out of the hash.
 
 - A platform with a production build for its fingerprint: publish that platform's over-the-air update. Binaries built with the committed version receive it.
 - A platform with no production build for its fingerprint, including the first release: build and submit that platform. Today the first version is `1.0.0`.
 
-Android goes live on the Play production track. iOS is uploaded to TestFlight. After an iOS submit, the workflow runs `eas metadata:push` from [apps/mobile/store.config.json](../apps/mobile/store.config.json) (Apple only). A person submits the iOS build for App Review. Pull requests, `staging`, and other branches do not release. The Release workflow runs only after its file is on the default branch.
+Android goes live on the Play production track. iOS is uploaded to TestFlight. After an iOS submit, the workflow runs `eas metadata:push` from [apps/mobile/store.config.json](../apps/mobile/store.config.json) (Apple only). A person submits the iOS build for App Review. Pull requests, `staging`, and other branches do not release.
 
 The store version and the runtime version are the committed `version`. EAS `autoIncrement` sets `ios.buildNumber` and `android.versionCode`. Those build numbers stay off the runtime version.
 

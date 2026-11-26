@@ -304,6 +304,7 @@ export const MapScreen = () => {
     setSearchOpen(false);
     setSearchFocused(false);
     setNavEdit(null);
+    Keyboard.dismiss();
   }, [setSearchOpen, setSearchQuery]);
 
   const exitNavigation = useCallback(() => {
@@ -351,6 +352,7 @@ export const MapScreen = () => {
         }}
         onPressMap={() => {
           closeModal();
+          clearSearch();
           if (!navigating && target.kind !== "home") {
             setMapFloor((current) => mapFloorAfterClosingPlaceSheet(activeFloor, current));
             open("/");

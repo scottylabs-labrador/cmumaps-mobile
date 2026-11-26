@@ -11,7 +11,7 @@ import {
 } from "@/lib/campusTarget";
 import { theme } from "@/theme";
 
-const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.54);
+const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.5);
 
 interface Props {
   query: string;

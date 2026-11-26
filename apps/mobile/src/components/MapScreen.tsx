@@ -16,7 +16,7 @@ import { SearchResults } from "@/components/SearchResults";
 import { routeLine, useRoutes } from "@/hooks/useRoutes";
 import { requestUserLocation, useUserLocation } from "@/hooks/useUserLocation";
 import { useSignedInUser } from "@/hooks/useWaypoint";
-import { buildingAt, FLOOR_ZOOM_DENSITY } from "@/lib/geometry";
+import { buildingAt, FLOOR_ZOOM_DENSITY, regionForCoordinates } from "@/lib/geometry";
 import { focusedFloor, type Place, parsePlace, suffixFromPathname } from "@/lib/place";
 import { isPublicBuilding } from "@/lib/publicBuilding";
 import { shareUrl } from "@/lib/shareUrl";
@@ -192,6 +192,26 @@ export const MapScreen = () => {
   const currentInstruction = routes.data?.[selectedRoute]?.instructions[instructionIndex];
 
   const camera = (() => {
+    if (navigating && currentInstruction) {
+      const route = routes.data?.[selectedRoute];
+      const node =
+        instructionIndex === 0
+          ? route?.path.path[0]
+          : route?.path.path.find(
+              (entry) => entry.id === route.instructions[instructionIndex - 1]?.nodeId,
+            );
+      if (node?.coordinate) {
+        return {
+          latitude: node.coordinate.latitude,
+          longitude: node.coordinate.longitude,
+          latitudeDelta: 0.0008,
+          longitudeDelta: 0.0008,
+        };
+      }
+    }
+    if (navOpen && line.length > 1) {
+      return regionForCoordinates(line);
+    }
     if (place.kind === "coordinate") {
       return {
         latitude: place.latitude,

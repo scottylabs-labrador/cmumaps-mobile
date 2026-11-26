@@ -1,5 +1,4 @@
-import { MapScreen } from "@/components/MapScreen";
-
+/** URL sync only — MapScreen lives in the root layout so MapView never remounts. */
 export default function MapRoute() {
-  return <MapScreen />;
+  return null;
 }

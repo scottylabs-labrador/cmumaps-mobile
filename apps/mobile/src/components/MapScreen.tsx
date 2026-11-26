@@ -9,7 +9,12 @@ import { APP_REVIEW_EMAIL, signIn, signInWithPassword, signOut } from "@/auth/cl
 import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
 import { AboutPanel } from "@/components/AboutPanel";
-import { AccountDial, PromptCard, ReviewPasswordPrompt } from "@/components/GearMenu";
+import {
+  AccountCardModal,
+  AccountDial,
+  PromptCard,
+  ReviewPasswordPrompt,
+} from "@/components/GearMenu";
 import { CloseIcon, SearchIcon } from "@/components/Icons";
 import { NavPanel } from "@/components/NavPanel";
 import { PlaceSheet } from "@/components/PlaceSheet";
@@ -82,6 +87,7 @@ export const MapScreen = () => {
   const dst = one(params.dst) ?? "";
   const floorParam = one(params.floor) ?? "";
   const [gearOpen, setGearOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [navEdit, setNavEdit] = useState<"src" | "dst" | null>(null);
   const [reviewPromptOpen, setReviewPromptOpen] = useState(false);
@@ -617,17 +623,33 @@ export const MapScreen = () => {
           />
         </View>
       ) : null}
-      {!showSearchResults ? (
-        <View style={[styles.gear, { bottom: insets.bottom + 156 }]}>
+      {gearOpen ? (
+        <Pressable
+          accessibilityLabel="Close menu"
+          style={styles.dialBackdrop}
+          onPress={() => setGearOpen(false)}
+        />
+      ) : null}
+      {!showSearchResults &&
+      !navOpen &&
+      !aboutOpen &&
+      (place.kind === "home" || place.kind === "pending") ? (
+        <View style={[styles.gear, { bottom: insets.bottom + 24 }]}>
           <AccountDial
             open={gearOpen}
             signedIn={signedIn}
             onToggle={() => setGearOpen((open) => !open)}
-            onSignIn={() => startSignIn(href(pathname, src || undefined, dst || undefined))}
-            onReviewSignIn={openReviewSignIn}
-            onSignOut={() => {
+            onSignIn={() => {
               setGearOpen(false);
-              signOut().catch(() => undefined);
+              startSignIn(href(pathname, src || undefined, dst || undefined));
+            }}
+            onReviewSignIn={() => {
+              setGearOpen(false);
+              openReviewSignIn();
+            }}
+            onAccount={() => {
+              setGearOpen(false);
+              setAccountOpen(true);
             }}
             onAbout={() => {
               setGearOpen(false);
@@ -636,18 +658,28 @@ export const MapScreen = () => {
           />
         </View>
       ) : null}
-      <View style={[styles.prompts, { top: searchTop + 64 }]}>
-        <PromptCard
-          visible={locationPromptVisible && !navOpen}
-          title="Turn on location"
-          body="Directions from your location need permission to use the device location."
-          action="Enable location"
-          onAction={() => {
-            requestUserLocation().catch(() => undefined);
-          }}
-          onDismiss={() => setLocationPromptVisible(false)}
-        />
-      </View>
+      <AccountCardModal
+        visible={accountOpen}
+        name={user?.name}
+        email={user?.email}
+        onSignOut={() => {
+          setAccountOpen(false);
+          signOut().catch(() => undefined);
+        }}
+        onDismiss={() => setAccountOpen(false)}
+      />
+      <PromptCard
+        visible={locationPromptVisible}
+        title="Enable your location"
+        body="Allow CMU Maps to use your current location to find routes and show where you are on campus."
+        action="Allow this time"
+        dismissLabel="Don't allow"
+        onAction={() => {
+          setLocationPromptVisible(false);
+          requestUserLocation().catch(() => undefined);
+        }}
+        onDismiss={() => setLocationPromptVisible(false)}
+      />
       <ReviewPasswordPrompt
         visible={reviewPromptOpen}
         error={reviewError}
@@ -814,8 +846,13 @@ const styles = StyleSheet.create({
   searchIconBox: {
     marginRight: 10,
   },
+  dialBackdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(0, 0, 0, 0.28)",
+    zIndex: 24,
+  },
   gear: {
-    left: 16,
+    left: 20,
     position: "absolute",
     zIndex: 25,
   },
@@ -974,10 +1011,6 @@ const styles = StyleSheet.create({
     left: -70,
     position: "absolute",
     zIndex: 20,
-  },
-  prompts: {
-    left: 16,
-    position: "absolute",
   },
   bottom: {
     bottom: 0,

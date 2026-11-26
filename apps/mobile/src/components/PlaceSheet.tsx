@@ -2,12 +2,12 @@ import { useMemo, useRef } from "react";
 import { Animated, Image, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { ArrowRightIcon, DoorIcon, ShareIcon } from "@/components/Icons";
 import { locationImage } from "@/lib/locationImage";
-import type { Place } from "@/lib/place";
+import { type CampusTarget, targetBuildingCode } from "@/lib/campusTarget";
 import type { SheetState } from "@/store";
 import { theme } from "@/theme";
 
 interface Props {
-  place: Place;
+  target: CampusTarget;
   title: string;
   subtitle: string;
   detail: string;
@@ -22,7 +22,7 @@ interface Props {
 }
 
 export const PlaceSheet = ({
-  place,
+  target,
   title,
   subtitle,
   detail,
@@ -80,19 +80,18 @@ export const PlaceSheet = ({
     [dragY, onClose, onCycle],
   );
 
-  if (place.kind === "home" || place.kind === "pending") {
+  if (target.kind === "home" || target.kind === "pending") {
     return null;
   }
 
-  const buildingCode =
-    place.kind === "building" || place.kind === "floor" || place.kind === "room"
-      ? place.buildingCode
-      : undefined;
-  const roomName = place.kind === "room" ? place.roomName : undefined;
+  const buildingCode = targetBuildingCode(target);
+  const roomName = target.kind === "room" ? target.roomName : undefined;
   const photo = locationImage(buildingCode, roomName);
   const showHero = Boolean(photo && sheet !== "collapsed");
   const roomPrefix =
-    place.kind === "room" && title.startsWith(`${place.buildingCode} `) ? place.buildingCode : null;
+    target.kind === "room" && title.startsWith(`${target.buildingCode} `)
+      ? target.buildingCode
+      : null;
 
   return (
     <Animated.View style={[styles.shadowWrap, { transform: [{ translateY: dragY }] }]}>
@@ -124,7 +123,7 @@ export const PlaceSheet = ({
         )}
 
         <View style={[styles.body, showHero ? styles.bodyWithHero : null]}>
-          {place.kind === "room" && roomType && sheet !== "collapsed" ? (
+          {target.kind === "room" && roomType && sheet !== "collapsed" ? (
             <View style={styles.roomBadge}>
               <DoorIcon size={15} color={theme.brandDark} />
               <Text style={styles.roomBadgeText}>{roomType}</Text>

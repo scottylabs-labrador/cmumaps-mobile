@@ -1,4 +1,4 @@
-import type { Buildings, GeoCoordinate, GeoRooms } from "@cmumaps/common";
+import type { GeoCoordinate } from "@cmumaps/common";
 import { router, useGlobalSearchParams, usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Dimensions, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
@@ -31,56 +31,31 @@ import { routeLine, useRoutes } from "@/hooks/useRoutes";
 import { useShakeGesture } from "@/hooks/useShakeGesture";
 import { requestUserLocation, useUserLocation } from "@/hooks/useUserLocation";
 import { useSignedInUser } from "@/hooks/useWaypoint";
+import { env } from "@/env";
+import {
+  canViewFloor,
+  formatFloorCode,
+  parseCampusTarget,
+  targetBuildingCode,
+  targetDetail,
+  targetFocusedFloor,
+  targetHref,
+  targetPath,
+  targetShareUrl,
+  targetSubtitle,
+  targetTitle,
+  targetWaypointToken,
+} from "@/lib/campusTarget";
 import {
   buildingAt,
   buildingsInView,
   FLOOR_ZOOM_DENSITY,
   regionForCoordinates,
 } from "@/lib/geometry";
-import { focusedFloor, type Place, parsePlace, suffixFromPathname } from "@/lib/place";
-import { isPublicBuilding } from "@/lib/publicBuilding";
-import { shareUrl } from "@/lib/shareUrl";
 import { useMapStore } from "@/store";
 import { theme } from "@/theme";
 
 const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
-
-const href = (path: string, src?: string, dst?: string) => {
-  const params = new URLSearchParams();
-  if (src) {
-    params.set("src", src);
-  }
-  if (dst) {
-    params.set("dst", dst);
-  }
-  const search = params.toString();
-  return search ? `${path}?${search}` : path;
-};
-
-const placeTitle = (
-  place: Place,
-  buildings: Buildings | undefined,
-  rooms: GeoRooms | undefined,
-) => {
-  if (place.kind === "coordinate") {
-    return "Pinned place";
-  }
-  if (place.kind === "unknown") {
-    return "That link is not on the map";
-  }
-  if (place.kind !== "building" && place.kind !== "floor" && place.kind !== "room") {
-    return "";
-  }
-  const building = buildings?.[place.buildingCode];
-  if (place.kind === "room") {
-    const room = rooms?.[place.roomName];
-    return room?.alias || `${building?.name ?? place.buildingCode} ${place.roomName}`;
-  }
-  if (place.kind === "floor") {
-    return `${building?.name ?? place.buildingCode} floor ${place.floor}`;
-  }
-  return building?.name ?? place.buildingCode;
-};
 
 export const MapScreen = () => {
   const insets = useSafeAreaInsets();
@@ -120,18 +95,13 @@ export const MapScreen = () => {
     setReportOpen(true);
   }, !reportOpen && !reviewPromptOpen);
   const buildings = useBuildings();
-  const suffix = suffixFromPathname(pathname);
-  const place = parsePlace(suffix === "" && floorParam ? floorParam : suffix, buildings.data);
-  const floor = focusedFloor(place, buildings.data);
+  const target = parseCampusTarget(pathname, buildings.data, floorParam);
+  const floor = targetFocusedFloor(target, buildings.data);
   const activeFloor = floor ?? mapFloor;
-  const placeBuildingCode =
-    place.kind === "building" || place.kind === "floor" || place.kind === "room"
-      ? place.buildingCode
-      : undefined;
-  const buildingCode = placeBuildingCode ?? activeFloor?.buildingCode ?? floor?.buildingCode;
-  const floorCode = activeFloor ? `${activeFloor.buildingCode}-${activeFloor.floor}` : null;
-  const canSeeFloor =
-    Boolean(activeFloor) && (signedIn || isPublicBuilding(activeFloor?.buildingCode));
+  const targetBuilding = targetBuildingCode(target);
+  const buildingCode = targetBuilding ?? activeFloor?.buildingCode ?? floor?.buildingCode;
+  const floorCode = activeFloor ? formatFloorCode(activeFloor) : null;
+  const canSeeFloor = Boolean(activeFloor) && canViewFloor(activeFloor?.buildingCode, signedIn);
   const rooms = useFloorplan(floorCode, canSeeFloor);
   const pois = usePois(floorCode, canSeeFloor);
   const density = viewRegion && Dimensions.get("window").width / viewRegion.longitudeDelta;
@@ -140,13 +110,12 @@ export const MapScreen = () => {
     showInViewFloors && buildings.data && viewRegion
       ? buildingsInView(buildings.data, viewRegion)
           .filter(
-            (building) =>
-              (signedIn || isPublicBuilding(building.code)) && building.code !== buildingCode,
+            (building) => canViewFloor(building.code, signedIn) && building.code !== buildingCode,
           )
           .slice(0, 8)
           .map((building) => {
             const level = building.defaultFloor ?? building.floors[0];
-            return level ? `${building.code}-${level}` : null;
+            return level ? formatFloorCode({ buildingCode: building.code, floor: level }) : null;
           })
           .filter((code): code is string => Boolean(code))
       : [];
@@ -212,7 +181,7 @@ export const MapScreen = () => {
     if (!floor) {
       return;
     }
-    if (!signedIn && !isPublicBuilding(floor.buildingCode)) {
+    if (!canViewFloor(floor.buildingCode, signedIn)) {
       return;
     }
     setMapFloor((current) =>
@@ -223,7 +192,7 @@ export const MapScreen = () => {
   }, [navigating, instructionIndex, routes.data, selectedRoute, signedIn]);
 
   const open = (path: string, nextSrc = src, nextDst = dst) => {
-    router.replace(href(path, nextSrc || undefined, nextDst || undefined));
+    router.replace(targetHref(path, nextSrc || undefined, nextDst || undefined));
     setSearchOpen(false);
     setSearchQuery("");
   };
@@ -261,14 +230,14 @@ export const MapScreen = () => {
 
   const selectBuilding = (code: string) => open(`/${code}`);
   const selectFloor = (code: string, level: string) => {
-    if (!signedIn && !isPublicBuilding(code)) {
+    if (!canViewFloor(code, signedIn)) {
       startSignIn(`/${code}-${level}`);
       return;
     }
     open(`/${code}-${level}`);
   };
   const selectRoom = (code: string, roomName: string) => {
-    if (!signedIn && !isPublicBuilding(code)) {
+    if (!canViewFloor(code, signedIn)) {
       startSignIn(`/${code}-${roomName}`);
       return;
     }
@@ -292,7 +261,7 @@ export const MapScreen = () => {
       setMapFloor((current) => (current ? null : current));
       return;
     }
-    if (!signedIn && !isPublicBuilding(hit.code)) {
+    if (!canViewFloor(hit.code, signedIn)) {
       setMapFloor((current) => (current ? null : current));
       if (promptedBuilding.current !== hit.code) {
         promptedBuilding.current = hit.code;
@@ -353,17 +322,17 @@ export const MapScreen = () => {
     if (navOpen && line.length > 1) {
       return `route:${src}:${dst}:${selectedRoute}`;
     }
-    if (place.kind === "coordinate") {
-      return `coord:${place.latitude},${place.longitude}`;
+    if (target.kind === "coordinate") {
+      return `coord:${target.latitude},${target.longitude}`;
     }
-    if (place.kind === "room") {
-      return `room:${place.buildingCode}-${place.roomName}`;
+    if (target.kind === "room") {
+      return `room:${target.buildingCode}-${target.roomName}`;
     }
-    if (place.kind === "floor") {
-      return `floor:${place.buildingCode}-${place.floor}`;
+    if (target.kind === "floor") {
+      return `floor:${target.buildingCode}-${target.floor}`;
     }
-    if (place.kind === "building") {
-      return `building:${place.buildingCode}`;
+    if (target.kind === "building") {
+      return `building:${target.buildingCode}`;
     }
     return "";
   })();
@@ -392,16 +361,16 @@ export const MapScreen = () => {
     if (navOpen && line.length > 1) {
       return regionForCoordinates(line);
     }
-    if (place.kind === "coordinate") {
+    if (target.kind === "coordinate") {
       return {
-        latitude: place.latitude,
-        longitude: place.longitude,
+        latitude: target.latitude,
+        longitude: target.longitude,
         latitudeDelta: 0.004,
         longitudeDelta: 0.004,
       };
     }
-    if (place.kind === "room") {
-      const room = rooms.data?.[place.roomName];
+    if (target.kind === "room") {
+      const room = rooms.data?.[target.roomName];
       if (room) {
         return {
           latitude: room.labelPosition.latitude,
@@ -411,7 +380,7 @@ export const MapScreen = () => {
         };
       }
     }
-    if (placeBuildingCode && building) {
+    if (targetBuilding && building) {
       return {
         latitude: building.labelLatitude,
         longitude: building.labelLongitude,
@@ -422,26 +391,10 @@ export const MapScreen = () => {
     return null;
   })();
 
-  const destinationForPlace = () => {
-    if (place.kind === "room") {
-      return `${place.buildingCode}-${place.roomName}`;
-    }
-    if (place.kind === "floor") {
-      return `floor:${place.buildingCode}-${place.floor}`;
-    }
-    if (place.kind === "building") {
-      return place.buildingCode;
-    }
-    if (place.kind === "coordinate") {
-      return `${place.latitude},${place.longitude}`;
-    }
-    return "";
-  };
-
   const searchTop = insets.top + 12;
   const selectedPlaceTitle =
-    place.kind !== "home" && place.kind !== "pending"
-      ? placeTitle(place, buildings.data, rooms.data)
+    target.kind !== "home" && target.kind !== "pending"
+      ? targetTitle(target, buildings.data, rooms.data)
       : "";
   const showSearchResults = searchOpen && (searchQuery.trim().length > 0 || navEdit !== null);
   const clearSearch = () => {
@@ -460,21 +413,21 @@ export const MapScreen = () => {
         line={line}
         completedLine={progressLines?.completed}
         remainingLine={progressLines?.remaining}
-        selectedBuilding={placeBuildingCode}
-        selectedRoom={place.kind === "room" ? place.roomName : undefined}
+        selectedBuilding={targetBuilding}
+        selectedRoom={target.kind === "room" ? target.roomName : undefined}
         userPosition={userPosition}
         camera={camera}
         cameraIntent={cameraIntent}
         onSelectBuilding={selectBuilding}
         onSelectRoom={(roomName) => {
-          if (placeBuildingCode || buildingCode) {
-            selectRoom(placeBuildingCode ?? buildingCode ?? "", roomName);
+          if (targetBuilding || buildingCode) {
+            selectRoom(targetBuilding ?? buildingCode ?? "", roomName);
           }
         }}
         onPressMap={() => {
           setGearOpen(false);
           setAboutOpen(false);
-          if (!navigating && place.kind !== "home") {
+          if (!navigating && target.kind !== "home") {
             setMapFloor(null);
             open("/");
           }
@@ -493,7 +446,7 @@ export const MapScreen = () => {
             buildingLabel={
               end.buildingCode
                 ? buildings.data?.[end.buildingCode]?.name
-                : (placeBuildingCode ?? buildingCode)
+                : (targetBuilding ?? buildingCode)
             }
             onPrev={() => setInstructionIndex(Math.max(0, instructionIndex - 1))}
             onNext={() => setInstructionIndex(Math.min(instructions.length, instructionIndex + 1))}
@@ -670,7 +623,7 @@ export const MapScreen = () => {
       {!showSearchResults &&
       !navOpen &&
       !aboutOpen &&
-      (place.kind === "home" || place.kind === "pending") ? (
+      (target.kind === "home" || target.kind === "pending") ? (
         <View style={[styles.gear, { bottom: insets.bottom + 24 }]}>
           <AccountDial
             open={gearOpen}
@@ -678,7 +631,7 @@ export const MapScreen = () => {
             onToggle={() => setGearOpen((open) => !open)}
             onSignIn={() => {
               setGearOpen(false);
-              startSignIn(href(pathname, src || undefined, dst || undefined));
+              startSignIn(targetHref(pathname, src || undefined, dst || undefined));
             }}
             onReviewSignIn={() => {
               setGearOpen(false);
@@ -745,7 +698,7 @@ export const MapScreen = () => {
       <ReportSheet
         visible={reportOpen}
         context={{
-          path: href(pathname, src || undefined, dst || undefined),
+          path: targetHref(pathname, src || undefined, dst || undefined),
           signedIn,
         }}
         onDismiss={() => setReportOpen(false)}
@@ -771,23 +724,11 @@ export const MapScreen = () => {
           />
         ) : !showSearchResults ? (
           <PlaceSheet
-            place={place}
-            title={placeTitle(place, buildings.data, rooms.data)}
-            subtitle={
-              place.kind === "room"
-                ? rooms.data?.[place.roomName]?.alias
-                  ? `${place.buildingCode} ${place.roomName}${building ? ` · ${building.name}` : ""}`
-                  : (building?.name ?? place.buildingCode)
-                : building
-                  ? `${building.code}`
-                  : ""
-            }
-            roomType={place.kind === "room" ? rooms.data?.[place.roomName]?.type : undefined}
-            detail={
-              place.kind === "room"
-                ? `${rooms.data?.[place.roomName]?.type ?? "Room"} in ${building?.name ?? place.buildingCode}`
-                : (building?.name ?? "")
-            }
+            target={target}
+            title={targetTitle(target, buildings.data, rooms.data)}
+            subtitle={targetSubtitle(target, buildings.data, rooms.data)}
+            roomType={target.kind === "room" ? rooms.data?.[target.roomName]?.type : undefined}
+            detail={targetDetail(target, buildings.data, rooms.data)}
             sheet={sheet}
             onCycle={cycleSheet}
             onClose={() => {
@@ -797,7 +738,7 @@ export const MapScreen = () => {
             needsSignIn={needsSignIn}
             onSignIn={() => startSignIn(pathname)}
             onDirections={() => {
-              const nextDst = destinationForPlace();
+              const nextDst = targetWaypointToken(target);
               if (!nextDst) {
                 return;
               }
@@ -809,10 +750,14 @@ export const MapScreen = () => {
             }}
             onShare={() => {
               Share.share({
-                message: shareUrl(place, {
-                  src: src || undefined,
-                  dst: dst || undefined,
-                }),
+                message: targetShareUrl(
+                  target,
+                  {
+                    src: src || undefined,
+                    dst: dst || undefined,
+                  },
+                  env.webOrigin,
+                ),
               }).catch(() => undefined);
             }}
           />
@@ -828,8 +773,8 @@ export const MapScreen = () => {
               query={searchQuery}
               signedIn={signedIn}
               showYourLocation={navEdit !== null}
-              pickingDestination={navEdit !== null || (Boolean(src) && !dst)}
-              onPick={(value) => {
+              pickingWaypoint={navEdit !== null || (Boolean(src) && !dst)}
+              onPickWaypoint={(value) => {
                 if (navEdit === "src") {
                   open(pathname, value, dst);
                 } else if (navEdit === "dst") {
@@ -839,37 +784,9 @@ export const MapScreen = () => {
                 }
                 clearSearch();
               }}
-              onSelectBuilding={(code) => {
-                if (navEdit) {
-                  const next = navEdit === "src" ? [code, dst] : [src, code];
-                  open(pathname, next[0], next[1]);
-                  clearSearch();
-                  return;
-                }
+              onSelectTarget={(nextTarget) => {
                 clearSearch();
-                selectBuilding(code);
-              }}
-              onSelectFloor={(code, level) => {
-                if (navEdit) {
-                  const point = `floor:${code}-${level}`;
-                  const next = navEdit === "src" ? [point, dst] : [src, point];
-                  open(pathname, next[0], next[1]);
-                  clearSearch();
-                  return;
-                }
-                clearSearch();
-                selectFloor(code, level);
-              }}
-              onSelectRoom={(code, roomName) => {
-                if (navEdit) {
-                  const point = `${code}-${roomName}`;
-                  const next = navEdit === "src" ? [point, dst] : [src, point];
-                  open(pathname, next[0], next[1]);
-                  clearSearch();
-                  return;
-                }
-                clearSearch();
-                selectRoom(code, roomName);
+                open(targetPath(nextTarget));
               }}
               onNeedSignIn={startSignIn}
             />

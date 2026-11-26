@@ -31,3 +31,7 @@ _Avoid_: Shortest
 **Inside**:
 The route kind that prefers staying indoors.
 _Avoid_: Indoor
+
+**Campus Target**:
+A Building, Floor, Room, or coordinate selected on the map or encoded in a link.
+_Avoid_: Place, location

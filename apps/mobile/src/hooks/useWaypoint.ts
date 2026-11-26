@@ -1,10 +1,7 @@
 import { useBuildings, useFloorplan } from "@/api/client";
 import { authClient } from "@/auth/client";
-import { getFloorLevelFromRoomName } from "@/lib/place";
-import { isPublicBuilding } from "@/lib/publicBuilding";
+import { canViewFloor, formatFloorCode, parseWaypointToken } from "@/lib/campusTarget";
 import { useMapStore } from "@/store";
-
-const FLOOR_WAYPOINT_PREFIX = "floor:";
 
 export interface Waypoint {
   query?: string;
@@ -21,78 +18,67 @@ export const useSignedInUser = () => {
   };
 };
 
-export const useWaypoint = (point: string): Waypoint => {
+export const useWaypoint = (token: string): Waypoint => {
   const { user } = useSignedInUser();
   const userPosition = useMapStore((state) => state.userPosition);
   const buildings = useBuildings();
+  const parsed = parseWaypointToken(token, buildings.data);
 
-  const normalized = point.startsWith(FLOOR_WAYPOINT_PREFIX)
-    ? point.slice(FLOOR_WAYPOINT_PREFIX.length)
-    : point;
-  const [buildingCode, ...restParts] = normalized.split("-");
-  const rest = restParts.join("-");
-  const floorName = point.startsWith(FLOOR_WAYPOINT_PREFIX)
-    ? rest
-    : getFloorLevelFromRoomName(rest);
   const floorCode =
-    buildingCode && floorName && buildingCode !== "outside" ? `${buildingCode}-${floorName}` : null;
-  const canSeeFloor = isPublicBuilding(buildingCode) || Boolean(user);
-  const rooms = useFloorplan(floorCode, canSeeFloor);
+    parsed.kind === "room" && parsed.buildingCode !== "outside"
+      ? formatFloorCode({ buildingCode: parsed.buildingCode, floor: parsed.floor })
+      : null;
+  const rooms = useFloorplan(
+    floorCode,
+    parsed.kind === "room" && canViewFloor(parsed.buildingCode, Boolean(user)),
+  );
 
-  if (point === "" || point === "user") {
-    if (point === "") {
+  switch (parsed.kind) {
+    case "empty":
       return { label: "" };
+    case "user":
+      if (!userPosition) {
+        return { label: "Your Location (unavailable)" };
+      }
+      return {
+        query: `${userPosition.latitude},${userPosition.longitude}`,
+        label: "Your Location",
+      };
+    case "coordinate":
+      return { query: parsed.token, label: "Pinned place" };
+    case "building":
+      return {
+        query: parsed.buildingCode,
+        label: buildings.data?.[parsed.buildingCode]?.name ?? parsed.buildingCode,
+        buildingCode: parsed.buildingCode,
+      };
+    case "floor":
+      return {
+        query: `floor:${formatFloorCode(parsed)}`,
+        label: `${buildings.data?.[parsed.buildingCode]?.name ?? parsed.buildingCode} floor ${parsed.floor}`,
+        buildingCode: parsed.buildingCode,
+      };
+    case "room": {
+      const building = buildings.data?.[parsed.buildingCode];
+      const room = rooms.data?.[parsed.roomName];
+      if (!room) {
+        return {
+          label: `${parsed.buildingCode} ${parsed.roomName}`,
+          buildingCode: parsed.buildingCode,
+          error: rooms.data ? "Unknown room" : undefined,
+        };
+      }
+      return {
+        query: room.id,
+        label: room.alias || `${building?.name ?? parsed.buildingCode} ${parsed.roomName}`,
+        buildingCode: parsed.buildingCode,
+      };
     }
-    if (!userPosition) {
-      return { label: "Your Location (unavailable)" };
-    }
-    return {
-      query: `${userPosition.latitude},${userPosition.longitude}`,
-      label: "Your Location",
-    };
+    case "invalid":
+      return {
+        label: parsed.label,
+        buildingCode: parsed.buildingCode,
+        error: parsed.error,
+      };
   }
-
-  if (point.includes(",")) {
-    return { query: point, label: "Pinned place" };
-  }
-
-  if (!normalized.includes("-")) {
-    const building = buildingCode ? buildings.data?.[buildingCode] : undefined;
-    if (!building) {
-      return { label: point, error: buildings.data ? "Unknown building" : undefined };
-    }
-    return { query: buildingCode, label: building.name, buildingCode };
-  }
-
-  const building = buildingCode ? buildings.data?.[buildingCode] : undefined;
-  if (!(buildingCode && building)) {
-    return { label: point, buildingCode, error: "Unknown building" };
-  }
-
-  const isFloor =
-    point.startsWith(FLOOR_WAYPOINT_PREFIX) || (Boolean(rest) && building.floors.includes(rest));
-  if (isFloor) {
-    if (!building.floors.includes(rest)) {
-      return { label: point, buildingCode, error: "Unknown floor" };
-    }
-    return {
-      query: `${FLOOR_WAYPOINT_PREFIX}${buildingCode}-${rest}`,
-      label: `${building.name} floor ${rest}`,
-      buildingCode,
-    };
-  }
-
-  const room = rest ? rooms.data?.[rest] : undefined;
-  if (!room) {
-    return {
-      label: `${buildingCode} ${rest}`,
-      buildingCode,
-      error: rooms.data ? "Unknown room" : undefined,
-    };
-  }
-  return {
-    query: room.id,
-    label: room.alias || `${building.name} ${rest}`,
-    buildingCode,
-  };
 };

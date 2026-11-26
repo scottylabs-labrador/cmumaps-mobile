@@ -1,7 +1,14 @@
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSearch } from "@/api/client";
 import { BuildingIcon, DoorIcon, LayersIcon, TargetIcon } from "@/components/Icons";
-import { isPublicBuilding } from "@/lib/publicBuilding";
+import {
+  canViewFloor,
+  type CampusTarget,
+  targetBuildingCode,
+  targetFromSearchDocument,
+  targetPath,
+  targetWaypointToken,
+} from "@/lib/campusTarget";
 import { theme } from "@/theme";
 
 const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.54);
@@ -10,24 +17,20 @@ interface Props {
   query: string;
   signedIn: boolean;
   showYourLocation?: boolean;
-  onSelectBuilding: (code: string) => void;
-  onSelectFloor: (buildingCode: string, level: string) => void;
-  onSelectRoom: (buildingCode: string, roomName: string) => void;
+  pickingWaypoint: boolean;
+  onSelectTarget: (target: CampusTarget) => void;
+  onPickWaypoint: (token: string) => void;
   onNeedSignIn: (path: string) => void;
-  pickingDestination: boolean;
-  onPick: (value: string) => void;
 }
 
 export const SearchResults = ({
   query,
   signedIn,
   showYourLocation = false,
-  onSelectBuilding,
-  onSelectFloor,
-  onSelectRoom,
+  pickingWaypoint,
+  onSelectTarget,
+  onPickWaypoint,
   onNeedSignIn,
-  pickingDestination,
-  onPick,
 }: Props) => {
   const results = useSearch(query);
   const trimmed = query.trim();
@@ -44,7 +47,7 @@ export const SearchResults = ({
         contentContainerStyle={styles.list}
       >
         {showYourLocation ? (
-          <Pressable style={styles.row} onPress={() => onPick("user")}>
+          <Pressable style={styles.row} onPress={() => onPickWaypoint("user")}>
             <View style={styles.iconBox}>
               <TargetIcon size={19} color={theme.brand} />
             </View>
@@ -59,47 +62,23 @@ export const SearchResults = ({
                 key={`${result.type}-${result.id}`}
                 style={styles.row}
                 onPress={() => {
-                  if (result.type === "building") {
-                    if (pickingDestination) {
-                      onPick(result.id);
-                      return;
-                    }
-                    onSelectBuilding(result.id);
+                  const target = targetFromSearchDocument(result);
+                  if (!target) {
                     return;
                   }
-                  const buildingCode =
-                    result.type === "floor"
-                      ? (result.floor?.buildingCode ?? result.id.split("-")[0])
-                      : result.nameWithSpace.split(" ")[0];
-                  const roomName = result.nameWithSpace.split(" ")[1];
-                  if (!signedIn && !isPublicBuilding(buildingCode)) {
-                    const path =
-                      result.type === "floor"
-                        ? `/${result.id}`
-                        : buildingCode && roomName
-                          ? `/${buildingCode}-${roomName}`
-                          : "/";
-                    onNeedSignIn(path);
+                  const buildingCode = targetBuildingCode(target);
+                  if (target.kind !== "building" && !canViewFloor(buildingCode, signedIn)) {
+                    onNeedSignIn(targetPath(target));
                     return;
                   }
-                  if (result.type === "floor") {
-                    const level = result.floor?.level ?? result.id.split("-").slice(1).join("-");
-                    if (pickingDestination && buildingCode && level) {
-                      onPick(`floor:${buildingCode}-${level}`);
-                      return;
-                    }
-                    if (buildingCode && level) {
-                      onSelectFloor(buildingCode, level);
+                  if (pickingWaypoint) {
+                    const token = targetWaypointToken(target);
+                    if (token) {
+                      onPickWaypoint(token);
                     }
                     return;
                   }
-                  if (pickingDestination && buildingCode && roomName) {
-                    onPick(`${buildingCode}-${roomName}`);
-                    return;
-                  }
-                  if (buildingCode && roomName) {
-                    onSelectRoom(buildingCode, roomName);
-                  }
+                  onSelectTarget(target);
                 }}
               >
                 <View style={styles.iconBox}>

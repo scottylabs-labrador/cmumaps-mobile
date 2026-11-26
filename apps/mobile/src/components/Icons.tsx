@@ -252,18 +252,6 @@ export const LogInIcon = ({ size = 22, color = "#ffffff", strokeWidth = 1.9 }: I
   </Svg>
 );
 
-export const HelpCircleIcon = ({ size = 22, color = "#ffffff", strokeWidth = 2 }: IconProps) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M9.1 9C9.4 8.1 10.1 7.4 11 7.1C11.9 6.8 12.9 6.9 13.7 7.4C14.5 7.9 15 8.8 15 9.7C15 11.4 12.5 12 12 13.5"
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-    />
-    <Circle cx="12" cy="17.5" r="1.2" fill={color} />
-  </Svg>
-);
-
 export const DirectionArrowIcon = ({
   action,
   size = 44,

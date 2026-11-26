@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import {
-  CloseIcon,
-  HelpCircleIcon,
-  LogInIcon,
-  LogOutIcon,
-  PlusIcon,
-  UserIcon,
-} from "@/components/Icons";
+import { Animated, Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { CloseIcon, LogInIcon, LogOutIcon, PlusIcon, UserIcon } from "@/components/Icons";
 import { theme } from "@/theme";
 
 const DIAL_STEP = 62;
@@ -69,7 +62,10 @@ export const AccountDial = ({
           onPress={onAbout}
           style={[styles.circle, styles.circleSecondary]}
         >
-          <HelpCircleIcon size={22} color="#ffffff" />
+          <Image
+            source={require("../../assets/icons/plus_button_menu/question-mark.png")}
+            style={styles.question}
+          />
         </Pressable>
       </Animated.View>
       <Animated.View
@@ -252,6 +248,10 @@ const styles = StyleSheet.create({
   },
   circleSecondary: {
     backgroundColor: theme.dialSecondary,
+  },
+  question: {
+    height: 28,
+    width: 28,
   },
   modalBackdrop: {
     alignItems: "center",

@@ -69,7 +69,9 @@ export const NavPanel = ({
               onPress={() => onSelect(kind)}
               style={[styles.chip, active ? styles.chipOn : null]}
             >
-              <Text style={[styles.chipText, !available ? styles.chipOff : null]}>{kind}</Text>
+              <Text style={[styles.chipText, !available ? styles.chipOff : null]}>
+                {kind === "Inside" ? "Indoor" : kind}
+              </Text>
             </Pressable>
           );
         })}

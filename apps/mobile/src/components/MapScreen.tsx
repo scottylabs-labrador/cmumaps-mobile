@@ -491,41 +491,71 @@ export const MapScreen = () => {
       ) : navOpen ? (
         <View style={[styles.searchWrap, { top: searchTop }]}>
           <View style={styles.navHeader}>
-            <View style={styles.navEndpoints}>
+            <View style={styles.navTitleRow}>
               <Pressable
-                style={styles.navEndpoint}
+                accessibilityLabel="Back"
                 onPress={() => {
-                  setNavEdit("src");
-                  setSearchOpen(true);
-                  setSearchQuery("");
+                  resetNav();
+                  open(pathname);
                 }}
+                style={styles.navBack}
               >
-                <Text style={styles.navEndpointLabel}>From</Text>
-                <Text style={styles.navEndpointValue} numberOfLines={1}>
-                  {start.label || "Choose start"}
-                </Text>
+                <Text style={styles.navBackText}>‹</Text>
               </Pressable>
-              <Pressable
-                style={styles.navEndpoint}
-                onPress={() => {
-                  setNavEdit("dst");
-                  setSearchOpen(true);
-                  setSearchQuery("");
-                }}
-              >
-                <Text style={styles.navEndpointLabel}>To</Text>
-                <Text style={styles.navEndpointValue} numberOfLines={1}>
-                  {end.label || "Choose destination"}
-                </Text>
-              </Pressable>
+              <Text style={styles.navTitle}>Navigation</Text>
             </View>
-            <Pressable
-              accessibilityLabel="Swap start and destination"
-              onPress={() => open(pathname, dst, src)}
-              style={styles.swapButton}
-            >
-              <Text style={styles.swapText}>⇅</Text>
-            </Pressable>
+            <View style={styles.navEndpoints}>
+              <View style={styles.navEndpointRail}>
+                <View style={[styles.navDot, styles.navDotStart]} />
+                <View style={styles.navRailLine} />
+                <View style={[styles.navDot, styles.navDotEnd]} />
+              </View>
+              <View style={styles.navEndpointFields}>
+                <Pressable
+                  style={styles.navEndpoint}
+                  onPress={() => {
+                    setNavEdit("src");
+                    setSearchOpen(true);
+                    setSearchQuery("");
+                  }}
+                >
+                  <Text
+                    style={[styles.navEndpointValue, styles.navEndpointStart]}
+                    numberOfLines={1}
+                  >
+                    {start.label || "Choose start"}
+                  </Text>
+                  {src ? (
+                    <Pressable
+                      accessibilityLabel="Clear start"
+                      onPress={() => open(pathname, "", dst)}
+                      hitSlop={8}
+                    >
+                      <Text style={styles.clearText}>✕</Text>
+                    </Pressable>
+                  ) : null}
+                </Pressable>
+                <Pressable
+                  style={styles.navEndpoint}
+                  onPress={() => {
+                    setNavEdit("dst");
+                    setSearchOpen(true);
+                    setSearchQuery("");
+                  }}
+                >
+                  <Text style={styles.navEndpointValue} numberOfLines={1}>
+                    {end.label || "Enter destination"}
+                  </Text>
+                  <Pressable
+                    accessibilityLabel="Swap start and destination"
+                    onPress={() => open(pathname, dst, src)}
+                    hitSlop={8}
+                  >
+                    <Text style={styles.swapText}>⇄</Text>
+                  </Pressable>
+                </Pressable>
+              </View>
+            </View>
           </View>
         </View>
       ) : (
@@ -831,47 +861,89 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   navHeader: {
-    alignItems: "center",
     backgroundColor: theme.paper,
-    borderRadius: 20,
-    flexDirection: "row",
-    gap: 8,
-    padding: 10,
+    borderRadius: 16,
+    paddingBottom: 12,
+    paddingHorizontal: 12,
+    paddingTop: 10,
     shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.12,
     shadowRadius: 6,
   },
+  navTitleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+    marginBottom: 8,
+  },
+  navBack: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  navBackText: {
+    color: theme.muted,
+    fontSize: 28,
+    fontWeight: "300",
+    lineHeight: 28,
+  },
+  navTitle: {
+    color: theme.muted,
+    fontSize: 14,
+    fontWeight: "600",
+  },
   navEndpoints: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  navEndpointRail: {
+    alignItems: "center",
+    paddingVertical: 10,
+    width: 16,
+  },
+  navDot: {
+    borderRadius: 6,
+    height: 12,
+    width: 12,
+  },
+  navDotStart: {
+    backgroundColor: "#0E96D1",
+  },
+  navDotEnd: {
+    backgroundColor: theme.danger,
+  },
+  navRailLine: {
+    backgroundColor: theme.line,
     flex: 1,
-    gap: 6,
+    marginVertical: 4,
+    width: 2,
+  },
+  navEndpointFields: {
+    flex: 1,
+    gap: 8,
   },
   navEndpoint: {
-    backgroundColor: theme.canvas,
+    alignItems: "center",
+    borderColor: theme.line,
     borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  navEndpointLabel: {
-    color: theme.muted,
-    fontSize: 11,
-    fontWeight: "600",
+    paddingVertical: 10,
   },
   navEndpointValue: {
     color: theme.ink,
+    flex: 1,
     fontSize: 15,
     fontWeight: "600",
-    marginTop: 2,
   },
-  swapButton: {
-    alignItems: "center",
-    height: 36,
-    justifyContent: "center",
-    width: 36,
+  navEndpointStart: {
+    color: "#0E96D1",
   },
   swapText: {
-    color: theme.greenDark,
-    fontSize: 20,
+    color: theme.muted,
+    fontSize: 18,
     fontWeight: "700",
   },
   floors: {

@@ -5,16 +5,6 @@
     "dev": {
       "cache": false,
       "persistent": true
-    },
-    "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**"]
-    },
-    "start": {
-      "dependsOn": ["^build", "build"],
-      "cache": false,
-      "persistent": true
     }
   }
 }

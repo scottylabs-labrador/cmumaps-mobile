@@ -16,8 +16,8 @@ RUN bun install --frozen-lockfile --ignore-scripts
 # Generate the OpenAPI spec
 RUN cd apps/server && bun run tsoa && bun run openapi
 
-# Build the project
-RUN bun run build --filter=@cmumaps/server...
+# Build the server
+RUN cd apps/server && bun run build
 
 # Final runtime image
 FROM base AS runner

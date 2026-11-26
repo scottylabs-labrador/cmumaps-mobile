@@ -19,7 +19,7 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 - **`DATABASE_URL` in shell env**: The local connection string is the `local` profile default in `packages/db/secretspec.toml`. The server and dataflow import the Drizzle client from `@cmumaps/db/client`, which reads that variable. A stale shell `DATABASE_URL` (for example `postgres:5432` from Docker Compose) can still override it. `unset DATABASE_URL` before starting the server or running `bun run --filter @cmumaps/db db:migrate`.
 - **`SERVER_PORT`**: The local SecretSpec profile sets `SERVER_PORT` to `8080` because this Mac cannot bind port 80 without sudo. The schema coerces that string. `SERVER_URL` is `http://localhost:8080`.
 - **Database**: `@cmumaps/db` owns the Drizzle schema. `bun run --filter @cmumaps/db db:migrate` applies the SQL in `packages/db/drizzle`.
-- **Code generation before check/build**: Before running `bun run check` or `bun run build`, generate the server's OpenAPI artifacts: `cd apps/server && bun run tsoa && bun run openapi` (or use `bun run sync` from the root).
+- **Code generation before check/build**: Before running `bun run check` or building the server, generate the OpenAPI artifacts: `cd apps/server && bun run tsoa && bun run openapi` (or use `bun run sync` from the root).
 - **Pre-commit hooks** (`.vite-hooks/pre-commit`): Runs `editorconfig-checker`, `syncpack lint`, and `vp check`. Vite+ installs the hook dispatcher on `prepare`.
 
 ### Populating the database
@@ -47,8 +47,8 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 ### Standard commands
 
 - **Lint/check**: `bun run check` runs `vp check` (Oxfmt, Oxlint, and tsrs typecheck).
-- **Build**: `bun run build`
-- **Dev**: `bun run dev` runs every package `dev` script: Postgres, the server, Expo, web, and the visualizer
+- **Build (server)**: `cd apps/server && bun run build`
+- **Dev**: `bun run dev` runs every package `dev` script: Postgres, the server, and Expo
 - **Dev (server + mobile)**: `turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server`
 - **Dev (server only)**: `bun run --filter @cmumaps/server dev`
 - See `package.json` scripts for the full list.

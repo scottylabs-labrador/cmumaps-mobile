@@ -41,7 +41,6 @@
     "openapi": "cd ../.. && bun --filter @cmumaps/openapi-codegen openapi",
     "openapi:watch": "onchange './build/swagger.yaml' -- bun run openapi",
     "server": "secretspec run -P local -f ../../packages/db/secretspec.toml -- secretspec run -P local -- bun run --watch src/server.ts",
-    "start": "bun dist/server.js",
     "tsoa": "tsoa spec-and-routes",
     "tsoa:watch": "onchange 'src/controllers/*.ts' 'tsoa.json' -- bun run tsoa"
   },

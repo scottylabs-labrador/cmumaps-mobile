@@ -1,10 +1,12 @@
 import process from "node:process";
 import { expo } from "@better-auth/expo";
+import { APP_REVIEW_EMAIL } from "@cmumaps/common";
 import { betterAuth } from "better-auth";
 import { genericOAuth, keycloak } from "better-auth/plugins";
 import { env } from "../env.ts";
 
 const isProd = process.env.NODE_ENV === "production";
+const passwordSignInEnabled = Boolean(env.PASSWORD_SIGN_IN);
 console.log(`NODE_ENV=${process.env.NODE_ENV ?? "<unset>"} isProd=${isProd}`);
 
 // https://www.better-auth.com/docs/installation#create-a-better-auth-instance
@@ -22,9 +24,9 @@ export const auth = betterAuth({
     // Cloudflare Tunnel sets X-Forwarded-Proto / Host.
     trustedProxyHeaders: !isProd,
   },
-  // App Store review path — seeded on boot; public email signup stays closed.
+  // App Store review path — enabled only when PASSWORD_SIGN_IN is set; public signup stays closed.
   emailAndPassword: {
-    enabled: true,
+    enabled: passwordSignInEnabled,
     disableSignUp: true,
   },
   plugins: [
@@ -45,19 +47,18 @@ export const auth = betterAuth({
 
 /** Ensure the App Store demo account exists (memory adapter resets on restart). */
 export const ensureAppReviewUser = async () => {
-  const email = env.APP_REVIEW_EMAIL;
-  const password = env.APP_REVIEW_PASSWORD;
-  if (!email || !password) {
+  const password = env.PASSWORD_SIGN_IN;
+  if (!password) {
     return;
   }
   const ctx = await auth.$context;
-  const existing = await ctx.internalAdapter.findUserByEmail(email);
+  const existing = await ctx.internalAdapter.findUserByEmail(APP_REVIEW_EMAIL);
   if (existing) {
     return;
   }
   const user = await ctx.internalAdapter.createUser(
     {
-      email,
+      email: APP_REVIEW_EMAIL,
       name: "App Review",
       emailVerified: true,
     },
@@ -73,5 +74,5 @@ export const ensureAppReviewUser = async () => {
     providerId: "credential",
     password: hash,
   });
-  console.log(`App Review user ready (${email})`);
+  console.log(`App Review user ready (${APP_REVIEW_EMAIL})`);
 };

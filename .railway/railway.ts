@@ -24,14 +24,13 @@ export default defineRailway(() => {
     networking: { privateNetworkEndpoint: "cmumaps" },
     env: {
       ALLOWED_ORIGINS_REGEX: preserve(),
-      APP_REVIEW_EMAIL: preserve(),
-      APP_REVIEW_PASSWORD: preserve(),
       AUTH_CLIENT_ID: preserve(),
       AUTH_CLIENT_SECRET: preserve(),
       AUTH_ISSUER: preserve(),
       AUTH_JWKS_URI: preserve(),
       DATABASE_URL: "${{Postgres.DATABASE_URL}}",
       NODE_ENV: "production",
+      PASSWORD_SIGN_IN: preserve(),
       SERVER_URL: preserve(),
     },
   });

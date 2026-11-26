@@ -13,7 +13,7 @@ import {
 import type { Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBuildings, useFloorplan, useFloorplans, usePois } from "@/api/client";
-import { APP_REVIEW_EMAIL, signIn, signInWithPassword, signOut } from "@/auth/client";
+import { signIn, signInWithPassword, signOut } from "@/auth/client";
 import { AboutPanel } from "@/components/AboutPanel";
 import { AccountCardModal, AccountDial, ReviewPasswordPrompt } from "@/components/AccountControls";
 import { CampusMap } from "@/components/CampusMap";
@@ -205,7 +205,7 @@ export const MapScreen = () => {
   const submitReviewSignIn = (password: string) => {
     setReviewBusy(true);
     setReviewError(null);
-    void signInWithPassword(APP_REVIEW_EMAIL, password)
+    void signInWithPassword(password)
       .then(({ error }) => {
         if (error) {
           setReviewError("Sign-in failed. Check the review password.");

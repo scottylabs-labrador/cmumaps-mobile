@@ -6,12 +6,14 @@ import { z } from "zod";
 // variables and their types
 const envSchema = z.object({
   ALLOWED_ORIGINS_REGEX: z.string(),
-  APP_REVIEW_EMAIL: z.email().optional(),
-  APP_REVIEW_PASSWORD: z.string().min(8).optional(),
   AUTH_CLIENT_ID: z.string(),
   AUTH_CLIENT_SECRET: z.string(),
   AUTH_ISSUER: z.string(),
   AUTH_JWKS_URI: z.string(),
+  PASSWORD_SIGN_IN: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().min(8).optional(),
+  ),
   SERVER_PORT: z.coerce.number().default(80),
   SERVER_URL: z.url(),
 });

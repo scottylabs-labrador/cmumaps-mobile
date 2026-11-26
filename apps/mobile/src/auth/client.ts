@@ -1,10 +1,8 @@
+import { APP_REVIEW_EMAIL } from "@cmumaps/common";
 import { createAuthClient } from "better-auth/react";
 import { expoClient } from "@better-auth/expo/client";
 import * as SecureStore from "expo-secure-store";
 import { env } from "@/env";
-
-/** Matches server `APP_REVIEW_EMAIL` default — listed in App Store review notes. */
-export const APP_REVIEW_EMAIL = "review@cmumaps.com";
 
 export const authClient = createAuthClient({
   baseURL: env.serverUrl,
@@ -26,7 +24,7 @@ export const signIn = (returnPath: string) => {
   });
 };
 
-export const signInWithPassword = (email: string, password: string) =>
-  authClient.signIn.email({ email, password });
+export const signInWithPassword = (password: string) =>
+  authClient.signIn.email({ email: APP_REVIEW_EMAIL, password });
 
 export const signOut = () => authClient.signOut();

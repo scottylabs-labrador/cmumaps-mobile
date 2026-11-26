@@ -34,6 +34,7 @@ export const AboutPanel = ({ visible, onClose }: Props) => {
         <Text style={styles.section}>Credits</Text>
         <Text style={styles.body}>Developer: {credits.developer}</Text>
         <Text style={styles.body}>Designer: {credits.designer}</Text>
+        <Text style={[styles.body, styles.thanks]}>{credits.dataSupport}</Text>
         <Pressable onPress={onClose} style={styles.close}>
           <Text style={styles.closeText}>Close</Text>
         </Pressable>
@@ -47,7 +48,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.paper,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: 420,
+    maxHeight: 480,
     paddingBottom: 28,
   },
   handle: {
@@ -99,6 +100,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 20,
     marginBottom: 6,
+  },
+  thanks: {
+    marginTop: 8,
   },
   close: {
     marginTop: 20,

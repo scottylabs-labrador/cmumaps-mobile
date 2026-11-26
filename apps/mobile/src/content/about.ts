@@ -10,4 +10,5 @@ export const reportEmail = "ops+cmumaps@scottylabs.org";
 export const credits = {
   developer: "Yuxiang Huang",
   designer: "Wunwan Boonsitanara",
+  dataSupport: "Special thanks to the CMU Maps Web Team and CMU ESIM Office for the data support.",
 } as const;

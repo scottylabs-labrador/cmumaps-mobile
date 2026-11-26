@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { locationImage } from "@/lib/locationImage";
 import type { Place } from "@/lib/place";
 import type { SheetState } from "@/store";
 import { theme } from "@/theme";
@@ -32,11 +33,19 @@ export const PlaceSheet = ({
     return null;
   }
 
+  const buildingCode =
+    place.kind === "building" || place.kind === "floor" || place.kind === "room"
+      ? place.buildingCode
+      : undefined;
+  const roomName = place.kind === "room" ? place.roomName : undefined;
+  const photo = locationImage(buildingCode, roomName);
+
   return (
     <View style={[styles.sheet, sheet === "collapsed" ? styles.collapsed : null]}>
       <Pressable onPress={onCycle} style={styles.handle} accessibilityRole="button">
         <View style={styles.grabber} />
       </Pressable>
+      {photo && sheet !== "collapsed" ? <Image source={photo} style={styles.hero} /> : null}
       <Text style={styles.title}>{title}</Text>
       {sheet !== "collapsed" ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       {sheet === "expanded" ? <Text style={styles.detail}>{detail}</Text> : null}
@@ -78,6 +87,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     height: 4,
     width: 48,
+  },
+  hero: {
+    borderRadius: 12,
+    height: 140,
+    marginBottom: 12,
+    width: "100%",
   },
   title: {
     color: theme.ink,

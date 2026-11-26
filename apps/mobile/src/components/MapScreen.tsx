@@ -8,6 +8,7 @@ import { useBuildings, useFloorplan, usePois } from "@/api/client";
 import { signIn, signOut } from "@/auth/client";
 import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
+import { AboutPanel } from "@/components/AboutPanel";
 import { AccountDial, PromptCard } from "@/components/GearMenu";
 import { NavPanel } from "@/components/NavPanel";
 import { PlaceSheet } from "@/components/PlaceSheet";
@@ -73,6 +74,7 @@ export const MapScreen = () => {
   const dst = one(params.dst) ?? "";
   const floorParam = one(params.floor) ?? "";
   const [gearOpen, setGearOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [returnPath, setReturnPath] = useState("/");
   const [mapFloor, setMapFloor] = useState<{
     buildingCode: string;
@@ -256,7 +258,10 @@ export const MapScreen = () => {
               selectRoom(buildingCode, roomName);
             }
           }}
-          onPressMap={() => setGearOpen(false)}
+          onPressMap={() => {
+            setGearOpen(false);
+            setAboutOpen(false);
+          }}
           onLongPress={(coordinate: GeoCoordinate) =>
             open(`/${coordinate.latitude},${coordinate.longitude}`)
           }
@@ -300,7 +305,10 @@ export const MapScreen = () => {
                 setGearOpen(false);
                 signOut().catch(() => undefined);
               }}
-              onAbout={() => setGearOpen(false)}
+              onAbout={() => {
+                setGearOpen(false);
+                setAboutOpen(true);
+              }}
             />
           </View>
         </View>
@@ -350,7 +358,9 @@ export const MapScreen = () => {
             onNeedSignIn={askSignIn}
           />
         ) : null}
-        {navOpen && !searchOpen ? (
+        {aboutOpen && !searchOpen ? (
+          <AboutPanel visible onClose={() => setAboutOpen(false)} />
+        ) : navOpen && !searchOpen ? (
           <NavPanel
             srcLabel={start.label}
             dstLabel={end.label}

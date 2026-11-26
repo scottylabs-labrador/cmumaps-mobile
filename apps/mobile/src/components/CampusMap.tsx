@@ -131,9 +131,9 @@ export const CampusMap = ({
                   .filter((hole) => hole.length >= 3)}
                 tappable
                 onPress={() => onSelectBuilding(code)}
-                strokeColor={selected ? theme.green : "#334155"}
-                fillColor={selected ? "rgba(22,128,60,0.28)" : "rgba(100,116,139,0.28)"}
-                strokeWidth={selected ? 3 : 1}
+                strokeColor={selected ? theme.green : "#475569"}
+                fillColor={selected ? "rgba(14,160,65,0.22)" : "rgba(100,116,139,0.24)"}
+                strokeWidth={selected ? 2.5 : 1}
               />
             );
           })
@@ -164,21 +164,28 @@ export const CampusMap = ({
           })
         : null}
       {buildings
-        ? Object.entries(buildings).map(([code, building]) => (
-            <Marker
-              key={`${code}-label`}
-              coordinate={{
-                latitude: building.labelLatitude,
-                longitude: building.labelLongitude,
-              }}
-              onPress={() => onSelectBuilding(code)}
-              tracksViewChanges={false}
-            >
-              <View style={styles.roundel}>
-                <Text style={styles.roundelText}>{code}</Text>
-              </View>
-            </Marker>
-          ))
+        ? Object.entries(buildings).map(([code, building]) => {
+            if (rooms && Object.keys(rooms).length > 0 && code === selectedBuilding) {
+              return null;
+            }
+            return (
+              <Marker
+                key={`${code}-label`}
+                coordinate={{
+                  latitude: building.labelLatitude,
+                  longitude: building.labelLongitude,
+                }}
+                onPress={() => onSelectBuilding(code)}
+                tracksViewChanges={false}
+              >
+                <View style={styles.roundel}>
+                  <Text style={styles.roundelText} numberOfLines={1} adjustsFontSizeToFit>
+                    {code}
+                  </Text>
+                </View>
+              </Marker>
+            );
+          })
         : null}
       {pois
         ? Object.entries(pois).map(([id, poi]) => (
@@ -212,14 +219,20 @@ export const CampusMap = ({
 
 const styles = StyleSheet.create({
   roundel: {
-    backgroundColor: "#1f2937",
-    borderRadius: 16,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    alignItems: "center",
+    backgroundColor: "#525C68",
+    borderColor: "#ffffff",
+    borderRadius: 18,
+    borderWidth: 1.5,
+    height: 36,
+    justifyContent: "center",
+    paddingHorizontal: 3,
+    width: 36,
   },
   roundelText: {
     color: "#ffffff",
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "700",
+    letterSpacing: -0.2,
   },
 });

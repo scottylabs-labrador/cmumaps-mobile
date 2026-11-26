@@ -1,4 +1,4 @@
-import type { Instruction, PreciseRoute } from "@cmumaps/common";
+import type { Instruction } from "@cmumaps/common";
 import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   BuildingIcon,
@@ -10,35 +10,19 @@ import {
   PinIcon,
   ZapIcon,
 } from "@/components/Icons";
-import type { RouteKind } from "@/store";
+import { ROUTE_KINDS, type RouteKind, type RoutePlan } from "@/lib/routePlan";
 import { theme } from "@/theme";
 
 const MAX_STEPS_HEIGHT = Math.round(Dimensions.get("window").height * 0.8);
 
 interface Props {
-  routes: Record<string, PreciseRoute> | undefined;
-  selected: RouteKind;
+  plan: RoutePlan;
   navigating: boolean;
-  error?: string;
-  canGo?: boolean;
   onSelect: (route: RouteKind) => void;
   onGo: () => void;
   onEnd: () => void;
   onOpenSteps?: () => void;
 }
-
-export const formatRouteSummary = (route: PreciseRoute | undefined) => {
-  const feet = Math.round(route?.path.distance ?? 0);
-  const minutes = Math.max(1, Math.round(feet / 250));
-  const arrival = new Date(Date.now() + minutes * 60 * 1000).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-  const distanceValue = feet >= 1000 ? (feet / 5280).toFixed(1) : String(feet);
-  const distanceUnit = feet >= 1000 ? "mi" : "ft";
-  return { feet, distanceValue, distanceUnit, minutes, arrival };
-};
 
 interface BannerProps {
   instructions: Instruction[];
@@ -122,7 +106,7 @@ export const TurnByTurnBanner = ({
 
 interface StepsSheetProps {
   visible: boolean;
-  route: PreciseRoute | undefined;
+  plan: RoutePlan;
   index: number;
   destinationLabel: string;
   onSelectStep: (index: number) => void;
@@ -132,17 +116,17 @@ interface StepsSheetProps {
 
 export const StepsSheet = ({
   visible,
-  route,
+  plan,
   index,
   destinationLabel,
   onSelectStep,
   onClose,
   onEnd,
 }: StepsSheetProps) => {
-  const instructions = route?.instructions ?? [];
+  const instructions = plan.activeRoute?.instructions ?? [];
   const arrived = instructions.length > 0 && index >= instructions.length;
   const current = arrived ? null : instructions[index];
-  const stats = formatRouteSummary(route);
+  const stats = plan.summary;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -249,9 +233,13 @@ export const StepsSheet = ({
 
           <View style={styles.stepsFooter}>
             <View style={styles.stats}>
-              <Stat value={stats.arrival} label="arrival" />
-              <Stat value={String(stats.minutes)} label="min" />
-              <Stat value={stats.distanceValue} label={stats.distanceUnit} />
+              {stats ? (
+                <>
+                  <Stat value={stats.arrival} label="arrival" />
+                  <Stat value={String(stats.minutes)} label="min" />
+                  <Stat value={stats.distanceValue} label={stats.distanceUnit} />
+                </>
+              ) : null}
             </View>
             <Pressable
               onPress={() => {
@@ -269,20 +257,9 @@ export const StepsSheet = ({
   );
 };
 
-export const NavPanel = ({
-  routes,
-  selected,
-  navigating,
-  error,
-  canGo = true,
-  onSelect,
-  onGo,
-  onEnd,
-  onOpenSteps,
-}: Props) => {
-  const route = routes?.[selected];
-  const stats = formatRouteSummary(route);
-  const ready = Boolean(route && canGo && !error);
+export const NavPanel = ({ plan, navigating, onSelect, onGo, onEnd, onOpenSteps }: Props) => {
+  const stats = plan.summary;
+  const ready = plan.canGo && Boolean(stats);
 
   if (navigating) {
     return (
@@ -298,9 +275,13 @@ export const NavPanel = ({
         ) : null}
         <View style={styles.tripBar}>
           <View style={styles.stats}>
-            <Stat value={stats.arrival} label="arrival" />
-            <Stat value={String(stats.minutes)} label="min" />
-            <Stat value={stats.distanceValue} label={stats.distanceUnit} />
+            {stats ? (
+              <>
+                <Stat value={stats.arrival} label="arrival" />
+                <Stat value={String(stats.minutes)} label="min" />
+                <Stat value={stats.distanceValue} label={stats.distanceUnit} />
+              </>
+            ) : null}
           </View>
           <Pressable onPress={onEnd} style={styles.end}>
             <Text style={styles.actionText}>End</Text>
@@ -314,9 +295,9 @@ export const NavPanel = ({
     <View style={styles.cardShadow}>
       <View style={styles.card}>
         <View style={styles.tabBand}>
-          {(["Fastest", "Inside"] as const).map((kind) => {
-            const available = Boolean(routes?.[kind]) && ready;
-            const active = kind === selected && available;
+          {ROUTE_KINDS.map((kind) => {
+            const available = plan.availableKinds.includes(kind) && ready;
+            const active = kind === plan.selectedKind && available;
             const tint = active ? theme.brandDark : available ? theme.ink : theme.subtle;
             return (
               <Pressable
@@ -339,7 +320,7 @@ export const NavPanel = ({
         </View>
         <View style={styles.footerBand}>
           <View style={styles.stats}>
-            {ready ? (
+            {ready && stats ? (
               <>
                 <Stat value={stats.arrival} label="arrival" />
                 <Stat value={String(stats.minutes)} label="min" />
@@ -347,7 +328,7 @@ export const NavPanel = ({
               </>
             ) : (
               <Text style={styles.unavailable} numberOfLines={2}>
-                {error || "Path unavailable"}
+                {plan.error || "Path unavailable"}
               </Text>
             )}
           </View>

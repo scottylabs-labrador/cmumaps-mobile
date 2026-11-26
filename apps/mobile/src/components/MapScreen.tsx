@@ -27,7 +27,7 @@ import { NavPanel, StepsSheet, TurnByTurnBanner } from "@/components/NavPanel";
 import { PlaceSheet } from "@/components/PlaceSheet";
 import { ReportSheet } from "@/components/ReportSheet";
 import { SearchResults } from "@/components/SearchResults";
-import { routeLine, useRoutes } from "@/hooks/useRoutes";
+import { useRoutes } from "@/hooks/useRoutes";
 import { useShakeGesture } from "@/hooks/useShakeGesture";
 import { requestUserLocation, useUserLocation } from "@/hooks/useUserLocation";
 import { useSignedInUser } from "@/hooks/useWaypoint";
@@ -133,8 +133,6 @@ export const MapScreen = () => {
     }
     return Object.keys(merged).length > 0 ? merged : base;
   })();
-  const { start, end, routes } = useRoutes(src, dst);
-
   const sheet = useMapStore((state) => state.sheet);
   const setSheet = useMapStore((state) => state.setSheet);
   const cycleSheet = useMapStore((state) => state.cycleSheet);
@@ -152,12 +150,7 @@ export const MapScreen = () => {
   const locationPromptVisible = useMapStore((state) => state.locationPromptVisible);
   const setLocationPromptVisible = useMapStore((state) => state.setLocationPromptVisible);
   const resetNav = useMapStore((state) => state.resetNav);
-
-  useEffect(() => {
-    if (routes.data && !routes.data[selectedRoute] && routes.data.Inside) {
-      setSelectedRoute("Inside");
-    }
-  }, [routes.data, selectedRoute, setSelectedRoute]);
+  const { start, end, plan } = useRoutes(src, dst, selectedRoute);
 
   useEffect(() => {
     setSheet("default");
@@ -167,7 +160,7 @@ export const MapScreen = () => {
     if (!navigating) {
       return;
     }
-    const route = routes.data?.[selectedRoute];
+    const route = plan.activeRoute;
     if (!route) {
       return;
     }
@@ -189,7 +182,7 @@ export const MapScreen = () => {
         ? current
         : { buildingCode: floor.buildingCode, floor: floor.level },
     );
-  }, [navigating, instructionIndex, routes.data, selectedRoute, signedIn]);
+  }, [navigating, instructionIndex, plan.activeRoute, signedIn]);
 
   const open = (path: string, nextSrc = src, nextDst = dst) => {
     router.replace(targetHref(path, nextSrc || undefined, nextDst || undefined));
@@ -279,33 +272,23 @@ export const MapScreen = () => {
   const building = buildingCode ? buildings.data?.[buildingCode] : undefined;
   const needsSignIn = Boolean(floor) && !canSeeFloor;
   const navOpen = Boolean(src || dst);
-  const originReady = src !== "user" || Boolean(userPosition);
-  const line = originReady ? routeLine(routes.data, selectedRoute) : [];
-  const activeRoute = routes.data?.[selectedRoute];
+  const line = plan.line;
+  const activeRoute = plan.activeRoute;
   const instructions = activeRoute?.instructions ?? [];
   const currentInstruction = instructions[instructionIndex];
-  const navError = !originReady
-    ? "Path unavailable"
-    : routes.isError
-      ? "Path unavailable"
-      : (start.error ?? end.error);
   const progressLines = (() => {
-    if (!navigating || !originReady) {
+    if (!navigating || !activeRoute) {
       return null;
     }
-    const route = routes.data?.[selectedRoute];
-    if (!route) {
-      return null;
-    }
-    const path = route.path.path;
-    if (instructionIndex >= route.instructions.length) {
+    const path = activeRoute.path.path;
+    if (instructionIndex >= activeRoute.instructions.length) {
       return {
         completed: path.map((node) => node.coordinate),
         remaining: [],
       };
     }
     const currentNodeId =
-      instructionIndex > 0 ? route.instructions[instructionIndex - 1]?.nodeId : path[0]?.id;
+      instructionIndex > 0 ? activeRoute.instructions[instructionIndex - 1]?.nodeId : path[0]?.id;
     const split = path.findIndex((node) => node.id === currentNodeId);
     if (split < 0) {
       return null;
@@ -317,10 +300,10 @@ export const MapScreen = () => {
 
   const cameraIntent = (() => {
     if (navigating) {
-      return `nav:${selectedRoute}:${instructionIndex}`;
+      return `nav:${plan.selectedKind}:${instructionIndex}`;
     }
     if (navOpen && line.length > 1) {
-      return `route:${src}:${dst}:${selectedRoute}`;
+      return `route:${src}:${dst}:${plan.selectedKind}`;
     }
     if (target.kind === "coordinate") {
       return `coord:${target.latitude},${target.longitude}`;
@@ -341,13 +324,12 @@ export const MapScreen = () => {
     if (!cameraIntent) {
       return null;
     }
-    if (navigating && currentInstruction) {
-      const route = routes.data?.[selectedRoute];
+    if (navigating && currentInstruction && activeRoute) {
       const node =
         instructionIndex === 0
-          ? route?.path.path[0]
-          : route?.path.path.find(
-              (entry) => entry.id === route.instructions[instructionIndex - 1]?.nodeId,
+          ? activeRoute.path.path[0]
+          : activeRoute.path.path.find(
+              (entry) => entry.id === activeRoute.instructions[instructionIndex - 1]?.nodeId,
             );
       if (node?.coordinate) {
         return {
@@ -684,7 +666,7 @@ export const MapScreen = () => {
       />
       <StepsSheet
         visible={stepsOpen && navigating}
-        route={activeRoute}
+        plan={plan}
         index={instructionIndex}
         destinationLabel={end.label || "Destination"}
         onSelectStep={(stepIdx) => setInstructionIndex(stepIdx)}
@@ -708,11 +690,8 @@ export const MapScreen = () => {
           <AboutPanel visible onClose={() => setAboutOpen(false)} />
         ) : navOpen && !showSearchResults ? (
           <NavPanel
-            routes={routes.data}
-            selected={selectedRoute}
+            plan={plan}
             navigating={navigating}
-            error={navError}
-            canGo={originReady && Boolean(routes.data?.[selectedRoute])}
             onSelect={setSelectedRoute}
             onGo={() => setNavigating(true)}
             onOpenSteps={() => setStepsOpen(true)}

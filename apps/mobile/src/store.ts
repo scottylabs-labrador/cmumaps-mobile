@@ -1,7 +1,8 @@
 import { create } from "zustand";
+import type { RouteKind } from "@/lib/routePlan";
 
+export type { RouteKind } from "@/lib/routePlan";
 export type SheetState = "collapsed" | "default" | "expanded";
-export type RouteKind = "Fastest" | "Inside";
 
 interface Position {
   latitude: number;

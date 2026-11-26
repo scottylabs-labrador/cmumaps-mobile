@@ -1,7 +1,9 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSearch } from "@/api/client";
 import { isPublicBuilding } from "@/lib/publicBuilding";
 import { theme } from "@/theme";
+
+const SHEET_HEIGHT = Math.round(Dimensions.get("window").height * 0.58);
 
 interface Props {
   query: string;
@@ -34,7 +36,7 @@ export const SearchResults = ({
   }
 
   return (
-    <View style={styles.sheet}>
+    <View style={[styles.sheet, { height: SHEET_HEIGHT }]}>
       <View style={styles.handleRow}>
         <View style={styles.grabber} />
       </View>
@@ -46,7 +48,11 @@ export const SearchResults = ({
           <Text style={styles.closeText}>✕</Text>
         </Pressable>
       </View>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.list}>
+      <ScrollView
+        style={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.list}
+      >
         {results.data?.map((result) => (
           <Pressable
             key={`${result.type}-${result.id}`}
@@ -113,8 +119,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.paper,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    height: "58%",
-    maxHeight: "58%",
     paddingBottom: 12,
   },
   handleRow: {
@@ -153,6 +157,9 @@ const styles = StyleSheet.create({
     color: theme.muted,
     fontSize: 16,
     fontWeight: "700",
+  },
+  scroll: {
+    flex: 1,
   },
   list: {
     gap: 10,

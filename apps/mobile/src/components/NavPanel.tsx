@@ -1,5 +1,5 @@
 import type { PreciseRoute } from "@cmumaps/common";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { RouteKind } from "@/store";
 import { theme } from "@/theme";
 
@@ -9,14 +9,11 @@ interface Props {
   routes: Record<string, PreciseRoute> | undefined;
   selected: RouteKind;
   navigating: boolean;
-  instructionIndex: number;
   error?: string;
   canGo?: boolean;
   onSelect: (route: RouteKind) => void;
   onGo: () => void;
   onEnd: () => void;
-  onPrev: () => void;
-  onNext: () => void;
   onBack: () => void;
   onSwap: () => void;
 }
@@ -38,33 +35,48 @@ export const NavPanel = ({
   routes,
   selected,
   navigating,
-  instructionIndex,
   error,
   canGo = true,
   onSelect,
   onGo,
   onEnd,
-  onPrev,
-  onNext,
   onBack,
   onSwap,
 }: Props) => {
   const route = routes?.[selected];
   const stats = summary(route);
-  const instruction = route?.instructions[instructionIndex];
+
+  if (navigating) {
+    return (
+      <View style={styles.tripBar}>
+        <View style={styles.stats}>
+          <Stat value={stats.arrival} label="arrival" />
+          <Stat value={String(stats.minutes)} label="min" />
+          <Stat value={String(stats.distance)} label="ft" />
+        </View>
+        <Pressable onPress={onEnd} style={styles.end}>
+          <Text style={styles.primaryText}>End</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.sheet}>
+      <View style={styles.handleRow}>
+        <View style={styles.grabber} />
+      </View>
       <View style={styles.header}>
-        <Pressable onPress={onBack}>
+        <Pressable onPress={onBack} accessibilityLabel="Back">
           <Text style={styles.link}>Back</Text>
         </Pressable>
-        <Pressable onPress={onSwap}>
+        <Pressable onPress={onSwap} accessibilityLabel="Swap start and destination">
           <Text style={styles.link}>Swap</Text>
         </Pressable>
       </View>
-      <Text style={styles.place}>{srcLabel || "Choose a start"}</Text>
-      <Text style={styles.place}>{dstLabel || "Choose a destination"}</Text>
+      <Text style={styles.routeLabel} numberOfLines={1}>
+        {srcLabel || "Choose a start"} → {dstLabel || "Choose a destination"}
+      </Text>
       <View style={styles.chips}>
         {(["Fastest", "Inside"] as const).map((kind) => {
           const available = Boolean(routes?.[kind]);
@@ -87,39 +99,13 @@ export const NavPanel = ({
         <Stat value={String(stats.distance)} label="ft" />
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      {navigating && instruction ? (
-        <ScrollView style={styles.steps}>
-          {route?.instructions.map((step, index) => (
-            <Text
-              key={`${step.nodeId}-${index}`}
-              style={index === instructionIndex ? styles.stepOn : styles.step}
-            >
-              {step.action} · {step.distance} ft
-            </Text>
-          ))}
-        </ScrollView>
-      ) : null}
-      {navigating ? (
-        <View style={styles.actions}>
-          <Pressable onPress={onPrev} style={styles.secondary}>
-            <Text>Prev</Text>
-          </Pressable>
-          <Pressable onPress={onNext} style={styles.secondary}>
-            <Text>Next</Text>
-          </Pressable>
-          <Pressable onPress={onEnd} style={styles.end}>
-            <Text style={styles.primaryText}>End</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <Pressable
-          onPress={onGo}
-          style={[styles.go, !(route && canGo) ? styles.goDisabled : null]}
-          disabled={!(route && canGo)}
-        >
-          <Text style={styles.primaryText}>Go</Text>
-        </Pressable>
-      )}
+      <Pressable
+        onPress={onGo}
+        style={[styles.go, !(route && canGo) ? styles.goDisabled : null]}
+        disabled={!(route && canGo)}
+      >
+        <Text style={styles.primaryText}>Go</Text>
+      </Pressable>
     </View>
   );
 };
@@ -134,24 +120,52 @@ const Stat = ({ value, label }: { value: string; label: string }) => (
 const styles = StyleSheet.create({
   sheet: {
     backgroundColor: theme.paper,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
     paddingBottom: 28,
+    paddingTop: 8,
+  },
+  handleRow: {
+    alignItems: "center",
+    paddingBottom: 8,
+    paddingTop: 4,
+  },
+  grabber: {
+    backgroundColor: theme.line,
+    borderRadius: 4,
+    height: 4,
+    width: 48,
+  },
+  tripBar: {
+    alignItems: "center",
+    backgroundColor: theme.paper,
+    borderRadius: 20,
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+    marginHorizontal: 12,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   link: {
     color: theme.greenDark,
     fontWeight: "700",
   },
-  place: {
+  routeLabel: {
     color: theme.ink,
-    fontSize: 16,
-    marginTop: 4,
+    fontSize: 15,
+    fontWeight: "600",
   },
   chips: {
     flexDirection: "row",
@@ -176,7 +190,8 @@ const styles = StyleSheet.create({
   },
   stats: {
     flexDirection: "row",
-    gap: 24,
+    flex: 1,
+    gap: 20,
     marginTop: 16,
   },
   statValue: {
@@ -191,30 +206,12 @@ const styles = StyleSheet.create({
     color: theme.danger,
     marginTop: 8,
   },
-  steps: {
-    maxHeight: 140,
-    marginTop: 12,
-  },
-  step: {
-    color: theme.muted,
-    paddingVertical: 4,
-  },
-  stepOn: {
-    color: theme.ink,
-    fontWeight: "700",
-    paddingVertical: 4,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 16,
-  },
   go: {
     alignItems: "center",
     backgroundColor: theme.green,
     borderRadius: 24,
     marginTop: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   goDisabled: {
     opacity: 0.4,
@@ -222,14 +219,7 @@ const styles = StyleSheet.create({
   end: {
     backgroundColor: theme.danger,
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  secondary: {
-    borderColor: theme.line,
-    borderRadius: 20,
-    borderWidth: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 10,
   },
   primaryText: {

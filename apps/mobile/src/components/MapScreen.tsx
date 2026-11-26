@@ -458,11 +458,35 @@ export const MapScreen = () => {
       />
       {navigating && currentInstruction ? (
         <View style={[styles.banner, { top: searchTop }]}>
-          <Text style={styles.bannerEyebrow}>Next</Text>
-          <Text style={styles.bannerTitle}>{currentInstruction.action}</Text>
-          <Text style={styles.bannerSub}>
-            {currentInstruction.distance} ft · {end.label}
-          </Text>
+          <View style={styles.bannerBody}>
+            <View style={styles.bannerCopy}>
+              <Text style={styles.bannerTitle}>{currentInstruction.action}</Text>
+              <Text style={styles.bannerSub}>
+                {currentInstruction.distance} ft · {end.label}
+              </Text>
+            </View>
+            <Text style={styles.bannerCode}>{placeBuildingCode ?? buildingCode ?? ""}</Text>
+          </View>
+          <View style={styles.bannerControls}>
+            <Pressable
+              onPress={() => setInstructionIndex(Math.max(0, instructionIndex - 1))}
+              style={styles.bannerControl}
+            >
+              <Text style={styles.bannerControlText}>{"<<"} Prev</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                const count = routes.data?.[selectedRoute]?.instructions.length ?? 0;
+                if (count === 0) {
+                  return;
+                }
+                setInstructionIndex(Math.min(count - 1, instructionIndex + 1));
+              }}
+              style={styles.bannerControl}
+            >
+              <Text style={styles.bannerControlText}>Next {">>"}</Text>
+            </Pressable>
+          </View>
         </View>
       ) : navOpen ? (
         <View style={[styles.searchWrap, { top: searchTop }]}>
@@ -618,26 +642,17 @@ export const MapScreen = () => {
             routes={routes.data}
             selected={selectedRoute}
             navigating={navigating}
-            instructionIndex={instructionIndex}
             error={navError}
             canGo={originReady && Boolean(routes.data?.[selectedRoute])}
             onSelect={setSelectedRoute}
             onGo={() => setNavigating(true)}
             onEnd={() => {
               resetNav();
-              router.replace(href(pathname));
-            }}
-            onPrev={() => setInstructionIndex(Math.max(0, instructionIndex - 1))}
-            onNext={() => {
-              const count = routes.data?.[selectedRoute]?.instructions.length ?? 0;
-              if (count === 0) {
-                return;
-              }
-              setInstructionIndex(Math.min(count - 1, instructionIndex + 1));
+              open(pathname);
             }}
             onBack={() => {
               resetNav();
-              router.replace(href(pathname));
+              open(pathname);
             }}
             onSwap={() => open(pathname, dst, src)}
           />
@@ -778,29 +793,49 @@ const styles = StyleSheet.create({
     backgroundColor: theme.green,
     borderRadius: 20,
     left: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
+    overflow: "hidden",
     position: "absolute",
     right: 16,
     zIndex: 20,
   },
-  bannerEyebrow: {
-    color: "#dcfce7",
-    fontSize: 13,
-    fontWeight: "600",
-    letterSpacing: 0.4,
-    textTransform: "uppercase",
+  bannerBody: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  bannerCopy: {
+    flex: 1,
   },
   bannerTitle: {
     color: "#ffffff",
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "700",
-    marginTop: 4,
   },
   bannerSub: {
     color: "#dcfce7",
+    fontSize: 15,
+    marginTop: 4,
+  },
+  bannerCode: {
+    color: "#ffffff",
     fontSize: 16,
-    marginTop: 6,
+    fontWeight: "700",
+  },
+  bannerControls: {
+    backgroundColor: theme.greenDark,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  bannerControl: {
+    paddingVertical: 2,
+  },
+  bannerControlText: {
+    color: "#ffffff",
+    fontWeight: "700",
   },
   navHeader: {
     alignItems: "center",
@@ -809,6 +844,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     padding: 10,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
   },
   navEndpoints: {
     flex: 1,

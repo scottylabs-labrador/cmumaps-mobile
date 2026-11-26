@@ -337,7 +337,7 @@ export const MapScreen = () => {
         line={plan.line}
         completedLine={step.progressLines?.completed}
         remainingLine={step.progressLines?.remaining}
-        selectedBuilding={targetBuilding}
+        selectedBuilding={buildingCode}
         selectedRoom={target.kind === "room" ? target.roomName : undefined}
         userPosition={userPosition}
         camera={camera.region}
@@ -352,7 +352,7 @@ export const MapScreen = () => {
         onPressMap={() => {
           closeModal();
           if (!navigating && target.kind !== "home") {
-            setMapFloor(null);
+            setMapFloor((current) => mapFloorAfterClosingPlaceSheet(activeFloor, current));
             open("/");
           }
         }}

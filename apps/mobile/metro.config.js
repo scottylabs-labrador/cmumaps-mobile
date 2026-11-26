@@ -13,14 +13,6 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, "node_modules"),
 ];
 
-const { assetExts, sourceExts } = config.resolver;
-config.transformer = {
-  ...config.transformer,
-  babelTransformerPath: require.resolve("react-native-svg-transformer/expo"),
-};
-config.resolver.assetExts = assetExts.filter((ext) => ext !== "svg");
-config.resolver.sourceExts = [...sourceExts, "svg"];
-
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName.startsWith("@/")) {
     return context.resolveRequest(context, path.resolve(srcRoot, moduleName.slice(2)), platform);

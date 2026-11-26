@@ -1,7 +1,7 @@
 import type { Buildings, GeoCoordinate, GeoRooms } from "@cmumaps/common";
 import { router, useGlobalSearchParams, usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Dimensions, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { Dimensions, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import type { Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBuildings, useFloorplan, usePois } from "@/api/client";
@@ -239,6 +239,11 @@ export const MapScreen = () => {
   };
 
   const mapReady = place.kind !== "pending";
+  const searchTop = insets.top + 16;
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchOpen(false);
+  };
 
   return (
     <View style={styles.fill}>
@@ -271,14 +276,14 @@ export const MapScreen = () => {
         <View style={StyleSheet.absoluteFill} />
       )}
       {navigating && currentInstruction ? (
-        <View style={[styles.banner, { top: insets.top + 8 }]}>
+        <View style={[styles.banner, { top: searchTop }]}>
           <Text style={styles.bannerTitle}>
             {currentInstruction.action} · {currentInstruction.distance} ft
           </Text>
           <Text style={styles.bannerSub}>{end.label}</Text>
         </View>
       ) : (
-        <View style={[styles.searchWrap, { top: insets.top + 8 }]}>
+        <View style={[styles.searchWrap, { top: searchTop }]}>
           <View style={styles.searchRow}>
             <TextInput
               value={searchQuery}
@@ -291,6 +296,15 @@ export const MapScreen = () => {
                 setSearchOpen(true);
               }}
             />
+            {searchOpen || searchQuery.length > 0 ? (
+              <Pressable
+                accessibilityLabel="Clear search"
+                onPress={clearSearch}
+                style={styles.clearButton}
+              >
+                <Text style={styles.clearText}>✕</Text>
+              </Pressable>
+            ) : null}
             <AccountDial
               open={gearOpen}
               signedIn={signedIn}
@@ -314,7 +328,7 @@ export const MapScreen = () => {
         </View>
       )}
       {!searchOpen && !navigating && building ? (
-        <View style={[styles.floors, { top: insets.top + 72 }]}>
+        <View style={[styles.floors, { top: searchTop + 64 }]}>
           <FloorSwitcher
             floors={building.floors}
             current={activeFloor?.floor}
@@ -322,7 +336,7 @@ export const MapScreen = () => {
           />
         </View>
       ) : null}
-      <View style={[styles.prompts, { top: insets.top + 72 }]}>
+      <View style={[styles.prompts, { top: searchTop + 64 }]}>
         <PromptCard
           visible={locationPromptVisible && !navOpen}
           title="Turn on location"
@@ -452,6 +466,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  clearButton: {
+    alignItems: "center",
+    backgroundColor: theme.paper,
+    borderRadius: 18,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  clearText: {
+    color: theme.muted,
+    fontSize: 16,
+    fontWeight: "700",
   },
   banner: {
     backgroundColor: theme.green,

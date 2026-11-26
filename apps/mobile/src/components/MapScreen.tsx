@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BackHandler,
   Dimensions,
+  Keyboard,
   Pressable,
   Share,
   StyleSheet,
@@ -20,6 +21,7 @@ import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
 import { CloseIcon, SearchIcon } from "@/components/Icons";
 import { LocationPrompt } from "@/components/LocationPrompt";
+import { LoginModal } from "@/components/LoginModal";
 import { NavHeader, NavPanel, StepsSheet, TurnByTurnBanner } from "@/components/NavigationChrome";
 import { PlaceSheet } from "@/components/PlaceSheet";
 import { ReportSheet } from "@/components/ReportSheet";
@@ -70,10 +72,12 @@ export const MapScreen = () => {
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [signInReturnPath, setSignInReturnPath] = useState("/");
   const [mapFloor, setMapFloor] = useState<FloorRef | null>(null);
   const [viewRegion, setViewRegion] = useState<Region | null>(null);
   const [focusKey, setFocusKey] = useState(0);
   const promptedBuilding = useRef<string | null>(null);
+  const skipSearchLoginPrompt = useRef(false);
 
   const sheet = useMapStore((state) => state.sheet);
   const setSheet = useMapStore((state) => state.setSheet);
@@ -103,8 +107,14 @@ export const MapScreen = () => {
   const signedIn = Boolean(user);
   useShakeGesture(
     () => openModal("report"),
-    activeModal !== "report" && activeModal !== "reviewSignIn",
+    activeModal !== "report" && activeModal !== "reviewSignIn" && activeModal !== "login",
   );
+
+  useEffect(() => {
+    if (signedIn) {
+      skipSearchLoginPrompt.current = false;
+    }
+  }, [signedIn]);
 
   const buildings = useBuildings();
   const target = parseCampusTarget(pathname, buildings.data, floorParam);
@@ -198,6 +208,14 @@ export const MapScreen = () => {
     void signIn(path);
   };
 
+  const promptLogin = (path: string) => {
+    setSignInReturnPath(path);
+    setSearchOpen(false);
+    setSearchFocused(false);
+    Keyboard.dismiss();
+    openModal("login");
+  };
+
   const openReviewSignIn = () => {
     setReviewError(null);
     openModal("reviewSignIn");
@@ -254,7 +272,7 @@ export const MapScreen = () => {
       setMapFloor((current) => (current ? null : current));
       if (promptedBuilding.current !== resolved.buildingCode) {
         promptedBuilding.current = resolved.buildingCode;
-        startSignIn(resolved.path);
+        promptLogin(resolved.path);
       }
       return;
     }
@@ -407,6 +425,10 @@ export const MapScreen = () => {
               placeholderTextColor={theme.subtle}
               style={styles.search}
               onFocus={() => {
+                if (!signedIn && !skipSearchLoginPrompt.current) {
+                  promptLogin(targetHref(pathname, src || undefined, dst || undefined));
+                  return;
+                }
                 setNavEdit(null);
                 setSearchOpen(true);
                 setSearchFocused(true);
@@ -490,6 +512,15 @@ export const MapScreen = () => {
           requestUserLocation().catch(() => undefined);
         }}
         onDismiss={() => setLocationPromptVisible(false)}
+      />
+
+      <LoginModal
+        visible={activeModal === "login" && !signedIn}
+        onSignIn={() => startSignIn(signInReturnPath)}
+        onDismiss={() => {
+          skipSearchLoginPrompt.current = true;
+          closeModal();
+        }}
       />
 
       <ReviewPasswordPrompt
@@ -603,7 +634,7 @@ export const MapScreen = () => {
                 setFocusKey((key) => key + 1);
                 open(targetPath(nextTarget));
               }}
-              onNeedSignIn={startSignIn}
+              onNeedSignIn={promptLogin}
             />
           </View>
         </View>

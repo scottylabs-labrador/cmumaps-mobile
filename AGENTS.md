@@ -52,7 +52,7 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 
 #### App Review sign-in (non-Keycloak)
 
-Apple reviewers cannot use CMU Keycloak. Long-press the dial **Sign in** control, enter the review password, and Better Auth signs in with the demo email/password account (`review@cmumaps.com`, enabled and seeded on server boot only when `PASSWORD_SIGN_IN` is set). Local default: `CMUMaps-AppReview-2026`. Set `PASSWORD_SIGN_IN` on Railway for production during review (and put the same value in App Store Connect review notes); unset or empty it to disable password sign-in. A normal tap still opens Keycloak. Zooming into a non-public floor starts Keycloak sign-in immediately (no intermediate prompt).
+Apple reviewers cannot use CMU Keycloak. Long-press the dial **Sign in** control, enter the review password, and Better Auth signs in with the demo email/password account (`review@cmumaps.com`, enabled and seeded on server boot only when `PASSWORD_SIGN_IN` is set). Local default: `CMUMaps-AppReview-2026`. Set `PASSWORD_SIGN_IN` on Railway for production during review (and put the same value in App Store Connect review notes); unset or empty it to disable password sign-in. A normal tap still opens Keycloak. Tapping search while signed out, or zooming into a non-public floor, shows a login modal (Sign in / Close); Close lets search continue for the session and skips re-prompting that building until you leave it.
 
 ### Standard commands
 

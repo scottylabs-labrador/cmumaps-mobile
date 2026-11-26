@@ -1,4 +1,5 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useMemo, useRef } from "react";
+import { Animated, Image, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { locationImage } from "@/lib/locationImage";
 import type { Place } from "@/lib/place";
 import type { SheetState } from "@/store";
@@ -11,6 +12,7 @@ interface Props {
   detail: string;
   sheet: SheetState;
   onCycle: () => void;
+  onClose: () => void;
   onDirections: () => void;
   onShare: () => void;
   needsSignIn: boolean;
@@ -24,11 +26,57 @@ export const PlaceSheet = ({
   detail,
   sheet,
   onCycle,
+  onClose,
   onDirections,
   onShare,
   needsSignIn,
   onSignIn,
 }: Props) => {
+  const dragY = useRef(new Animated.Value(0)).current;
+
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          Math.abs(gesture.dy) > 8 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+        onPanResponderMove: (_, gesture) => {
+          if (gesture.dy > 0) {
+            dragY.setValue(gesture.dy);
+          }
+        },
+        onPanResponderRelease: (_, gesture) => {
+          const shouldClose = gesture.dy > 100 || gesture.vy > 1.1;
+          if (shouldClose) {
+            Animated.timing(dragY, {
+              toValue: 420,
+              duration: 180,
+              useNativeDriver: true,
+            }).start(() => {
+              dragY.setValue(0);
+              onClose();
+            });
+            return;
+          }
+          Animated.spring(dragY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 4,
+          }).start();
+          if (gesture.dy < -48) {
+            onCycle();
+          }
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(dragY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 4,
+          }).start();
+        },
+      }),
+    [dragY, onClose, onCycle],
+  );
+
   if (place.kind === "home" || place.kind === "pending") {
     return null;
   }
@@ -41,7 +89,14 @@ export const PlaceSheet = ({
   const photo = locationImage(buildingCode, roomName);
 
   return (
-    <View style={[styles.sheet, sheet === "collapsed" ? styles.collapsed : null]}>
+    <Animated.View
+      style={[
+        styles.sheet,
+        sheet === "collapsed" ? styles.collapsed : null,
+        { transform: [{ translateY: dragY }] },
+      ]}
+      {...pan.panHandlers}
+    >
       <Pressable onPress={onCycle} style={styles.handle} accessibilityRole="button">
         <View style={styles.grabber} />
       </Pressable>
@@ -63,7 +118,7 @@ export const PlaceSheet = ({
           </Pressable>
         </View>
       )}
-    </View>
+    </Animated.View>
   );
 };
 

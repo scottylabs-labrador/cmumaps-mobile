@@ -655,6 +655,10 @@ export const MapScreen = () => {
             }
             sheet={sheet}
             onCycle={cycleSheet}
+            onClose={() => {
+              setMapFloor(null);
+              open("/");
+            }}
             needsSignIn={needsSignIn}
             onSignIn={() => startSignIn(pathname)}
             onDirections={() => {
@@ -678,57 +682,57 @@ export const MapScreen = () => {
             }}
           />
         ) : null}
-        {showSearchResults ? (
-          <View style={styles.searchOverlay}>
-            <SearchResults
-              query={searchQuery}
-              signedIn={signedIn}
-              onClose={clearSearch}
-              pickingDestination={navEdit === "dst" || (Boolean(src) && !dst)}
-              onPick={(value) => {
-                if (navEdit === "src") {
-                  open(pathname, value, dst);
-                } else if (navEdit === "dst") {
-                  open(pathname, src, value);
-                } else {
-                  open(pathname === "/" ? "/" : pathname, src, value);
-                }
-                setNavEdit(null);
-              }}
-              onSelectBuilding={(code) => {
-                if (navEdit) {
-                  const next = navEdit === "src" ? [code, dst] : [src, code];
-                  open(pathname, next[0], next[1]);
-                  setNavEdit(null);
-                  return;
-                }
-                selectBuilding(code);
-              }}
-              onSelectFloor={(code, level) => {
-                if (navEdit) {
-                  const point = `floor:${code}-${level}`;
-                  const next = navEdit === "src" ? [point, dst] : [src, point];
-                  open(pathname, next[0], next[1]);
-                  setNavEdit(null);
-                  return;
-                }
-                selectFloor(code, level);
-              }}
-              onSelectRoom={(code, roomName) => {
-                if (navEdit) {
-                  const point = `${code}-${roomName}`;
-                  const next = navEdit === "src" ? [point, dst] : [src, point];
-                  open(pathname, next[0], next[1]);
-                  setNavEdit(null);
-                  return;
-                }
-                selectRoom(code, roomName);
-              }}
-              onNeedSignIn={startSignIn}
-            />
-          </View>
-        ) : null}
       </View>
+      {showSearchResults ? (
+        <View style={styles.searchOverlay} pointerEvents="box-none">
+          <SearchResults
+            query={searchQuery}
+            signedIn={signedIn}
+            onClose={clearSearch}
+            pickingDestination={navEdit === "dst" || (Boolean(src) && !dst)}
+            onPick={(value) => {
+              if (navEdit === "src") {
+                open(pathname, value, dst);
+              } else if (navEdit === "dst") {
+                open(pathname, src, value);
+              } else {
+                open(pathname === "/" ? "/" : pathname, src, value);
+              }
+              setNavEdit(null);
+            }}
+            onSelectBuilding={(code) => {
+              if (navEdit) {
+                const next = navEdit === "src" ? [code, dst] : [src, code];
+                open(pathname, next[0], next[1]);
+                setNavEdit(null);
+                return;
+              }
+              selectBuilding(code);
+            }}
+            onSelectFloor={(code, level) => {
+              if (navEdit) {
+                const point = `floor:${code}-${level}`;
+                const next = navEdit === "src" ? [point, dst] : [src, point];
+                open(pathname, next[0], next[1]);
+                setNavEdit(null);
+                return;
+              }
+              selectFloor(code, level);
+            }}
+            onSelectRoom={(code, roomName) => {
+              if (navEdit) {
+                const point = `${code}-${roomName}`;
+                const next = navEdit === "src" ? [point, dst] : [src, point];
+                open(pathname, next[0], next[1]);
+                setNavEdit(null);
+                return;
+              }
+              selectRoom(code, roomName);
+            }}
+            onNeedSignIn={startSignIn}
+          />
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -883,9 +887,8 @@ const styles = StyleSheet.create({
     right: 0,
   },
   searchOverlay: {
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
+    ...StyleSheet.absoluteFill,
+    justifyContent: "flex-end",
+    zIndex: 30,
   },
 });

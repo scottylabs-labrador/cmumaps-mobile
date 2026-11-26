@@ -294,7 +294,7 @@ export const MapScreen = () => {
 
   const building = buildingCode ? buildings.data?.[buildingCode] : undefined;
   const needsSignIn = Boolean(floor) && !canSeeFloor;
-  const navOpen = Boolean(src && dst);
+  const navOpen = Boolean(src || dst);
   const originReady = src !== "user" || Boolean(userPosition);
   const line = originReady ? routeLine(routes.data, selectedRoute) : [];
   const currentInstruction = routes.data?.[selectedRoute]?.instructions[instructionIndex];

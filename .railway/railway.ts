@@ -28,7 +28,6 @@ export default defineRailway(() => {
       AUTH_CLIENT_SECRET: preserve(),
       AUTH_ISSUER: preserve(),
       AUTH_JWKS_URI: preserve(),
-      BETTER_AUTH_URL: preserve(),
       DATABASE_URL: "${{Postgres.DATABASE_URL}}",
       SERVER_URL: preserve(),
     },

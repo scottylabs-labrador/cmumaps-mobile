@@ -24,8 +24,8 @@
     },
     "info": {
       "en-US": {
-        "title": "ScottyLabs CMU Maps",
-        "subtitle": "Super App for Carnegie Mellon University",
+        "title": "CMU Maps",
+        "subtitle": "Super App for CMU",
         "promoText": "Super App for Carnegie Mellon University",
         "description": "CMU Maps helps you get around Carnegie Mellon University.\n\n1. Map\n2. Building outlines\n3. Interactive floor plans\n4. Room cards with 25Live availability, dining info, and room images\n5. Building cards with images\n6. Waypoint-to-waypoint pathfinding and turn-based navigation\n7. Search nearest rooms, dining (see what's open), restrooms, and classes\n8. Upload your schedule\n\nMade by ScottyLabs",
         "keywords": ["CMU", "campus", "maps", "navigation", "ScottyLabs", "floor plans"],

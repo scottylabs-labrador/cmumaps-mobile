@@ -6,6 +6,7 @@ import {
   deriveChromeVisibility,
   resolveNavigationStep,
   resolveViewportFloor,
+  visibleAdjacentFloorCodes,
   visibleRoomLabels,
 } from "./mapSession";
 import { buildRoutePlan } from "./routePlan";
@@ -129,7 +130,18 @@ describe("mapSession", () => {
     expect(clampInstructionIndex(10, 2)).toBe(2);
   });
 
-  test("gates non-CUC viewport floor focus behind sign-in when zoomed in", () => {
+  test("gates non-CUC viewport floor focus behind sign-in when zoomed past raised threshold", () => {
+    const moderateZoomCuc = {
+      latitude: 40.4435,
+      longitude: -79.942,
+      latitudeDelta: 0.001,
+      longitudeDelta: 0.001,
+    };
+    expect(resolveViewportFloor(buildings, moderateZoomCuc, 400, true)).toEqual({
+      kind: "none",
+    });
+    expect(visibleAdjacentFloorCodes(buildings, moderateZoomCuc, 400, true, undefined)).toEqual([]);
+
     const zoomedCuc = {
       latitude: 40.4435,
       longitude: -79.942,

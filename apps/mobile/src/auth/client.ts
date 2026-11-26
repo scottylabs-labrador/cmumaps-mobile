@@ -15,10 +15,11 @@ export const authClient = createAuthClient({
 });
 
 export const signIn = (returnPath: string) => {
-  const path = returnPath.startsWith("/") ? returnPath.slice(1) : returnPath;
+  // Relative path: expoClient uses Linking.createURL (cmumaps:// in builds, exp:// in Expo Go).
+  const path = returnPath.startsWith("/") ? returnPath : `/${returnPath}`;
   return authClient.signIn.social({
     provider: "keycloak",
-    callbackURL: `cmumaps://${path}`,
+    callbackURL: path,
   });
 };
 

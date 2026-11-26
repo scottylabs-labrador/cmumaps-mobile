@@ -11,13 +11,13 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 | Service                        | Port | How to start                                                                                                                                |
 | ------------------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | PostgreSQL (`@cmumaps/db`)     | 5432 | `bun run --filter @cmumaps/db dev` from the repo root. Database `cmumaps` at `postgresql://postgres:donotuseinprod@localhost:5432/cmumaps`. |
-| Server (`@cmumaps/server`)     | 8080 | `bun run --filter @cmumaps/server dev` from the repo root                                                                                   |
+| Server (`@cmumaps/server`)     | 8080 | `bun run --filter @cmumaps/server dev` from the repo root (also starts Cloudflare Tunnel → `https://local.cmumaps.com`)                     |
 | Mobile app (`@cmumaps/mobile`) | 8081 | `turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server` from the repo root                                                            |
 
 ### Key gotchas
 
 - **`DATABASE_URL` in shell env**: The local connection string is the `local` profile default in `packages/db/secretspec.toml`. The server and dataflow import the Drizzle client from `@cmumaps/db/client`, which reads that variable. A stale shell `DATABASE_URL` (for example `postgres:5432` from Docker Compose) can still override it. `unset DATABASE_URL` before starting the server or running `bun run --filter @cmumaps/db db:migrate`.
-- **`SERVER_PORT`**: The local SecretSpec profile sets `SERVER_PORT` to `8080` because this Mac cannot bind port 80 without sudo. The schema coerces that string. `SERVER_URL` is `http://localhost:8080`.
+- **`SERVER_PORT` / `SERVER_URL`**: Local listen port is `8080`. Public URL is `https://local.cmumaps.com` via Cloudflare Tunnel (`cloudflared` sidecar in the server `dev` script). Put the tunnel token in Bao as `cmumaps-mobile/local/server` → `TUNNEL_TOKEN` (`brew install cloudflared` once). Keycloak redirect: `https://local.cmumaps.com/api/auth/callback/keycloak`.
 - **Database**: `@cmumaps/db` owns the Drizzle schema. `bun run --filter @cmumaps/db db:migrate` applies the SQL in `packages/db/drizzle`.
 - **Code generation before check/build**: Before running `bun run check` or building the server, generate the OpenAPI artifacts: `cd apps/server && bun run tsoa && bun run openapi` (or use `bun run sync` from the root).
 - **Pre-commit hooks** (`.vite-hooks/pre-commit`): Runs `editorconfig-checker`, `syncpack lint`, and `vp check`. Vite+ installs the hook dispatcher on `prepare`.
@@ -28,7 +28,7 @@ CMU Maps is a Turborepo monorepo with 3 apps (`apps/mobile`, `apps/server`, `app
 
 ### Testing the mobile app on the iOS simulator
 
-`turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server` starts the server and Expo together. In dev, the app calls port 8080 on the host Metro reports.
+`turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server` starts the server (plus tunnel) and Expo together. In dev, the app calls `https://local.cmumaps.com`.
 
 #### Setup
 

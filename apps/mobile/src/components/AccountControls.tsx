@@ -121,11 +121,9 @@ export const AccountCardModal = ({
   <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
     <Pressable style={styles.modalBackdrop} onPress={onDismiss}>
       <Pressable style={styles.modalCard} onPress={(event) => event.stopPropagation()}>
-        <View style={styles.modalHeader}>
+        <View style={[styles.modalHeader, styles.accountHeader]}>
           <View style={styles.accountIdentity}>
-            <Text style={styles.modalTitle} numberOfLines={1}>
-              {name || "CMU Account"}
-            </Text>
+            <Text style={styles.modalTitle}>{name || "CMU Account"}</Text>
             {email ? (
               <Text style={styles.accountEmail} numberOfLines={1}>
                 {email}
@@ -178,7 +176,7 @@ export const ReviewPasswordPrompt = ({
       <Pressable style={styles.modalBackdrop} onPress={onDismiss}>
         <Pressable style={styles.modalCard} onPress={(event) => event.stopPropagation()}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>App Review sign-in</Text>
+            <Text style={[styles.modalTitle, styles.modalTitleFlex]}>App Review sign-in</Text>
             <Pressable
               accessibilityLabel="Cancel"
               onPress={onDismiss}
@@ -280,11 +278,17 @@ const styles = StyleSheet.create({
     gap: 12,
     justifyContent: "space-between",
   },
+  accountHeader: {
+    alignItems: "flex-start",
+  },
   modalTitle: {
     color: theme.ink,
-    flex: 1,
     fontSize: 21,
     fontWeight: "600",
+    lineHeight: 26,
+  },
+  modalTitleFlex: {
+    flex: 1,
   },
   closeCircle: {
     alignItems: "center",
@@ -301,6 +305,7 @@ const styles = StyleSheet.create({
   accountEmail: {
     color: theme.muted,
     fontSize: 14,
+    lineHeight: 19,
   },
   divider: {
     backgroundColor: "#ebebeb",

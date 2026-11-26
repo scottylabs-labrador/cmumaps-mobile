@@ -315,8 +315,8 @@ export const NavPanel = ({
       <View style={styles.card}>
         <View style={styles.tabBand}>
           {(["Fastest", "Inside"] as const).map((kind) => {
-            const available = Boolean(routes?.[kind]);
-            const active = kind === selected;
+            const available = Boolean(routes?.[kind]) && ready;
+            const active = kind === selected && available;
             const tint = active ? theme.brandDark : available ? theme.ink : theme.subtle;
             return (
               <Pressable

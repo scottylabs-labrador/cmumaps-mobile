@@ -10,6 +10,7 @@ import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
 import { AboutPanel } from "@/components/AboutPanel";
 import { AccountDial, PromptCard, ReviewPasswordPrompt } from "@/components/GearMenu";
+import { CloseIcon, SearchIcon } from "@/components/Icons";
 import { NavPanel } from "@/components/NavPanel";
 import { PlaceSheet } from "@/components/PlaceSheet";
 import { ReportSheet } from "@/components/ReportSheet";
@@ -415,11 +416,16 @@ export const MapScreen = () => {
     return "";
   };
 
-  const searchTop = insets.top + 16;
-  const showSearchResults = searchOpen && searchQuery.trim().length > 0;
+  const searchTop = insets.top + 12;
+  const selectedPlaceTitle =
+    place.kind !== "home" && place.kind !== "pending"
+      ? placeTitle(place, buildings.data, rooms.data)
+      : "";
+  const showSearchResults = searchOpen && (searchQuery.trim().length > 0 || navEdit !== null);
   const clearSearch = () => {
     setSearchQuery("");
     setSearchOpen(false);
+    setSearchFocused(false);
     setNavEdit(null);
   };
 
@@ -561,11 +567,13 @@ export const MapScreen = () => {
       ) : (
         <View style={[styles.searchWrap, { top: searchTop }]}>
           <View style={styles.searchPill}>
-            <Text style={styles.searchIcon}>⌕</Text>
+            <View style={styles.searchIconBox}>
+              <SearchIcon size={19} color={theme.muted} />
+            </View>
             <TextInput
-              value={searchQuery}
-              placeholder="Search here"
-              placeholderTextColor={theme.muted}
+              value={searchFocused || searchQuery.length > 0 ? searchQuery : selectedPlaceTitle}
+              placeholder="Search..."
+              placeholderTextColor={theme.subtle}
               style={styles.search}
               onFocus={() => {
                 setNavEdit(null);
@@ -578,13 +586,23 @@ export const MapScreen = () => {
                 setSearchOpen(true);
               }}
             />
-            {searchFocused || searchQuery.length > 0 ? (
+            {searchFocused || searchQuery.length > 0 || selectedPlaceTitle ? (
               <Pressable
-                accessibilityLabel="Clear search"
-                onPress={clearSearch}
+                accessibilityLabel={
+                  selectedPlaceTitle && !searchFocused ? "Clear selection" : "Clear search"
+                }
+                onPress={() => {
+                  if (searchFocused || searchQuery.length > 0) {
+                    clearSearch();
+                  } else {
+                    setMapFloor(null);
+                    open("/");
+                  }
+                }}
+                hitSlop={8}
                 style={styles.clearButton}
               >
-                <Text style={styles.clearText}>✕</Text>
+                <CloseIcon size={18} color={theme.muted} />
               </Pressable>
             ) : null}
           </View>
@@ -709,52 +727,60 @@ export const MapScreen = () => {
       </View>
       {showSearchResults ? (
         <View style={styles.searchOverlay} pointerEvents="box-none">
-          <SearchResults
-            query={searchQuery}
-            signedIn={signedIn}
-            onClose={clearSearch}
-            pickingDestination={navEdit === "dst" || (Boolean(src) && !dst)}
-            onPick={(value) => {
-              if (navEdit === "src") {
-                open(pathname, value, dst);
-              } else if (navEdit === "dst") {
-                open(pathname, src, value);
-              } else {
-                open(pathname === "/" ? "/" : pathname, src, value);
-              }
-              setNavEdit(null);
-            }}
-            onSelectBuilding={(code) => {
-              if (navEdit) {
-                const next = navEdit === "src" ? [code, dst] : [src, code];
-                open(pathname, next[0], next[1]);
-                setNavEdit(null);
-                return;
-              }
-              selectBuilding(code);
-            }}
-            onSelectFloor={(code, level) => {
-              if (navEdit) {
-                const point = `floor:${code}-${level}`;
-                const next = navEdit === "src" ? [point, dst] : [src, point];
-                open(pathname, next[0], next[1]);
-                setNavEdit(null);
-                return;
-              }
-              selectFloor(code, level);
-            }}
-            onSelectRoom={(code, roomName) => {
-              if (navEdit) {
-                const point = `${code}-${roomName}`;
-                const next = navEdit === "src" ? [point, dst] : [src, point];
-                open(pathname, next[0], next[1]);
-                setNavEdit(null);
-                return;
-              }
-              selectRoom(code, roomName);
-            }}
-            onNeedSignIn={startSignIn}
-          />
+          <Pressable style={StyleSheet.absoluteFill} onPress={clearSearch} />
+          <View
+            style={[styles.searchDropdownWrap, { top: navOpen ? searchTop + 158 : searchTop + 56 }]}
+          >
+            <SearchResults
+              query={searchQuery}
+              signedIn={signedIn}
+              showYourLocation={navEdit !== null}
+              pickingDestination={navEdit !== null || (Boolean(src) && !dst)}
+              onPick={(value) => {
+                if (navEdit === "src") {
+                  open(pathname, value, dst);
+                } else if (navEdit === "dst") {
+                  open(pathname, src, value);
+                } else {
+                  open(pathname === "/" ? "/" : pathname, src, value);
+                }
+                clearSearch();
+              }}
+              onSelectBuilding={(code) => {
+                if (navEdit) {
+                  const next = navEdit === "src" ? [code, dst] : [src, code];
+                  open(pathname, next[0], next[1]);
+                  clearSearch();
+                  return;
+                }
+                clearSearch();
+                selectBuilding(code);
+              }}
+              onSelectFloor={(code, level) => {
+                if (navEdit) {
+                  const point = `floor:${code}-${level}`;
+                  const next = navEdit === "src" ? [point, dst] : [src, point];
+                  open(pathname, next[0], next[1]);
+                  clearSearch();
+                  return;
+                }
+                clearSearch();
+                selectFloor(code, level);
+              }}
+              onSelectRoom={(code, roomName) => {
+                if (navEdit) {
+                  const point = `${code}-${roomName}`;
+                  const next = navEdit === "src" ? [point, dst] : [src, point];
+                  open(pathname, next[0], next[1]);
+                  clearSearch();
+                  return;
+                }
+                clearSearch();
+                selectRoom(code, roomName);
+              }}
+              onNeedSignIn={startSignIn}
+            />
+          </View>
         </View>
       ) : null}
     </View>
@@ -774,22 +800,22 @@ const styles = StyleSheet.create({
   searchPill: {
     alignItems: "center",
     backgroundColor: theme.paper,
-    borderRadius: 24,
+    borderRadius: 100,
     flexDirection: "row",
-    paddingLeft: 14,
-    paddingRight: 8,
+    height: 48,
+    paddingLeft: 16,
+    paddingRight: 14,
     shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  searchIcon: {
-    color: theme.muted,
-    fontSize: 20,
-    marginRight: 6,
+  searchIconBox: {
+    marginRight: 10,
   },
   gear: {
-    left: 12,
+    left: 16,
     position: "absolute",
     zIndex: 25,
   },
@@ -797,15 +823,13 @@ const styles = StyleSheet.create({
     color: theme.ink,
     flex: 1,
     fontSize: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   clearButton: {
     alignItems: "center",
-    backgroundColor: theme.canvas,
-    borderRadius: 16,
-    height: 32,
+    height: 28,
     justifyContent: "center",
-    width: 32,
+    width: 28,
   },
   clearText: {
     color: theme.muted,
@@ -963,7 +987,11 @@ const styles = StyleSheet.create({
   },
   searchOverlay: {
     ...StyleSheet.absoluteFill,
-    justifyContent: "flex-end",
-    zIndex: 30,
+    zIndex: 18,
+  },
+  searchDropdownWrap: {
+    left: 16,
+    position: "absolute",
+    right: 16,
   },
 });

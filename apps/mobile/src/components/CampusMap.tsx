@@ -1,7 +1,7 @@
 import type { Buildings, GeoCoordinate, GeoRooms, Pois } from "@cmumaps/common";
 import { getRoomTypeDetails } from "@cmumaps/common";
 import { useEffect, useState } from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import MapView, {
   Marker,
   Polygon,
@@ -106,7 +106,7 @@ export const CampusMap = ({
   return (
     <MapView
       style={StyleSheet.absoluteFill}
-      provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+      provider={PROVIDER_GOOGLE}
       initialRegion={camera ?? initialRegion}
       showsUserLocation={Boolean(userPosition)}
       showsBuildings={false}

@@ -15,7 +15,13 @@ const plugins: NonNullable<ExpoConfig["plugins"]> = [
 ];
 
 if (googleMapsApiKey) {
-  plugins.push(["react-native-maps", { androidGoogleMapsApiKey: googleMapsApiKey }]);
+  plugins.push([
+    "react-native-maps",
+    {
+      androidGoogleMapsApiKey: googleMapsApiKey,
+      iosGoogleMapsApiKey: googleMapsApiKey,
+    },
+  ]);
 }
 
 const config: ExpoConfig = {

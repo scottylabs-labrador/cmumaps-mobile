@@ -526,68 +526,36 @@ export const MapScreen = () => {
             >
               <Text style={styles.swapText}>⇅</Text>
             </Pressable>
-            <AccountDial
-              open={gearOpen}
-              signedIn={signedIn}
-              onToggle={() => setGearOpen((open) => !open)}
-              onSignIn={() => startSignIn(href(pathname, src || undefined, dst || undefined))}
-              onReviewSignIn={openReviewSignIn}
-              onSignOut={() => {
-                setGearOpen(false);
-                signOut().catch(() => undefined);
-              }}
-              onAbout={() => {
-                setGearOpen(false);
-                setAboutOpen(true);
-              }}
-            />
           </View>
         </View>
       ) : (
         <View style={[styles.searchWrap, { top: searchTop }]}>
-          <View style={styles.searchRow}>
-            <View style={styles.searchPill}>
-              <TextInput
-                value={searchQuery}
-                placeholder="Search CMU Maps"
-                placeholderTextColor={theme.muted}
-                style={styles.search}
-                onFocus={() => {
-                  setNavEdit(null);
-                  setSearchOpen(true);
-                  setSearchFocused(true);
-                }}
-                onBlur={() => setSearchFocused(false)}
-                onChangeText={(value) => {
-                  setSearchQuery(value);
-                  setSearchOpen(true);
-                }}
-              />
-              {searchFocused || searchQuery.length > 0 ? (
-                <Pressable
-                  accessibilityLabel="Clear search"
-                  onPress={clearSearch}
-                  style={styles.clearButton}
-                >
-                  <Text style={styles.clearText}>✕</Text>
-                </Pressable>
-              ) : null}
-            </View>
-            <AccountDial
-              open={gearOpen}
-              signedIn={signedIn}
-              onToggle={() => setGearOpen((open) => !open)}
-              onSignIn={() => startSignIn(href(pathname, src || undefined, dst || undefined))}
-              onReviewSignIn={openReviewSignIn}
-              onSignOut={() => {
-                setGearOpen(false);
-                signOut().catch(() => undefined);
+          <View style={styles.searchPill}>
+            <TextInput
+              value={searchQuery}
+              placeholder="Search CMU Maps"
+              placeholderTextColor={theme.muted}
+              style={styles.search}
+              onFocus={() => {
+                setNavEdit(null);
+                setSearchOpen(true);
+                setSearchFocused(true);
               }}
-              onAbout={() => {
-                setGearOpen(false);
-                setAboutOpen(true);
+              onBlur={() => setSearchFocused(false)}
+              onChangeText={(value) => {
+                setSearchQuery(value);
+                setSearchOpen(true);
               }}
             />
+            {searchFocused || searchQuery.length > 0 ? (
+              <Pressable
+                accessibilityLabel="Clear search"
+                onPress={clearSearch}
+                style={styles.clearButton}
+              >
+                <Text style={styles.clearText}>✕</Text>
+              </Pressable>
+            ) : null}
           </View>
         </View>
       )}
@@ -597,6 +565,25 @@ export const MapScreen = () => {
             floors={building.floors}
             current={activeFloor?.floor}
             onSelect={(level) => selectFloor(building.code, level)}
+          />
+        </View>
+      ) : null}
+      {!showSearchResults ? (
+        <View style={[styles.gear, { bottom: insets.bottom + 156 }]}>
+          <AccountDial
+            open={gearOpen}
+            signedIn={signedIn}
+            onToggle={() => setGearOpen((open) => !open)}
+            onSignIn={() => startSignIn(href(pathname, src || undefined, dst || undefined))}
+            onReviewSignIn={openReviewSignIn}
+            onSignOut={() => {
+              setGearOpen(false);
+              signOut().catch(() => undefined);
+            }}
+            onAbout={() => {
+              setGearOpen(false);
+              setAboutOpen(true);
+            }}
           />
         </View>
       ) : null}
@@ -756,19 +743,18 @@ const styles = StyleSheet.create({
     right: 16,
     zIndex: 20,
   },
-  searchRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-  },
   searchPill: {
     alignItems: "center",
     backgroundColor: theme.paper,
     borderRadius: 24,
-    flex: 1,
     flexDirection: "row",
     paddingLeft: 16,
     paddingRight: 8,
+  },
+  gear: {
+    left: 12,
+    position: "absolute",
+    zIndex: 25,
   },
   search: {
     color: theme.ink,

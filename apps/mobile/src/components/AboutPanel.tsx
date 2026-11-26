@@ -1,6 +1,7 @@
 import * as WebBrowser from "expo-web-browser";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { aboutDescription, credits, privacyPolicyUrl } from "@/content/about";
+import { useSwipeToDismiss } from "@/hooks/useSwipeToDismiss";
 import { theme } from "@/theme";
 
 interface Props {
@@ -9,15 +10,17 @@ interface Props {
 }
 
 export const AboutPanel = ({ visible, onClose }: Props) => {
+  const { dragY, panHandlers } = useSwipeToDismiss(onClose);
+
   if (!visible) {
     return null;
   }
 
   return (
-    <View style={styles.sheet}>
-      <Pressable onPress={onClose} style={styles.handle} accessibilityRole="button">
+    <Animated.View style={[styles.sheet, { transform: [{ translateY: dragY }] }]}>
+      <View {...panHandlers} style={styles.handle} accessibilityRole="adjustable">
         <View style={styles.grabber} />
-      </Pressable>
+      </View>
       <ScrollView contentContainerStyle={styles.content}>
         <Image source={require("../../assets/icon.png")} style={styles.icon} />
         <Text style={styles.title}>About CMU Maps</Text>
@@ -35,11 +38,8 @@ export const AboutPanel = ({ visible, onClose }: Props) => {
         <Text style={styles.body}>Developer: {credits.developer}</Text>
         <Text style={styles.body}>Designer: {credits.designer}</Text>
         <Text style={[styles.body, styles.thanks]}>{credits.dataSupport}</Text>
-        <Pressable onPress={onClose} style={styles.close}>
-          <Text style={styles.closeText}>Close</Text>
-        </Pressable>
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: "center",
+    paddingBottom: 8,
     paddingHorizontal: 24,
   },
   icon: {
@@ -98,18 +99,10 @@ const styles = StyleSheet.create({
     color: theme.ink,
     fontSize: 16,
     fontWeight: "700",
-    marginTop: 20,
     marginBottom: 6,
+    marginTop: 20,
   },
   thanks: {
     marginTop: 8,
-  },
-  close: {
-    marginTop: 20,
-    paddingVertical: 8,
-  },
-  closeText: {
-    color: theme.muted,
-    fontWeight: "600",
   },
 });

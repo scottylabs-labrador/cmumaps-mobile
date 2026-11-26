@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { CloseIcon, LogInIcon, LogOutIcon, PlusIcon, UserIcon } from "@/components/Icons";
+import { LogInIcon, LogOutIcon, PlusIcon, UserIcon } from "@/components/Icons";
 import { theme } from "@/theme";
 
 const DIAL_STEP = 62;
@@ -117,22 +117,13 @@ export const AccountCardModal = ({
   <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
     <Pressable style={styles.modalBackdrop} onPress={onDismiss}>
       <Pressable style={styles.modalCard} onPress={(event) => event.stopPropagation()}>
-        <View style={[styles.modalHeader, styles.accountHeader]}>
-          <View style={styles.accountIdentity}>
-            <Text style={styles.modalTitle}>{name || "CMU Account"}</Text>
-            {email ? (
-              <Text style={styles.accountEmail} numberOfLines={1}>
-                {email}
-              </Text>
-            ) : null}
-          </View>
-          <Pressable
-            accessibilityLabel="Close account"
-            onPress={onDismiss}
-            style={styles.closeCircle}
-          >
-            <CloseIcon size={16} color={theme.muted} />
-          </Pressable>
+        <View style={styles.accountIdentity}>
+          <Text style={styles.modalTitle}>{name || "CMU Account"}</Text>
+          {email ? (
+            <Text style={styles.accountEmail} numberOfLines={1}>
+              {email}
+            </Text>
+          ) : null}
         </View>
         <View style={styles.divider} />
         <Pressable style={styles.signOutRow} onPress={onSignOut}>
@@ -171,17 +162,7 @@ export const ReviewPasswordPrompt = ({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <Pressable style={styles.modalBackdrop} onPress={onDismiss}>
         <Pressable style={styles.modalCard} onPress={(event) => event.stopPropagation()}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, styles.modalTitleFlex]}>App Review sign-in</Text>
-            <Pressable
-              accessibilityLabel="Cancel"
-              onPress={onDismiss}
-              disabled={busy}
-              style={styles.closeCircle}
-            >
-              <CloseIcon size={16} color={theme.muted} />
-            </Pressable>
-          </View>
+          <Text style={styles.modalTitle}>App Review sign-in</Text>
           <Text style={styles.body}>Enter the review password from App Store Connect notes.</Text>
           <TextInput
             value={password}
@@ -278,34 +259,13 @@ const styles = StyleSheet.create({
     width: "100%",
     elevation: 8,
   },
-  modalHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-  },
-  accountHeader: {
-    alignItems: "flex-start",
-  },
   modalTitle: {
     color: theme.ink,
     fontSize: 21,
     fontWeight: "600",
     lineHeight: 26,
   },
-  modalTitleFlex: {
-    flex: 1,
-  },
-  closeCircle: {
-    alignItems: "center",
-    backgroundColor: theme.canvas,
-    borderRadius: 16,
-    height: 32,
-    justifyContent: "center",
-    width: 32,
-  },
   accountIdentity: {
-    flex: 1,
     gap: 2,
   },
   accountEmail: {

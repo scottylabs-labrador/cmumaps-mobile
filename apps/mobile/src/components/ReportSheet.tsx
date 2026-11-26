@@ -91,9 +91,6 @@ export const ReportSheet = ({ visible, context, onDismiss }: Props) => {
           >
             <Text style={styles.buttonText}>{busy ? "Opening Mail…" : "Send email"}</Text>
           </Pressable>
-          <Pressable onPress={onDismiss} disabled={busy}>
-            <Text style={styles.cancel}>Cancel</Text>
-          </Pressable>
         </Pressable>
       </Pressable>
     </Modal>
@@ -153,9 +150,5 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#ffffff",
     fontWeight: "700",
-  },
-  cancel: {
-    color: theme.muted,
-    marginTop: 10,
   },
 });

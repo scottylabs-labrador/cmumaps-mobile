@@ -1,5 +1,4 @@
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { CloseIcon } from "@/components/Icons";
 import { theme } from "@/theme";
 
 interface LocationPromptProps {
@@ -12,12 +11,7 @@ export const LocationPrompt = ({ visible, onAllow, onDismiss }: LocationPromptPr
   <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
     <Pressable style={styles.backdrop} onPress={onDismiss}>
       <Pressable style={styles.card} onPress={(event) => event.stopPropagation()}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Enable your location</Text>
-          <Pressable accessibilityLabel="Close" onPress={onDismiss} style={styles.closeCircle}>
-            <CloseIcon size={16} color={theme.muted} />
-          </Pressable>
-        </View>
+        <Text style={styles.title}>Enable your location</Text>
         <Text style={styles.body}>
           Allow CMU Maps to use your current location to find routes and show where you are on
           campus.
@@ -55,25 +49,10 @@ const styles = StyleSheet.create({
     width: "100%",
     elevation: 8,
   },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-  },
   title: {
     color: theme.ink,
-    flex: 1,
     fontSize: 21,
     fontWeight: "600",
-  },
-  closeCircle: {
-    alignItems: "center",
-    backgroundColor: theme.canvas,
-    borderRadius: 16,
-    height: 32,
-    justifyContent: "center",
-    width: 32,
   },
   body: {
     color: theme.muted,

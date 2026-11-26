@@ -1,5 +1,6 @@
 import type { Instruction } from "@cmumaps/common";
 import {
+  Animated,
   Dimensions,
   Modal,
   Pressable,
@@ -22,6 +23,7 @@ import {
   TargetIcon,
   ZapIcon,
 } from "@/components/Icons";
+import { useSwipeToDismiss } from "@/hooks/useSwipeToDismiss";
 import { ROUTE_KINDS, type RouteKind, type RoutePlan, type RouteSummary } from "@/lib/routePlan";
 import { theme } from "@/theme";
 
@@ -218,6 +220,9 @@ export const StepsSheet = ({
   onClose,
   onEnd,
 }: StepsSheetProps) => {
+  const { dragY, panHandlers } = useSwipeToDismiss(onClose, {
+    dismissDistance: MAX_STEPS_HEIGHT,
+  });
   const instructions = plan.activeRoute?.instructions ?? [];
   const arrived = instructions.length > 0 && index >= instructions.length;
   const current = arrived ? null : instructions[index];
@@ -227,14 +232,10 @@ export const StepsSheet = ({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.stepsBackdrop}>
         <Pressable style={styles.stepsDismissArea} onPress={onClose} />
-        <View style={styles.stepsSheet}>
-          <Pressable
-            accessibilityLabel="Close steps"
-            onPress={onClose}
-            style={styles.stepsHandleRow}
-          >
+        <Animated.View style={[styles.stepsSheet, { transform: [{ translateY: dragY }] }]}>
+          <View {...panHandlers} style={styles.stepsHandleRow} accessibilityRole="adjustable">
             <View style={styles.stepsGrabber} />
-          </Pressable>
+          </View>
 
           <View style={[styles.stepsHeaderCard, arrived ? styles.bannerArrived : null]}>
             <View style={styles.stepsHeaderContent}>
@@ -258,13 +259,6 @@ export const StepsSheet = ({
                   </View>
                 </>
               ) : null}
-              <Pressable
-                accessibilityLabel="Close directions list"
-                onPress={onClose}
-                style={styles.stepsCloseButton}
-              >
-                <CloseIcon size={18} color="#ffffff" />
-              </Pressable>
             </View>
           </View>
 
@@ -346,7 +340,7 @@ export const StepsSheet = ({
               <Text style={styles.actionText}>End</Text>
             </Pressable>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -704,14 +698,6 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.92)",
     fontSize: 14,
     marginTop: 2,
-  },
-  stepsCloseButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 16,
-    height: 32,
-    justifyContent: "center",
-    width: 32,
   },
   stepsScroll: {
     flexGrow: 0,

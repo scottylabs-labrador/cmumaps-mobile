@@ -224,6 +224,25 @@ export const MapScreen = () => {
     : routes.isError
       ? "No route for that pair."
       : (start.error ?? end.error);
+  const progressLines = (() => {
+    if (!navigating || !originReady) {
+      return null;
+    }
+    const route = routes.data?.[selectedRoute];
+    if (!route) {
+      return null;
+    }
+    const path = route.path.path;
+    const currentNodeId =
+      instructionIndex > 0 ? route.instructions[instructionIndex - 1]?.nodeId : path[0]?.id;
+    const split = path.findIndex((node) => node.id === currentNodeId);
+    if (split < 0) {
+      return null;
+    }
+    const completed = path.slice(0, split + 1).map((node) => node.coordinate);
+    const remaining = path.slice(split).map((node) => node.coordinate);
+    return { completed, remaining };
+  })();
 
   const camera = (() => {
     if (navigating && currentInstruction) {
@@ -308,6 +327,8 @@ export const MapScreen = () => {
           rooms={canSeeFloor ? rooms.data : undefined}
           pois={canSeeFloor ? pois.data : undefined}
           line={line}
+          completedLine={progressLines?.completed}
+          remainingLine={progressLines?.remaining}
           selectedBuilding={buildingCode}
           selectedRoom={place.kind === "room" ? place.roomName : undefined}
           userPosition={userPosition}

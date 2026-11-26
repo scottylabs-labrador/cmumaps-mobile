@@ -1,5 +1,5 @@
 import type { Buildings, GeoRooms, Pois, PreciseRoute } from "@cmumaps/common";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { authClient } from "@/auth/client";
 import { env } from "@/env";
 
@@ -48,6 +48,15 @@ export const useFloorplan = (floorCode: string | null, enabled: boolean) =>
     queryKey: ["floorplan", floorCode],
     queryFn: () => apiGet<GeoRooms>(`/floors/${encodeURIComponent(floorCode ?? "")}/floorplan`),
     enabled: Boolean(floorCode) && enabled,
+  });
+
+export const useFloorplans = (floorCodes: string[], enabled: boolean) =>
+  useQueries({
+    queries: floorCodes.map((floorCode) => ({
+      queryKey: ["floorplan", floorCode],
+      queryFn: () => apiGet<GeoRooms>(`/floors/${encodeURIComponent(floorCode)}/floorplan`),
+      enabled: enabled && floorCodes.length > 0,
+    })),
   });
 
 export const usePois = (floorCode: string | null, enabled: boolean) =>

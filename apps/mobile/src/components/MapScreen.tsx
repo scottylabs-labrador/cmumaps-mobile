@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Dimensions, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import type { Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBuildings, useFloorplan, usePois } from "@/api/client";
+import { useBuildings, useFloorplan, useFloorplans, usePois } from "@/api/client";
 import { signIn, signOut } from "@/auth/client";
 import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
@@ -16,7 +16,12 @@ import { SearchResults } from "@/components/SearchResults";
 import { routeLine, useRoutes } from "@/hooks/useRoutes";
 import { requestUserLocation, useUserLocation } from "@/hooks/useUserLocation";
 import { useSignedInUser } from "@/hooks/useWaypoint";
-import { buildingAt, FLOOR_ZOOM_DENSITY, regionForCoordinates } from "@/lib/geometry";
+import {
+  buildingAt,
+  buildingsInView,
+  FLOOR_ZOOM_DENSITY,
+  regionForCoordinates,
+} from "@/lib/geometry";
 import { focusedFloor, type Place, parsePlace, suffixFromPathname } from "@/lib/place";
 import { isPublicBuilding } from "@/lib/publicBuilding";
 import { shareUrl } from "@/lib/shareUrl";
@@ -81,6 +86,7 @@ export const MapScreen = () => {
     buildingCode: string;
     floor: string;
   } | null>(null);
+  const [viewRegion, setViewRegion] = useState<Region | null>(null);
   const promptedBuilding = useRef<string | null>(null);
 
   useUserLocation();
@@ -96,6 +102,36 @@ export const MapScreen = () => {
     Boolean(activeFloor) && (signedIn || isPublicBuilding(activeFloor?.buildingCode));
   const rooms = useFloorplan(floorCode, canSeeFloor);
   const pois = usePois(floorCode, canSeeFloor);
+  const density = viewRegion && Dimensions.get("window").width / viewRegion.longitudeDelta;
+  const showInViewFloors = Boolean(density && density >= FLOOR_ZOOM_DENSITY && buildings.data);
+  const inViewFloorCodes =
+    showInViewFloors && buildings.data && viewRegion
+      ? buildingsInView(buildings.data, viewRegion)
+          .filter(
+            (building) =>
+              (signedIn || isPublicBuilding(building.code)) && building.code !== buildingCode,
+          )
+          .slice(0, 8)
+          .map((building) => {
+            const level = building.defaultFloor ?? building.floors[0];
+            return level ? `${building.code}-${level}` : null;
+          })
+          .filter((code): code is string => Boolean(code))
+      : [];
+  const inViewFloorplans = useFloorplans(inViewFloorCodes, showInViewFloors);
+  const mergedRooms = (() => {
+    const base = canSeeFloor ? rooms.data : undefined;
+    if (!showInViewFloors) {
+      return base;
+    }
+    const merged = { ...base };
+    for (const result of inViewFloorplans) {
+      if (result.data) {
+        Object.assign(merged, result.data);
+      }
+    }
+    return Object.keys(merged).length > 0 ? merged : base;
+  })();
   const { start, end, routes } = useRoutes(src, dst);
 
   const sheet = useMapStore((state) => state.sheet);
@@ -180,9 +216,10 @@ export const MapScreen = () => {
   };
 
   const onRegionChangeComplete = (region: Region) => {
+    setViewRegion(region);
     const width = Dimensions.get("window").width;
-    const density = width / region.longitudeDelta;
-    if (density < FLOOR_ZOOM_DENSITY || !buildings.data) {
+    const nextDensity = width / region.longitudeDelta;
+    if (nextDensity < FLOOR_ZOOM_DENSITY || !buildings.data) {
       setMapFloor((current) => (current ? null : current));
       return;
     }
@@ -326,7 +363,7 @@ export const MapScreen = () => {
       {mapReady ? (
         <CampusMap
           buildings={buildings.data}
-          rooms={canSeeFloor ? rooms.data : undefined}
+          rooms={mergedRooms}
           pois={canSeeFloor ? pois.data : undefined}
           line={line}
           completedLine={progressLines?.completed}

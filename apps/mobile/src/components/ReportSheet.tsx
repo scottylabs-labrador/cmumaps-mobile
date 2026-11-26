@@ -67,10 +67,9 @@ export const ReportSheet = ({ visible, context, onDismiss }: Props) => {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <Pressable style={styles.backdrop} onPress={onDismiss}>
         <Pressable style={styles.card} onPress={(event) => event.stopPropagation()}>
-          <Text style={styles.title}>Report a problem</Text>
+          <Text style={styles.title}>Report a Problem or Improvement</Text>
           <Text style={styles.body}>
-            Describe what went wrong. We open an email to ops with the current map path and device
-            info.
+            Please describe the problem you are experiencing or what you would like to see improved.
           </Text>
           <TextInput
             value={message}
@@ -89,7 +88,7 @@ export const ReportSheet = ({ visible, context, onDismiss }: Props) => {
             onPress={submit}
             style={[styles.button, (busy || message.trim().length === 0) && styles.buttonDisabled]}
           >
-            <Text style={styles.buttonText}>{busy ? "Opening Mail…" : "Send email"}</Text>
+            <Text style={styles.buttonText}>{busy ? "Reporting..." : "Report"}</Text>
           </Pressable>
         </Pressable>
       </Pressable>

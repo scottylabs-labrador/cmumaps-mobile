@@ -1,13 +1,25 @@
 import type { Instruction } from "@cmumaps/common";
-import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Dimensions,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import {
   BuildingIcon,
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
+  ChevronLeftIcon,
   CloseIcon,
   DirectionArrowIcon,
   LayersIcon,
   PinIcon,
+  SwapIcon,
+  TargetIcon,
   ZapIcon,
 } from "@/components/Icons";
 import { ROUTE_KINDS, type RouteKind, type RoutePlan } from "@/lib/routePlan";
@@ -15,14 +27,95 @@ import { theme } from "@/theme";
 
 const MAX_STEPS_HEIGHT = Math.round(Dimensions.get("window").height * 0.8);
 
-interface Props {
-  plan: RoutePlan;
-  navigating: boolean;
-  onSelect: (route: RouteKind) => void;
-  onGo: () => void;
-  onEnd: () => void;
-  onOpenSteps?: () => void;
+interface NavHeaderProps {
+  src: string;
+  startLabel: string;
+  endLabel: string;
+  userLocationAvailable: boolean;
+  editingField: "src" | "dst" | null;
+  searchQuery: string;
+  onBack: () => void;
+  onFocusField: (field: "src" | "dst") => void;
+  onChangeQuery: (field: "src" | "dst", value: string) => void;
+  onClearStart: () => void;
+  onSwap: () => void;
 }
+
+export const NavHeader = ({
+  src,
+  startLabel,
+  endLabel,
+  userLocationAvailable,
+  editingField,
+  searchQuery,
+  onBack,
+  onFocusField,
+  onChangeQuery,
+  onClearStart,
+  onSwap,
+}: NavHeaderProps) => (
+  <View style={styles.navHeader}>
+    <Pressable accessibilityLabel="Back" onPress={onBack} style={styles.navTitleRow}>
+      <ChevronLeftIcon size={18} color={theme.subtle} />
+      <Text style={styles.navTitle}>Navigation</Text>
+    </Pressable>
+    <View style={styles.navEndpoints}>
+      <View style={styles.navEndpointRail}>
+        <TargetIcon
+          size={18}
+          color={src === "user" && !userLocationAvailable ? theme.subtle : theme.brand}
+        />
+        <View style={styles.navRailDots}>
+          <View style={styles.navRailDot} />
+          <View style={styles.navRailDot} />
+          <View style={styles.navRailDot} />
+        </View>
+        <PinIcon size={18} color={theme.danger} />
+      </View>
+      <View style={styles.navEndpointFields}>
+        <View
+          style={[styles.navEndpoint, editingField === "src" ? styles.navEndpointActive : null]}
+        >
+          <TextInput
+            value={editingField === "src" ? searchQuery : startLabel}
+            placeholder="Choose start"
+            placeholderTextColor={theme.subtle}
+            style={[
+              styles.navEndpointInput,
+              editingField !== "src" && src === "user"
+                ? userLocationAvailable
+                  ? styles.navEndpointStart
+                  : styles.navEndpointUnavailable
+                : null,
+            ]}
+            onFocus={() => onFocusField("src")}
+            onChangeText={(value) => onChangeQuery("src", value)}
+          />
+          {src || (editingField === "src" && searchQuery.length > 0) ? (
+            <Pressable accessibilityLabel="Clear start" onPress={onClearStart} hitSlop={8}>
+              <CloseIcon size={16} color={theme.muted} />
+            </Pressable>
+          ) : null}
+        </View>
+        <View
+          style={[styles.navEndpoint, editingField === "dst" ? styles.navEndpointActive : null]}
+        >
+          <TextInput
+            value={editingField === "dst" ? searchQuery : endLabel}
+            placeholder="Enter destination"
+            placeholderTextColor={theme.subtle}
+            style={styles.navEndpointInput}
+            onFocus={() => onFocusField("dst")}
+            onChangeText={(value) => onChangeQuery("dst", value)}
+          />
+          <Pressable accessibilityLabel="Swap start and destination" onPress={onSwap} hitSlop={8}>
+            <SwapIcon size={18} color={theme.muted} />
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  </View>
+);
 
 interface BannerProps {
   instructions: Instruction[];
@@ -257,7 +350,23 @@ export const StepsSheet = ({
   );
 };
 
-export const NavPanel = ({ plan, navigating, onSelect, onGo, onEnd, onOpenSteps }: Props) => {
+interface NavPanelProps {
+  plan: RoutePlan;
+  navigating: boolean;
+  onSelect: (route: RouteKind) => void;
+  onGo: () => void;
+  onEnd: () => void;
+  onOpenSteps?: () => void;
+}
+
+export const NavPanel = ({
+  plan,
+  navigating,
+  onSelect,
+  onGo,
+  onEnd,
+  onOpenSteps,
+}: NavPanelProps) => {
   const stats = plan.summary;
   const ready = plan.canGo && Boolean(stats);
 
@@ -355,6 +464,80 @@ const Stat = ({ value, label }: { value: string; label: string }) => (
 );
 
 const styles = StyleSheet.create({
+  navHeader: {
+    backgroundColor: theme.paper,
+    borderRadius: 16,
+    paddingBottom: 14,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  navTitleRow: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    gap: 4,
+    marginBottom: 10,
+  },
+  navTitle: {
+    color: theme.subtle,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  navEndpoints: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  navEndpointRail: {
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 11,
+    width: 22,
+  },
+  navRailDots: {
+    alignItems: "center",
+    gap: 4,
+  },
+  navRailDot: {
+    backgroundColor: theme.disabled,
+    borderRadius: 2,
+    height: 3.5,
+    width: 3.5,
+  },
+  navEndpointFields: {
+    flex: 1,
+    gap: 8,
+  },
+  navEndpoint: {
+    alignItems: "center",
+    borderColor: theme.line,
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    height: 40,
+    paddingHorizontal: 12,
+  },
+  navEndpointActive: {
+    borderColor: theme.brand,
+  },
+  navEndpointInput: {
+    color: theme.ink,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "500",
+    paddingVertical: 0,
+  },
+  navEndpointStart: {
+    color: theme.brand,
+  },
+  navEndpointUnavailable: {
+    color: theme.subtle,
+  },
   bannerShadow: {
     borderRadius: 20,
     shadowColor: theme.shadow,

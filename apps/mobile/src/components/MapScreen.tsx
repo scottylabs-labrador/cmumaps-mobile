@@ -1,29 +1,18 @@
 import type { GeoCoordinate } from "@cmumaps/common";
 import { router, useGlobalSearchParams, usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Dimensions, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { Dimensions, Pressable, Share, StyleSheet, TextInput, View } from "react-native";
 import type { Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBuildings, useFloorplan, useFloorplans, usePois } from "@/api/client";
 import { APP_REVIEW_EMAIL, signIn, signInWithPassword, signOut } from "@/auth/client";
 import { AboutPanel } from "@/components/AboutPanel";
+import { AccountCardModal, AccountDial, ReviewPasswordPrompt } from "@/components/AccountControls";
 import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
-import {
-  AccountCardModal,
-  AccountDial,
-  PromptCard,
-  ReviewPasswordPrompt,
-} from "@/components/GearMenu";
-import {
-  ChevronLeftIcon,
-  CloseIcon,
-  PinIcon,
-  SearchIcon,
-  SwapIcon,
-  TargetIcon,
-} from "@/components/Icons";
-import { NavPanel, StepsSheet, TurnByTurnBanner } from "@/components/NavPanel";
+import { CloseIcon, SearchIcon } from "@/components/Icons";
+import { LocationPrompt } from "@/components/LocationPrompt";
+import { NavHeader, NavPanel, StepsSheet, TurnByTurnBanner } from "@/components/NavigationChrome";
 import { PlaceSheet } from "@/components/PlaceSheet";
 import { ReportSheet } from "@/components/ReportSheet";
 import { SearchResults } from "@/components/SearchResults";
@@ -251,7 +240,7 @@ export const MapScreen = () => {
 
   const needsSignIn = Boolean(floor) && !canSeeFloor;
   const searchTop = insets.top + 12;
-  const selectedPlaceTitle =
+  const selectedTargetTitle =
     target.kind !== "home" && target.kind !== "pending"
       ? targetTitle(target, buildings.data, rooms.data)
       : "";
@@ -303,8 +292,9 @@ export const MapScreen = () => {
         }
         onRegionChangeComplete={onRegionChangeComplete}
       />
+
       {navigating && step.instructions.length > 0 ? (
-        <View style={[styles.bannerWrap, { top: searchTop }]}>
+        <View style={[styles.topOverlay, { top: searchTop }]}>
           <TurnByTurnBanner
             instructions={step.instructions}
             index={instructionIndex}
@@ -319,121 +309,53 @@ export const MapScreen = () => {
           />
         </View>
       ) : navOpen ? (
-        <View style={[styles.searchWrap, { top: searchTop }]}>
-          <View style={styles.navHeader}>
-            <Pressable
-              accessibilityLabel="Back"
-              onPress={() => {
-                clearSearch();
-                resetNav();
-                open(pathname);
-              }}
-              style={styles.navTitleRow}
-            >
-              <ChevronLeftIcon size={18} color={theme.subtle} />
-              <Text style={styles.navTitle}>Navigation</Text>
-            </Pressable>
-            <View style={styles.navEndpoints}>
-              <View style={styles.navEndpointRail}>
-                <TargetIcon
-                  size={18}
-                  color={src === "user" && !userPosition ? theme.subtle : theme.brand}
-                />
-                <View style={styles.navRailDots}>
-                  <View style={styles.navRailDot} />
-                  <View style={styles.navRailDot} />
-                  <View style={styles.navRailDot} />
-                </View>
-                <PinIcon size={18} color={theme.danger} />
-              </View>
-              <View style={styles.navEndpointFields}>
-                <View
-                  style={[styles.navEndpoint, navEdit === "src" ? styles.navEndpointActive : null]}
-                >
-                  <TextInput
-                    value={navEdit === "src" ? searchQuery : start.label}
-                    placeholder="Choose start"
-                    placeholderTextColor={theme.subtle}
-                    style={[
-                      styles.navEndpointInput,
-                      navEdit !== "src" && src === "user"
-                        ? userPosition
-                          ? styles.navEndpointStart
-                          : styles.navEndpointUnavailable
-                        : null,
-                    ]}
-                    onFocus={() => {
-                      setNavEdit("src");
-                      setSearchOpen(true);
-                      setSearchQuery("");
-                    }}
-                    onChangeText={(value) => {
-                      setNavEdit("src");
-                      setSearchQuery(value);
-                      setSearchOpen(true);
-                    }}
-                  />
-                  {src || (navEdit === "src" && searchQuery.length > 0) ? (
-                    <Pressable
-                      accessibilityLabel="Clear start"
-                      onPress={() => {
-                        if (navEdit === "src" && searchQuery.length > 0) {
-                          setSearchQuery("");
-                        } else {
-                          open(pathname, "", dst);
-                          setNavEdit("src");
-                          setSearchOpen(true);
-                          setSearchQuery("");
-                        }
-                      }}
-                      hitSlop={8}
-                    >
-                      <CloseIcon size={16} color={theme.muted} />
-                    </Pressable>
-                  ) : null}
-                </View>
-                <View
-                  style={[styles.navEndpoint, navEdit === "dst" ? styles.navEndpointActive : null]}
-                >
-                  <TextInput
-                    value={navEdit === "dst" ? searchQuery : end.label}
-                    placeholder="Enter destination"
-                    placeholderTextColor={theme.subtle}
-                    style={styles.navEndpointInput}
-                    onFocus={() => {
-                      setNavEdit("dst");
-                      setSearchOpen(true);
-                      setSearchQuery("");
-                    }}
-                    onChangeText={(value) => {
-                      setNavEdit("dst");
-                      setSearchQuery(value);
-                      setSearchOpen(true);
-                    }}
-                  />
-                  <Pressable
-                    accessibilityLabel="Swap start and destination"
-                    onPress={() => {
-                      clearSearch();
-                      open(pathname, dst, src);
-                    }}
-                    hitSlop={8}
-                  >
-                    <SwapIcon size={18} color={theme.muted} />
-                  </Pressable>
-                </View>
-              </View>
-            </View>
-          </View>
+        <View style={[styles.topOverlay, { top: searchTop }]}>
+          <NavHeader
+            src={src}
+            startLabel={start.label}
+            endLabel={end.label}
+            userLocationAvailable={Boolean(userPosition)}
+            editingField={navEdit}
+            searchQuery={searchQuery}
+            onBack={() => {
+              clearSearch();
+              resetNav();
+              open(pathname);
+            }}
+            onFocusField={(field) => {
+              setNavEdit(field);
+              setSearchOpen(true);
+              setSearchQuery("");
+            }}
+            onChangeQuery={(field, value) => {
+              setNavEdit(field);
+              setSearchQuery(value);
+              setSearchOpen(true);
+            }}
+            onClearStart={() => {
+              if (navEdit === "src" && searchQuery.length > 0) {
+                setSearchQuery("");
+              } else {
+                open(pathname, "", dst);
+                setNavEdit("src");
+                setSearchOpen(true);
+                setSearchQuery("");
+              }
+            }}
+            onSwap={() => {
+              clearSearch();
+              open(pathname, dst, src);
+            }}
+          />
         </View>
       ) : (
-        <View style={[styles.searchWrap, { top: searchTop }]}>
+        <View style={[styles.topOverlay, { top: searchTop }]}>
           <View style={styles.searchPill}>
             <View style={styles.searchIconBox}>
               <SearchIcon size={19} color={theme.muted} />
             </View>
             <TextInput
-              value={searchFocused || searchQuery.length > 0 ? searchQuery : selectedPlaceTitle}
+              value={searchFocused || searchQuery.length > 0 ? searchQuery : selectedTargetTitle}
               placeholder="Search..."
               placeholderTextColor={theme.subtle}
               style={styles.search}
@@ -448,10 +370,10 @@ export const MapScreen = () => {
                 setSearchOpen(true);
               }}
             />
-            {searchFocused || searchQuery.length > 0 || selectedPlaceTitle ? (
+            {searchFocused || searchQuery.length > 0 || selectedTargetTitle ? (
               <Pressable
                 accessibilityLabel={
-                  selectedPlaceTitle && !searchFocused ? "Clear selection" : "Clear search"
+                  selectedTargetTitle && !searchFocused ? "Clear selection" : "Clear search"
                 }
                 onPress={() => {
                   if (searchFocused || searchQuery.length > 0) {
@@ -470,6 +392,7 @@ export const MapScreen = () => {
           </View>
         </View>
       )}
+
       {chrome.showFloorSwitcher && building ? (
         <View style={[styles.floors, { top: Math.round(Dimensions.get("window").height * 0.34) }]}>
           <FloorSwitcher
@@ -479,6 +402,7 @@ export const MapScreen = () => {
           />
         </View>
       ) : null}
+
       {chrome.showDialBackdrop ? (
         <Pressable
           accessibilityLabel="Close menu"
@@ -486,8 +410,9 @@ export const MapScreen = () => {
           onPress={closeModal}
         />
       ) : null}
+
       {chrome.showAccountDial ? (
-        <View style={[styles.gear, { bottom: insets.bottom + 24 }]}>
+        <View style={[styles.dialWrap, { bottom: insets.bottom + 24 }]}>
           <AccountDial
             open={activeModal === "dial"}
             signedIn={signedIn}
@@ -499,6 +424,7 @@ export const MapScreen = () => {
           />
         </View>
       ) : null}
+
       <AccountCardModal
         visible={activeModal === "account"}
         name={user?.name}
@@ -509,18 +435,16 @@ export const MapScreen = () => {
         }}
         onDismiss={closeModal}
       />
-      <PromptCard
+
+      <LocationPrompt
         visible={locationPromptVisible}
-        title="Enable your location"
-        body="Allow CMU Maps to use your current location to find routes and show where you are on campus."
-        action="Allow this time"
-        dismissLabel="Don't allow"
-        onAction={() => {
+        onAllow={() => {
           setLocationPromptVisible(false);
           requestUserLocation().catch(() => undefined);
         }}
         onDismiss={() => setLocationPromptVisible(false)}
       />
+
       <ReviewPasswordPrompt
         visible={activeModal === "reviewSignIn"}
         error={reviewError}
@@ -533,6 +457,7 @@ export const MapScreen = () => {
           }
         }}
       />
+
       <StepsSheet
         visible={activeModal === "steps" && navigating}
         plan={plan}
@@ -545,6 +470,7 @@ export const MapScreen = () => {
           open(pathname);
         }}
       />
+
       <ReportSheet
         visible={activeModal === "report"}
         context={{
@@ -553,6 +479,7 @@ export const MapScreen = () => {
         }}
         onDismiss={closeModal}
       />
+
       <View style={styles.bottom}>
         {chrome.bottomPanel === "about" ? (
           <AboutPanel visible onClose={closeModal} />
@@ -606,6 +533,7 @@ export const MapScreen = () => {
           />
         ) : null}
       </View>
+
       {showSearchResults ? (
         <View style={styles.searchOverlay} pointerEvents="box-none">
           <Pressable style={StyleSheet.absoluteFill} onPress={clearSearch} />
@@ -644,7 +572,7 @@ const styles = StyleSheet.create({
   fill: {
     flex: 1,
   },
-  searchWrap: {
+  topOverlay: {
     left: 16,
     position: "absolute",
     right: 16,
@@ -672,7 +600,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.28)",
     zIndex: 24,
   },
-  gear: {
+  dialWrap: {
     left: 20,
     position: "absolute",
     zIndex: 25,
@@ -688,86 +616,6 @@ const styles = StyleSheet.create({
     height: 28,
     justifyContent: "center",
     width: 28,
-  },
-  bannerWrap: {
-    left: 16,
-    position: "absolute",
-    right: 16,
-    zIndex: 20,
-  },
-  navHeader: {
-    backgroundColor: theme.paper,
-    borderRadius: 16,
-    paddingBottom: 14,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.14,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  navTitleRow: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    gap: 4,
-    marginBottom: 10,
-  },
-  navTitle: {
-    color: theme.subtle,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  navEndpoints: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  navEndpointRail: {
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 11,
-    width: 22,
-  },
-  navRailDots: {
-    alignItems: "center",
-    gap: 4,
-  },
-  navRailDot: {
-    backgroundColor: theme.disabled,
-    borderRadius: 2,
-    height: 3.5,
-    width: 3.5,
-  },
-  navEndpointFields: {
-    flex: 1,
-    gap: 8,
-  },
-  navEndpoint: {
-    alignItems: "center",
-    borderColor: theme.line,
-    borderRadius: 10,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    height: 40,
-    paddingHorizontal: 12,
-  },
-  navEndpointActive: {
-    borderColor: theme.brand,
-  },
-  navEndpointInput: {
-    color: theme.ink,
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "500",
-    paddingVertical: 0,
-  },
-  navEndpointStart: {
-    color: theme.brand,
-  },
-  navEndpointUnavailable: {
-    color: theme.subtle,
   },
   floors: {
     left: -70,

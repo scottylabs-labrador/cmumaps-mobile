@@ -12,7 +12,7 @@ import { theme } from "@/theme";
 
 const DIAL_STEP = 62;
 
-interface Props {
+interface AccountDialProps {
   open: boolean;
   signedIn: boolean;
   onToggle: () => void;
@@ -30,7 +30,7 @@ export const AccountDial = ({
   onReviewSignIn,
   onAccount,
   onAbout,
-}: Props) => {
+}: AccountDialProps) => {
   const progress = useRef(new Animated.Value(open ? 1 : 0)).current;
 
   useEffect(() => {
@@ -145,48 +145,6 @@ export const AccountCardModal = ({
           <LogOutIcon size={19} color={theme.ink} />
           <Text style={styles.signOutText}>Sign out</Text>
         </Pressable>
-      </Pressable>
-    </Pressable>
-  </Modal>
-);
-
-interface PromptProps {
-  visible: boolean;
-  title: string;
-  body: string;
-  action: string;
-  dismissLabel?: string;
-  onAction: () => void;
-  onDismiss: () => void;
-}
-
-export const PromptCard = ({
-  visible,
-  title,
-  body,
-  action,
-  dismissLabel = "Don't allow",
-  onAction,
-  onDismiss,
-}: PromptProps) => (
-  <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-    <Pressable style={styles.modalBackdrop} onPress={onDismiss}>
-      <Pressable style={styles.modalCard} onPress={(event) => event.stopPropagation()}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>{title}</Text>
-          <Pressable accessibilityLabel="Close" onPress={onDismiss} style={styles.closeCircle}>
-            <CloseIcon size={16} color={theme.muted} />
-          </Pressable>
-        </View>
-        <Text style={styles.body}>{body}</Text>
-        <View style={styles.promptActions}>
-          <Pressable onPress={onAction} style={styles.pillPrimary}>
-            <Text style={styles.pillText}>{action}</Text>
-          </Pressable>
-          <Pressable onPress={onDismiss} style={styles.pillSecondary}>
-            <Text style={styles.pillText}>{dismissLabel}</Text>
-          </Pressable>
-        </View>
       </Pressable>
     </Pressable>
   </Modal>

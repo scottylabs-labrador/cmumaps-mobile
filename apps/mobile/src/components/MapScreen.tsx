@@ -122,6 +122,34 @@ export const MapScreen = () => {
     }
   }, [routes.data, selectedRoute, setSelectedRoute]);
 
+  useEffect(() => {
+    if (!navigating) {
+      return;
+    }
+    const route = routes.data?.[selectedRoute];
+    if (!route) {
+      return;
+    }
+    const node =
+      instructionIndex === 0
+        ? route.path.path[0]
+        : route.path.path.find(
+            (entry) => entry.id === route.instructions[instructionIndex - 1]?.nodeId,
+          );
+    const floor = node?.floor;
+    if (!floor) {
+      return;
+    }
+    if (!signedIn && !isPublicBuilding(floor.buildingCode)) {
+      return;
+    }
+    setMapFloor((current) =>
+      current?.buildingCode === floor.buildingCode && current.floor === floor.level
+        ? current
+        : { buildingCode: floor.buildingCode, floor: floor.level },
+    );
+  }, [navigating, instructionIndex, routes.data, selectedRoute, signedIn]);
+
   const open = (path: string, nextSrc = src, nextDst = dst) => {
     router.replace(href(path, nextSrc || undefined, nextDst || undefined));
     setSearchOpen(false);
@@ -357,7 +385,7 @@ export const MapScreen = () => {
           </View>
         </View>
       )}
-      {!searchOpen && !navigating && building ? (
+      {!searchOpen && building ? (
         <View style={[styles.floors, { top: searchTop + 64 }]}>
           <FloorSwitcher
             floors={building.floors}

@@ -6,9 +6,9 @@ import type { Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBuildings, useFloorplan, useFloorplans, usePois } from "@/api/client";
 import { APP_REVIEW_EMAIL, signIn, signInWithPassword, signOut } from "@/auth/client";
+import { AboutPanel } from "@/components/AboutPanel";
 import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
-import { AboutPanel } from "@/components/AboutPanel";
 import {
   AccountCardModal,
   AccountDial,
@@ -27,13 +27,14 @@ import { NavPanel, StepsSheet, TurnByTurnBanner } from "@/components/NavPanel";
 import { PlaceSheet } from "@/components/PlaceSheet";
 import { ReportSheet } from "@/components/ReportSheet";
 import { SearchResults } from "@/components/SearchResults";
+import { env } from "@/env";
 import { useRoutes } from "@/hooks/useRoutes";
 import { useShakeGesture } from "@/hooks/useShakeGesture";
 import { requestUserLocation, useUserLocation } from "@/hooks/useUserLocation";
 import { useSignedInUser } from "@/hooks/useWaypoint";
-import { env } from "@/env";
 import {
   canViewFloor,
+  type FloorRef,
   formatFloorCode,
   parseCampusTarget,
   targetBuildingCode,
@@ -47,11 +48,12 @@ import {
   targetWaypointToken,
 } from "@/lib/campusTarget";
 import {
-  buildingAt,
-  buildingsInView,
-  FLOOR_ZOOM_DENSITY,
-  regionForCoordinates,
-} from "@/lib/geometry";
+  deriveCamera,
+  deriveChromeVisibility,
+  resolveNavigationStep,
+  resolveViewportFloor,
+  visibleAdjacentFloorCodes,
+} from "@/lib/mapSession";
 import { useMapStore } from "@/store";
 import { theme } from "@/theme";
 
@@ -60,69 +62,75 @@ const one = (value: string | string[] | undefined) => (Array.isArray(value) ? va
 export const MapScreen = () => {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const params = useGlobalSearchParams<{
-    src?: string;
-    dst?: string;
-    floor?: string;
-  }>();
+  const params = useGlobalSearchParams<{ src?: string; dst?: string; floor?: string }>();
   const src = one(params.src) ?? "";
   const dst = one(params.dst) ?? "";
   const floorParam = one(params.floor) ?? "";
-  const [gearOpen, setGearOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
-  const [aboutOpen, setAboutOpen] = useState(false);
-  const [stepsOpen, setStepsOpen] = useState(false);
+
   const [navEdit, setNavEdit] = useState<"src" | "dst" | null>(null);
-  const [reviewPromptOpen, setReviewPromptOpen] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
-  const [reportOpen, setReportOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-  const [mapFloor, setMapFloor] = useState<{
-    buildingCode: string;
-    floor: string;
-  } | null>(null);
+  const [mapFloor, setMapFloor] = useState<FloorRef | null>(null);
   const [viewRegion, setViewRegion] = useState<Region | null>(null);
   const promptedBuilding = useRef<string | null>(null);
+
+  const sheet = useMapStore((state) => state.sheet);
+  const setSheet = useMapStore((state) => state.setSheet);
+  const cycleSheet = useMapStore((state) => state.cycleSheet);
+  const activeModal = useMapStore((state) => state.activeModal);
+  const openModal = useMapStore((state) => state.openModal);
+  const closeModal = useMapStore((state) => state.closeModal);
+  const toggleDial = useMapStore((state) => state.toggleDial);
+  const searchOpen = useMapStore((state) => state.searchOpen);
+  const setSearchOpen = useMapStore((state) => state.setSearchOpen);
+  const searchQuery = useMapStore((state) => state.searchQuery);
+  const setSearchQuery = useMapStore((state) => state.setSearchQuery);
+  const navigating = useMapStore((state) => state.navigating);
+  const startNavigation = useMapStore((state) => state.startNavigation);
+  const stepNavigation = useMapStore((state) => state.stepNavigation);
+  const jumpToStep = useMapStore((state) => state.jumpToStep);
+  const instructionIndex = useMapStore((state) => state.instructionIndex);
+  const selectedRoute = useMapStore((state) => state.selectedRoute);
+  const setSelectedRoute = useMapStore((state) => state.setSelectedRoute);
+  const userPosition = useMapStore((state) => state.userPosition);
+  const locationPromptVisible = useMapStore((state) => state.locationPromptVisible);
+  const setLocationPromptVisible = useMapStore((state) => state.setLocationPromptVisible);
+  const resetNav = useMapStore((state) => state.resetNav);
 
   useUserLocation();
   const { user } = useSignedInUser();
   const signedIn = Boolean(user);
-  useShakeGesture(() => {
-    setGearOpen(false);
-    setAboutOpen(false);
-    setReviewPromptOpen(false);
-    setReportOpen(true);
-  }, !reportOpen && !reviewPromptOpen);
+  useShakeGesture(
+    () => openModal("report"),
+    activeModal !== "report" && activeModal !== "reviewSignIn",
+  );
+
   const buildings = useBuildings();
   const target = parseCampusTarget(pathname, buildings.data, floorParam);
   const floor = targetFocusedFloor(target, buildings.data);
   const activeFloor = floor ?? mapFloor;
   const targetBuilding = targetBuildingCode(target);
   const buildingCode = targetBuilding ?? activeFloor?.buildingCode ?? floor?.buildingCode;
+  const building = buildingCode ? buildings.data?.[buildingCode] : undefined;
   const floorCode = activeFloor ? formatFloorCode(activeFloor) : null;
   const canSeeFloor = Boolean(activeFloor) && canViewFloor(activeFloor?.buildingCode, signedIn);
+
   const rooms = useFloorplan(floorCode, canSeeFloor);
   const pois = usePois(floorCode, canSeeFloor);
-  const density = viewRegion && Dimensions.get("window").width / viewRegion.longitudeDelta;
-  const showInViewFloors = Boolean(density && density >= FLOOR_ZOOM_DENSITY && buildings.data);
-  const inViewFloorCodes =
-    showInViewFloors && buildings.data && viewRegion
-      ? buildingsInView(buildings.data, viewRegion)
-          .filter(
-            (building) => canViewFloor(building.code, signedIn) && building.code !== buildingCode,
-          )
-          .slice(0, 8)
-          .map((building) => {
-            const level = building.defaultFloor ?? building.floors[0];
-            return level ? formatFloorCode({ buildingCode: building.code, floor: level }) : null;
-          })
-          .filter((code): code is string => Boolean(code))
-      : [];
-  const inViewFloorplans = useFloorplans(inViewFloorCodes, showInViewFloors);
+
+  const screenWidth = Dimensions.get("window").width;
+  const inViewFloorCodes = visibleAdjacentFloorCodes(
+    buildings.data,
+    viewRegion,
+    screenWidth,
+    signedIn,
+    buildingCode,
+  );
+  const inViewFloorplans = useFloorplans(inViewFloorCodes, inViewFloorCodes.length > 0);
   const mergedRooms = (() => {
     const base = canSeeFloor ? rooms.data : undefined;
-    if (!showInViewFloors) {
+    if (inViewFloorCodes.length === 0) {
       return base;
     }
     const merged = { ...base };
@@ -133,56 +141,38 @@ export const MapScreen = () => {
     }
     return Object.keys(merged).length > 0 ? merged : base;
   })();
-  const sheet = useMapStore((state) => state.sheet);
-  const setSheet = useMapStore((state) => state.setSheet);
-  const cycleSheet = useMapStore((state) => state.cycleSheet);
-  const searchOpen = useMapStore((state) => state.searchOpen);
-  const setSearchOpen = useMapStore((state) => state.setSearchOpen);
-  const searchQuery = useMapStore((state) => state.searchQuery);
-  const setSearchQuery = useMapStore((state) => state.setSearchQuery);
-  const navigating = useMapStore((state) => state.navigating);
-  const setNavigating = useMapStore((state) => state.setNavigating);
-  const instructionIndex = useMapStore((state) => state.instructionIndex);
-  const setInstructionIndex = useMapStore((state) => state.setInstructionIndex);
-  const selectedRoute = useMapStore((state) => state.selectedRoute);
-  const setSelectedRoute = useMapStore((state) => state.setSelectedRoute);
-  const userPosition = useMapStore((state) => state.userPosition);
-  const locationPromptVisible = useMapStore((state) => state.locationPromptVisible);
-  const setLocationPromptVisible = useMapStore((state) => state.setLocationPromptVisible);
-  const resetNav = useMapStore((state) => state.resetNav);
+
   const { start, end, plan } = useRoutes(src, dst, selectedRoute);
+  const navOpen = Boolean(src || dst);
+  const step = resolveNavigationStep(plan.activeRoute, instructionIndex, navigating);
+  const camera = deriveCamera({
+    target,
+    buildings: buildings.data,
+    rooms: rooms.data,
+    navOpen,
+    navigating,
+    plan,
+    step,
+    instructionIndex,
+    src,
+    dst,
+  });
 
   useEffect(() => {
     setSheet("default");
   }, [pathname, setSheet]);
 
   useEffect(() => {
-    if (!navigating) {
+    if (!step.stepFloor || !canViewFloor(step.stepFloor.buildingCode, signedIn)) {
       return;
     }
-    const route = plan.activeRoute;
-    if (!route) {
-      return;
-    }
-    const node =
-      instructionIndex === 0
-        ? route.path.path[0]
-        : route.path.path.find(
-            (entry) => entry.id === route.instructions[instructionIndex - 1]?.nodeId,
-          );
-    const floor = node?.floor;
-    if (!floor) {
-      return;
-    }
-    if (!canViewFloor(floor.buildingCode, signedIn)) {
-      return;
-    }
+    const nextFloor = step.stepFloor;
     setMapFloor((current) =>
-      current?.buildingCode === floor.buildingCode && current.floor === floor.level
+      current?.buildingCode === nextFloor.buildingCode && current.floor === nextFloor.floor
         ? current
-        : { buildingCode: floor.buildingCode, floor: floor.level },
+        : nextFloor,
     );
-  }, [navigating, instructionIndex, plan.activeRoute, signedIn]);
+  }, [step.stepFloor, signedIn]);
 
   const open = (path: string, nextSrc = src, nextDst = dst) => {
     router.replace(targetHref(path, nextSrc || undefined, nextDst || undefined));
@@ -192,14 +182,13 @@ export const MapScreen = () => {
 
   const startSignIn = (path: string) => {
     setSearchOpen(false);
-    setGearOpen(false);
+    closeModal();
     void signIn(path);
   };
 
   const openReviewSignIn = () => {
-    setGearOpen(false);
     setReviewError(null);
-    setReviewPromptOpen(true);
+    openModal("reviewSignIn");
   };
 
   const submitReviewSignIn = (password: string) => {
@@ -211,7 +200,7 @@ export const MapScreen = () => {
           setReviewError("Sign-in failed. Check the review password.");
           return;
         }
-        setReviewPromptOpen(false);
+        closeModal();
       })
       .catch(() => {
         setReviewError("Sign-in failed. Check the review password.");
@@ -239,146 +228,42 @@ export const MapScreen = () => {
 
   const onRegionChangeComplete = (region: Region) => {
     setViewRegion(region);
-    const width = Dimensions.get("window").width;
-    const nextDensity = width / region.longitudeDelta;
-    if (nextDensity < FLOOR_ZOOM_DENSITY || !buildings.data) {
+    const resolved = resolveViewportFloor(buildings.data, region, screenWidth, signedIn);
+    if (resolved.kind === "none") {
       setMapFloor((current) => (current ? null : current));
       return;
     }
-    const hit = buildingAt(buildings.data, {
-      latitude: region.latitude,
-      longitude: region.longitude,
-    });
-    const level = hit?.defaultFloor ?? hit?.floors[0];
-    if (!hit || !level) {
+    if (resolved.kind === "needsSignIn") {
       setMapFloor((current) => (current ? null : current));
-      return;
-    }
-    if (!canViewFloor(hit.code, signedIn)) {
-      setMapFloor((current) => (current ? null : current));
-      if (promptedBuilding.current !== hit.code) {
-        promptedBuilding.current = hit.code;
-        startSignIn(`/${hit.code}-${level}`);
+      if (promptedBuilding.current !== resolved.buildingCode) {
+        promptedBuilding.current = resolved.buildingCode;
+        startSignIn(resolved.path);
       }
       return;
     }
     setMapFloor((current) =>
-      current?.buildingCode === hit.code && current.floor === level
+      current?.buildingCode === resolved.floor.buildingCode &&
+      current.floor === resolved.floor.floor
         ? current
-        : { buildingCode: hit.code, floor: level },
+        : resolved.floor,
     );
   };
 
-  const building = buildingCode ? buildings.data?.[buildingCode] : undefined;
   const needsSignIn = Boolean(floor) && !canSeeFloor;
-  const navOpen = Boolean(src || dst);
-  const line = plan.line;
-  const activeRoute = plan.activeRoute;
-  const instructions = activeRoute?.instructions ?? [];
-  const currentInstruction = instructions[instructionIndex];
-  const progressLines = (() => {
-    if (!navigating || !activeRoute) {
-      return null;
-    }
-    const path = activeRoute.path.path;
-    if (instructionIndex >= activeRoute.instructions.length) {
-      return {
-        completed: path.map((node) => node.coordinate),
-        remaining: [],
-      };
-    }
-    const currentNodeId =
-      instructionIndex > 0 ? activeRoute.instructions[instructionIndex - 1]?.nodeId : path[0]?.id;
-    const split = path.findIndex((node) => node.id === currentNodeId);
-    if (split < 0) {
-      return null;
-    }
-    const completed = path.slice(0, split + 1).map((node) => node.coordinate);
-    const remaining = path.slice(split).map((node) => node.coordinate);
-    return { completed, remaining };
-  })();
-
-  const cameraIntent = (() => {
-    if (navigating) {
-      return `nav:${plan.selectedKind}:${instructionIndex}`;
-    }
-    if (navOpen && line.length > 1) {
-      return `route:${src}:${dst}:${plan.selectedKind}`;
-    }
-    if (target.kind === "coordinate") {
-      return `coord:${target.latitude},${target.longitude}`;
-    }
-    if (target.kind === "room") {
-      return `room:${target.buildingCode}-${target.roomName}`;
-    }
-    if (target.kind === "floor") {
-      return `floor:${target.buildingCode}-${target.floor}`;
-    }
-    if (target.kind === "building") {
-      return `building:${target.buildingCode}`;
-    }
-    return "";
-  })();
-
-  const camera = (() => {
-    if (!cameraIntent) {
-      return null;
-    }
-    if (navigating && currentInstruction && activeRoute) {
-      const node =
-        instructionIndex === 0
-          ? activeRoute.path.path[0]
-          : activeRoute.path.path.find(
-              (entry) => entry.id === activeRoute.instructions[instructionIndex - 1]?.nodeId,
-            );
-      if (node?.coordinate) {
-        return {
-          latitude: node.coordinate.latitude,
-          longitude: node.coordinate.longitude,
-          latitudeDelta: 0.0008,
-          longitudeDelta: 0.0008,
-        };
-      }
-    }
-    if (navOpen && line.length > 1) {
-      return regionForCoordinates(line);
-    }
-    if (target.kind === "coordinate") {
-      return {
-        latitude: target.latitude,
-        longitude: target.longitude,
-        latitudeDelta: 0.004,
-        longitudeDelta: 0.004,
-      };
-    }
-    if (target.kind === "room") {
-      const room = rooms.data?.[target.roomName];
-      if (room) {
-        return {
-          latitude: room.labelPosition.latitude,
-          longitude: room.labelPosition.longitude,
-          latitudeDelta: 0.0015,
-          longitudeDelta: 0.0015,
-        };
-      }
-    }
-    if (targetBuilding && building) {
-      return {
-        latitude: building.labelLatitude,
-        longitude: building.labelLongitude,
-        latitudeDelta: 0.004,
-        longitudeDelta: 0.004,
-      };
-    }
-    return null;
-  })();
-
   const searchTop = insets.top + 12;
   const selectedPlaceTitle =
     target.kind !== "home" && target.kind !== "pending"
       ? targetTitle(target, buildings.data, rooms.data)
       : "";
   const showSearchResults = searchOpen && (searchQuery.trim().length > 0 || navEdit !== null);
+  const chrome = deriveChromeVisibility({
+    target,
+    navOpen,
+    showSearchResults,
+    activeModal,
+    hasBuilding: Boolean(building),
+  });
+
   const clearSearch = () => {
     setSearchQuery("");
     setSearchOpen(false);
@@ -392,14 +277,14 @@ export const MapScreen = () => {
         buildings={buildings.data}
         rooms={mergedRooms}
         pois={canSeeFloor ? pois.data : undefined}
-        line={line}
-        completedLine={progressLines?.completed}
-        remainingLine={progressLines?.remaining}
+        line={plan.line}
+        completedLine={step.progressLines?.completed}
+        remainingLine={step.progressLines?.remaining}
         selectedBuilding={targetBuilding}
         selectedRoom={target.kind === "room" ? target.roomName : undefined}
         userPosition={userPosition}
-        camera={camera}
-        cameraIntent={cameraIntent}
+        camera={camera.region}
+        cameraIntent={camera.intent}
         onSelectBuilding={selectBuilding}
         onSelectRoom={(roomName) => {
           if (targetBuilding || buildingCode) {
@@ -407,8 +292,7 @@ export const MapScreen = () => {
           }
         }}
         onPressMap={() => {
-          setGearOpen(false);
-          setAboutOpen(false);
+          closeModal();
           if (!navigating && target.kind !== "home") {
             setMapFloor(null);
             open("/");
@@ -419,10 +303,10 @@ export const MapScreen = () => {
         }
         onRegionChangeComplete={onRegionChangeComplete}
       />
-      {navigating && instructions.length > 0 ? (
+      {navigating && step.instructions.length > 0 ? (
         <View style={[styles.bannerWrap, { top: searchTop }]}>
           <TurnByTurnBanner
-            instructions={instructions}
+            instructions={step.instructions}
             index={instructionIndex}
             destinationLabel={end.label || "Destination"}
             buildingLabel={
@@ -430,8 +314,8 @@ export const MapScreen = () => {
                 ? buildings.data?.[end.buildingCode]?.name
                 : (targetBuilding ?? buildingCode)
             }
-            onPrev={() => setInstructionIndex(Math.max(0, instructionIndex - 1))}
-            onNext={() => setInstructionIndex(Math.min(instructions.length, instructionIndex + 1))}
+            onPrev={() => stepNavigation(-1, step.instructions.length)}
+            onNext={() => stepNavigation(1, step.instructions.length)}
           />
         </View>
       ) : navOpen ? (
@@ -586,7 +470,7 @@ export const MapScreen = () => {
           </View>
         </View>
       )}
-      {!showSearchResults && building ? (
+      {chrome.showFloorSwitcher && building ? (
         <View style={[styles.floors, { top: Math.round(Dimensions.get("window").height * 0.34) }]}>
           <FloorSwitcher
             floors={building.floors}
@@ -595,50 +479,35 @@ export const MapScreen = () => {
           />
         </View>
       ) : null}
-      {gearOpen ? (
+      {chrome.showDialBackdrop ? (
         <Pressable
           accessibilityLabel="Close menu"
           style={styles.dialBackdrop}
-          onPress={() => setGearOpen(false)}
+          onPress={closeModal}
         />
       ) : null}
-      {!showSearchResults &&
-      !navOpen &&
-      !aboutOpen &&
-      (target.kind === "home" || target.kind === "pending") ? (
+      {chrome.showAccountDial ? (
         <View style={[styles.gear, { bottom: insets.bottom + 24 }]}>
           <AccountDial
-            open={gearOpen}
+            open={activeModal === "dial"}
             signedIn={signedIn}
-            onToggle={() => setGearOpen((open) => !open)}
-            onSignIn={() => {
-              setGearOpen(false);
-              startSignIn(targetHref(pathname, src || undefined, dst || undefined));
-            }}
-            onReviewSignIn={() => {
-              setGearOpen(false);
-              openReviewSignIn();
-            }}
-            onAccount={() => {
-              setGearOpen(false);
-              setAccountOpen(true);
-            }}
-            onAbout={() => {
-              setGearOpen(false);
-              setAboutOpen(true);
-            }}
+            onToggle={toggleDial}
+            onSignIn={() => startSignIn(targetHref(pathname, src || undefined, dst || undefined))}
+            onReviewSignIn={openReviewSignIn}
+            onAccount={() => openModal("account")}
+            onAbout={() => openModal("about")}
           />
         </View>
       ) : null}
       <AccountCardModal
-        visible={accountOpen}
+        visible={activeModal === "account"}
         name={user?.name}
         email={user?.email}
         onSignOut={() => {
-          setAccountOpen(false);
+          closeModal();
           signOut().catch(() => undefined);
         }}
-        onDismiss={() => setAccountOpen(false)}
+        onDismiss={closeModal}
       />
       <PromptCard
         visible={locationPromptVisible}
@@ -653,55 +522,53 @@ export const MapScreen = () => {
         onDismiss={() => setLocationPromptVisible(false)}
       />
       <ReviewPasswordPrompt
-        visible={reviewPromptOpen}
+        visible={activeModal === "reviewSignIn"}
         error={reviewError}
         busy={reviewBusy}
         onSubmit={submitReviewSignIn}
         onDismiss={() => {
           if (!reviewBusy) {
-            setReviewPromptOpen(false);
+            closeModal();
             setReviewError(null);
           }
         }}
       />
       <StepsSheet
-        visible={stepsOpen && navigating}
+        visible={activeModal === "steps" && navigating}
         plan={plan}
         index={instructionIndex}
         destinationLabel={end.label || "Destination"}
-        onSelectStep={(stepIdx) => setInstructionIndex(stepIdx)}
-        onClose={() => setStepsOpen(false)}
+        onSelectStep={(stepIdx) => jumpToStep(stepIdx, step.instructions.length)}
+        onClose={closeModal}
         onEnd={() => {
-          setStepsOpen(false);
           resetNav();
           open(pathname);
         }}
       />
       <ReportSheet
-        visible={reportOpen}
+        visible={activeModal === "report"}
         context={{
           path: targetHref(pathname, src || undefined, dst || undefined),
           signedIn,
         }}
-        onDismiss={() => setReportOpen(false)}
+        onDismiss={closeModal}
       />
       <View style={styles.bottom}>
-        {aboutOpen ? (
-          <AboutPanel visible onClose={() => setAboutOpen(false)} />
-        ) : navOpen && !showSearchResults ? (
+        {chrome.bottomPanel === "about" ? (
+          <AboutPanel visible onClose={closeModal} />
+        ) : chrome.bottomPanel === "nav" ? (
           <NavPanel
             plan={plan}
             navigating={navigating}
             onSelect={setSelectedRoute}
-            onGo={() => setNavigating(true)}
-            onOpenSteps={() => setStepsOpen(true)}
+            onGo={startNavigation}
+            onOpenSteps={() => openModal("steps")}
             onEnd={() => {
-              setStepsOpen(false);
               resetNav();
               open(pathname);
             }}
           />
-        ) : !showSearchResults ? (
+        ) : chrome.bottomPanel === "place" ? (
           <PlaceSheet
             target={target}
             title={targetTitle(target, buildings.data, rooms.data)}
@@ -731,10 +598,7 @@ export const MapScreen = () => {
               Share.share({
                 message: targetShareUrl(
                   target,
-                  {
-                    src: src || undefined,
-                    dst: dst || undefined,
-                  },
+                  { src: src || undefined, dst: dst || undefined },
                   env.webOrigin,
                 ),
               }).catch(() => undefined);

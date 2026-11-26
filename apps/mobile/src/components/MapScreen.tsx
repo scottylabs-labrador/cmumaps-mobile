@@ -267,6 +267,9 @@ export const MapScreen = () => {
           onPressMap={() => {
             setGearOpen(false);
             setAboutOpen(false);
+            if (!navigating && place.kind !== "home") {
+              open("/");
+            }
           }}
           onLongPress={(coordinate: GeoCoordinate) =>
             open(`/${coordinate.latitude},${coordinate.longitude}`)

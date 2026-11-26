@@ -14,7 +14,7 @@ const plugins: NonNullable<ExpoConfig["plugins"]> = [
     "expo-location",
     {
       locationWhenInUsePermission:
-        "CMU Maps uses your location to show where you are and to start directions.",
+        "CMU Maps uses your location for your map position, nearby searches, and navigation directions.",
     },
   ],
 ];

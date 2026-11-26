@@ -13,8 +13,8 @@ export const LocationPrompt = ({ visible, onAllow, onDismiss }: LocationPromptPr
       <Pressable style={styles.card} onPress={(event) => event.stopPropagation()}>
         <Text style={styles.title}>Enable your location</Text>
         <Text style={styles.body}>
-          Allow CMU Maps to use your current location to find routes and show where you are on
-          campus.
+          CMU Maps uses your location for your map position, nearby searches, and navigation
+          directions.
         </Text>
         <View style={styles.actions}>
           <Pressable onPress={onAllow} style={styles.pillPrimary}>

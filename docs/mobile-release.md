@@ -19,7 +19,7 @@ Run the EAS commands from `apps/mobile`.
 
 1. Invite a robot user that can build, submit, and publish updates. Create an access token for it and store the token as the GitHub Actions secret `EXPO_TOKEN`.
 2. Link this GitHub repository to the Expo project. The release job runs the workflow from the commit with `eas workflow:run --ref`, which requires that link.
-3. Store the Google Maps key for the iOS and Android Maps SDKs where the fingerprint job and the cloud build can read it. Use visibility `sensitive`. A secret is hidden from app config, so the Maps plugin would be omitted and the fingerprint would not match. In Google Cloud, that key must allow the Maps SDK for iOS and the Maps SDK for Android. One key can be restricted to Android apps or to iOS apps, not both. Use two keys if you want app restrictions, or one key restricted only by those two APIs.
+3. Store the Android Google Maps key where the fingerprint job and the cloud build can read it. Use visibility `sensitive`. A secret is hidden from app config, so the Maps plugin would be omitted and the fingerprint would not match. iOS uses Apple Maps and needs no key. In Google Cloud, that key must allow the Maps SDK for Android (package `org.scottylabs.cmumaps` plus its SHA-1).
 
    ```sh
    bunx eas-cli env:set --name EXPO_PUBLIC_GOOGLE_MAPS_API_KEY --value "$GOOGLE_MAPS_API_KEY" --environment production --visibility sensitive --non-interactive

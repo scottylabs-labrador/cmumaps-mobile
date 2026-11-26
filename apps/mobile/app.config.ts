@@ -19,12 +19,13 @@ const plugins: NonNullable<ExpoConfig["plugins"]> = [
   ],
 ];
 
+// iOS uses Apple Maps (no key). Android standalone builds need this key;
+// Expo Go already ships one for local Android testing.
 if (googleMapsApiKey) {
   plugins.push([
     "react-native-maps",
     {
       androidGoogleMapsApiKey: googleMapsApiKey,
-      iosGoogleMapsApiKey: googleMapsApiKey,
     },
   ]);
 }

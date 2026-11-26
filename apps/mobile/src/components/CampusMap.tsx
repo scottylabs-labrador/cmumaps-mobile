@@ -1,6 +1,6 @@
 import type { Buildings, GeoCoordinate, GeoRooms, Pois } from "@cmumaps/common";
 import { getRoomTypeDetails } from "@cmumaps/common";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polygon, Polyline, type Region } from "react-native-maps";
 import { theme } from "@/theme";
@@ -17,6 +17,8 @@ interface Props {
   rooms: GeoRooms | undefined;
   pois: Pois | undefined;
   line: GeoCoordinate[];
+  completedLine?: GeoCoordinate[];
+  remainingLine?: GeoCoordinate[];
   selectedRoom?: string;
   selectedBuilding?: string;
   userPosition: GeoCoordinate | null;
@@ -68,6 +70,8 @@ export const CampusMap = ({
   rooms,
   pois,
   line,
+  completedLine,
+  remainingLine,
   selectedRoom,
   selectedBuilding,
   userPosition,
@@ -78,29 +82,25 @@ export const CampusMap = ({
   onLongPress,
   onRegionChangeComplete,
 }: Props) => {
-  // Expo Go applies initialRegion only when the native map is created.
-  // Region, camera, and animateToRegion leave the existing map in place,
-  // so a place change unmounts the map and mounts a new one.
-  const regionKey = camera
-    ? `${camera.latitude}:${camera.longitude}:${camera.latitudeDelta}:${camera.longitudeDelta}`
-    : "campus";
-  const [visibleKey, setVisibleKey] = useState(regionKey);
+  const mapRef = useRef<MapView>(null);
   const openBuilding = rooms ? Object.values(rooms)[0]?.floor.buildingCode : undefined;
+  const cameraKey = camera
+    ? `${camera.latitude}:${camera.longitude}:${camera.latitudeDelta}:${camera.longitudeDelta}`
+    : "";
 
   useEffect(() => {
-    if (visibleKey === regionKey) {
+    if (!camera || !mapRef.current) {
       return;
     }
-    const frame = requestAnimationFrame(() => setVisibleKey(regionKey));
-    return () => cancelAnimationFrame(frame);
-  }, [regionKey, visibleKey]);
+    mapRef.current.animateToRegion(camera, 400);
+  }, [cameraKey, camera]);
 
-  if (visibleKey !== regionKey) {
-    return <View style={StyleSheet.absoluteFill} />;
-  }
+  const progressLines =
+    completedLine && remainingLine ? { completed: completedLine, remaining: remainingLine } : null;
 
   return (
     <MapView
+      ref={mapRef}
       style={StyleSheet.absoluteFill}
       initialRegion={camera ?? initialRegion}
       showsUserLocation={Boolean(userPosition)}
@@ -186,7 +186,20 @@ export const CampusMap = ({
             />
           ))
         : null}
-      {line.length > 1 ? (
+      {progressLines ? (
+        <>
+          {progressLines.completed.length > 1 ? (
+            <Polyline coordinates={progressLines.completed} strokeColor="#94a3b8" strokeWidth={5} />
+          ) : null}
+          {progressLines.remaining.length > 1 ? (
+            <Polyline
+              coordinates={progressLines.remaining}
+              strokeColor={theme.green}
+              strokeWidth={5}
+            />
+          ) : null}
+        </>
+      ) : line.length > 1 ? (
         <Polyline coordinates={line} strokeColor={theme.green} strokeWidth={5} />
       ) : null}
     </MapView>

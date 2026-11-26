@@ -868,8 +868,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   floors: {
+    left: 12,
     position: "absolute",
-    right: 12,
+    zIndex: 20,
   },
   prompts: {
     left: 16,

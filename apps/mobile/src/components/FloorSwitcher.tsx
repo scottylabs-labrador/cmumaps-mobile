@@ -34,7 +34,7 @@ export const FloorSwitcher = ({ floors, current, onSelect }: Props) => {
         onPanResponderMove: (_, gesture) => {
           const next = Math.max(
             0,
-            Math.min(floors.length - 1, dragStart.current - gesture.dy / 50),
+            Math.min(floors.length - 1, dragStart.current + gesture.dy / 50),
           );
           progress.setValue(next);
         },

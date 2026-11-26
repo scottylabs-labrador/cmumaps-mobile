@@ -591,7 +591,7 @@ export const MapScreen = () => {
         </View>
       )}
       {!showSearchResults && building ? (
-        <View style={[styles.floors, { top: searchTop + 64 }]}>
+        <View style={[styles.floors, { top: Math.round(Dimensions.get("window").height * 0.34) }]}>
           <FloorSwitcher
             floors={building.floors}
             current={activeFloor?.floor}
@@ -947,7 +947,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   floors: {
-    left: 12,
+    left: -70,
     position: "absolute",
     zIndex: 20,
   },

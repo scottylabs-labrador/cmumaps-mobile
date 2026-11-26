@@ -22,6 +22,7 @@ export const AboutPanel = ({ visible, onClose }: Props) => {
         <Image source={require("../../assets/icon.png")} style={styles.icon} />
         <Text style={styles.title}>About CMU Maps</Text>
         <Text style={styles.body}>{aboutDescription}</Text>
+        <Text style={[styles.body, styles.hint]}>Shake your device to report a problem.</Text>
         <Pressable
           onPress={() => {
             WebBrowser.openBrowserAsync(privacyPolicyUrl).catch(() => undefined);
@@ -79,6 +80,9 @@ const styles = StyleSheet.create({
     color: theme.muted,
     lineHeight: 22,
     textAlign: "center",
+  },
+  hint: {
+    marginTop: 12,
   },
   linkRow: {
     marginTop: 16,

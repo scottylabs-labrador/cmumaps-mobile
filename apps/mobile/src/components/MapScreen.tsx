@@ -12,8 +12,10 @@ import { AboutPanel } from "@/components/AboutPanel";
 import { AccountDial, PromptCard, ReviewPasswordPrompt } from "@/components/GearMenu";
 import { NavPanel } from "@/components/NavPanel";
 import { PlaceSheet } from "@/components/PlaceSheet";
+import { ReportSheet } from "@/components/ReportSheet";
 import { SearchResults } from "@/components/SearchResults";
 import { routeLine, useRoutes } from "@/hooks/useRoutes";
+import { useShakeGesture } from "@/hooks/useShakeGesture";
 import { requestUserLocation, useUserLocation } from "@/hooks/useUserLocation";
 import { useSignedInUser } from "@/hooks/useWaypoint";
 import {
@@ -84,6 +86,7 @@ export const MapScreen = () => {
   const [reviewPromptOpen, setReviewPromptOpen] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   const [mapFloor, setMapFloor] = useState<{
     buildingCode: string;
     floor: string;
@@ -94,6 +97,12 @@ export const MapScreen = () => {
   useUserLocation();
   const { user } = useSignedInUser();
   const signedIn = Boolean(user);
+  useShakeGesture(() => {
+    setGearOpen(false);
+    setAboutOpen(false);
+    setReviewPromptOpen(false);
+    setReportOpen(true);
+  }, !reportOpen && !reviewPromptOpen);
   const buildings = useBuildings();
   const suffix = suffixFromPathname(pathname);
   const place = parsePlace(suffix === "" && floorParam ? floorParam : suffix, buildings.data);
@@ -557,6 +566,14 @@ export const MapScreen = () => {
             setReviewError(null);
           }
         }}
+      />
+      <ReportSheet
+        visible={reportOpen}
+        context={{
+          path: href(pathname, src || undefined, dst || undefined),
+          signedIn,
+        }}
+        onDismiss={() => setReportOpen(false)}
       />
       <View style={styles.bottom}>
         {aboutOpen ? (

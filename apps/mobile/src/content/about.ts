@@ -4,6 +4,9 @@ export const aboutDescription =
 export const privacyPolicyUrl =
   "https://docs.google.com/document/d/11SGIF2uqN63vL80LA5jADpcl1DFgxCGHiCdKupzQ8Rk";
 
+/** Shake-to-report destination (opens the device mail client). */
+export const reportEmail = "ops+cmumaps@scottylabs.org";
+
 export const credits = {
   developer: "Yuxiang Huang",
   designer: "Wunwan Boonsitanara",

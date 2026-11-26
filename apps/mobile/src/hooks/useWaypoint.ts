@@ -44,11 +44,11 @@ export const useWaypoint = (point: string): Waypoint => {
       return { label: "" };
     }
     if (!userPosition) {
-      return { label: "Your location" };
+      return { label: "Your Location (unavailable)" };
     }
     return {
       query: `${userPosition.latitude},${userPosition.longitude}`,
-      label: "Your location",
+      label: "Your Location",
     };
   }
 

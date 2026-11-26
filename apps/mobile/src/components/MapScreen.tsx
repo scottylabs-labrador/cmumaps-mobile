@@ -15,7 +15,14 @@ import {
   PromptCard,
   ReviewPasswordPrompt,
 } from "@/components/GearMenu";
-import { CloseIcon, SearchIcon } from "@/components/Icons";
+import {
+  ChevronLeftIcon,
+  CloseIcon,
+  PinIcon,
+  SearchIcon,
+  SwapIcon,
+  TargetIcon,
+} from "@/components/Icons";
 import { NavPanel } from "@/components/NavPanel";
 import { PlaceSheet } from "@/components/PlaceSheet";
 import { ReportSheet } from "@/components/ReportSheet";
@@ -306,9 +313,9 @@ export const MapScreen = () => {
   const line = originReady ? routeLine(routes.data, selectedRoute) : [];
   const currentInstruction = routes.data?.[selectedRoute]?.instructions[instructionIndex];
   const navError = !originReady
-    ? "Turn on location or choose a start."
+    ? "Path unavailable"
     : routes.isError
-      ? "No route for that pair."
+      ? "Path unavailable"
       : (start.error ?? end.error);
   const progressLines = (() => {
     if (!navigating || !originReady) {
@@ -503,69 +510,107 @@ export const MapScreen = () => {
       ) : navOpen ? (
         <View style={[styles.searchWrap, { top: searchTop }]}>
           <View style={styles.navHeader}>
-            <View style={styles.navTitleRow}>
-              <Pressable
-                accessibilityLabel="Back"
-                onPress={() => {
-                  resetNav();
-                  open(pathname);
-                }}
-                style={styles.navBack}
-              >
-                <Text style={styles.navBackText}>‹</Text>
-              </Pressable>
+            <Pressable
+              accessibilityLabel="Back"
+              onPress={() => {
+                clearSearch();
+                resetNav();
+                open(pathname);
+              }}
+              style={styles.navTitleRow}
+            >
+              <ChevronLeftIcon size={18} color={theme.subtle} />
               <Text style={styles.navTitle}>Navigation</Text>
-            </View>
+            </Pressable>
             <View style={styles.navEndpoints}>
               <View style={styles.navEndpointRail}>
-                <View style={[styles.navDot, styles.navDotStart]} />
-                <View style={styles.navRailLine} />
-                <View style={[styles.navDot, styles.navDotEnd]} />
+                <TargetIcon
+                  size={18}
+                  color={src === "user" && !userPosition ? theme.subtle : theme.brand}
+                />
+                <View style={styles.navRailDots}>
+                  <View style={styles.navRailDot} />
+                  <View style={styles.navRailDot} />
+                  <View style={styles.navRailDot} />
+                </View>
+                <PinIcon size={18} color={theme.danger} />
               </View>
               <View style={styles.navEndpointFields}>
-                <Pressable
-                  style={styles.navEndpoint}
-                  onPress={() => {
-                    setNavEdit("src");
-                    setSearchOpen(true);
-                    setSearchQuery("");
-                  }}
+                <View
+                  style={[styles.navEndpoint, navEdit === "src" ? styles.navEndpointActive : null]}
                 >
-                  <Text
-                    style={[styles.navEndpointValue, styles.navEndpointStart]}
-                    numberOfLines={1}
-                  >
-                    {start.label || "Choose start"}
-                  </Text>
-                  {src ? (
+                  <TextInput
+                    value={navEdit === "src" ? searchQuery : start.label}
+                    placeholder="Choose start"
+                    placeholderTextColor={theme.subtle}
+                    style={[
+                      styles.navEndpointInput,
+                      navEdit !== "src" && src === "user"
+                        ? userPosition
+                          ? styles.navEndpointStart
+                          : styles.navEndpointUnavailable
+                        : null,
+                    ]}
+                    onFocus={() => {
+                      setNavEdit("src");
+                      setSearchOpen(true);
+                      setSearchQuery("");
+                    }}
+                    onChangeText={(value) => {
+                      setNavEdit("src");
+                      setSearchQuery(value);
+                      setSearchOpen(true);
+                    }}
+                  />
+                  {src || (navEdit === "src" && searchQuery.length > 0) ? (
                     <Pressable
                       accessibilityLabel="Clear start"
-                      onPress={() => open(pathname, "", dst)}
+                      onPress={() => {
+                        if (navEdit === "src" && searchQuery.length > 0) {
+                          setSearchQuery("");
+                        } else {
+                          open(pathname, "", dst);
+                          setNavEdit("src");
+                          setSearchOpen(true);
+                          setSearchQuery("");
+                        }
+                      }}
                       hitSlop={8}
                     >
-                      <Text style={styles.clearText}>✕</Text>
+                      <CloseIcon size={16} color={theme.muted} />
                     </Pressable>
                   ) : null}
-                </Pressable>
-                <Pressable
-                  style={styles.navEndpoint}
-                  onPress={() => {
-                    setNavEdit("dst");
-                    setSearchOpen(true);
-                    setSearchQuery("");
-                  }}
+                </View>
+                <View
+                  style={[styles.navEndpoint, navEdit === "dst" ? styles.navEndpointActive : null]}
                 >
-                  <Text style={styles.navEndpointValue} numberOfLines={1}>
-                    {end.label || "Enter destination"}
-                  </Text>
+                  <TextInput
+                    value={navEdit === "dst" ? searchQuery : end.label}
+                    placeholder="Enter destination"
+                    placeholderTextColor={theme.subtle}
+                    style={styles.navEndpointInput}
+                    onFocus={() => {
+                      setNavEdit("dst");
+                      setSearchOpen(true);
+                      setSearchQuery("");
+                    }}
+                    onChangeText={(value) => {
+                      setNavEdit("dst");
+                      setSearchQuery(value);
+                      setSearchOpen(true);
+                    }}
+                  />
                   <Pressable
                     accessibilityLabel="Swap start and destination"
-                    onPress={() => open(pathname, dst, src)}
+                    onPress={() => {
+                      clearSearch();
+                      open(pathname, dst, src);
+                    }}
                     hitSlop={8}
                   >
-                    <Text style={styles.swapText}>⇄</Text>
+                    <SwapIcon size={18} color={theme.muted} />
                   </Pressable>
-                </Pressable>
+                </View>
               </View>
             </View>
           </View>
@@ -869,11 +914,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 28,
   },
-  clearText: {
-    color: theme.muted,
-    fontSize: 14,
-    fontWeight: "700",
-  },
   banner: {
     backgroundColor: theme.green,
     borderRadius: 20,
@@ -925,60 +965,46 @@ const styles = StyleSheet.create({
   navHeader: {
     backgroundColor: theme.paper,
     borderRadius: 16,
-    paddingBottom: 12,
-    paddingHorizontal: 12,
-    paddingTop: 10,
+    paddingBottom: 14,
+    paddingHorizontal: 14,
+    paddingTop: 12,
     shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
+    elevation: 6,
   },
   navTitleRow: {
     alignItems: "center",
+    alignSelf: "flex-start",
     flexDirection: "row",
     gap: 4,
-    marginBottom: 8,
-  },
-  navBack: {
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  navBackText: {
-    color: theme.muted,
-    fontSize: 28,
-    fontWeight: "300",
-    lineHeight: 28,
+    marginBottom: 10,
   },
   navTitle: {
-    color: theme.muted,
+    color: theme.subtle,
     fontSize: 14,
     fontWeight: "600",
   },
   navEndpoints: {
     flexDirection: "row",
-    gap: 8,
+    gap: 10,
   },
   navEndpointRail: {
     alignItems: "center",
-    paddingVertical: 10,
-    width: 16,
+    justifyContent: "space-between",
+    paddingVertical: 11,
+    width: 22,
   },
-  navDot: {
-    borderRadius: 6,
-    height: 12,
-    width: 12,
+  navRailDots: {
+    alignItems: "center",
+    gap: 4,
   },
-  navDotStart: {
-    backgroundColor: "#0E96D1",
-  },
-  navDotEnd: {
-    backgroundColor: theme.danger,
-  },
-  navRailLine: {
-    backgroundColor: theme.line,
-    flex: 1,
-    marginVertical: 4,
-    width: 2,
+  navRailDot: {
+    backgroundColor: theme.disabled,
+    borderRadius: 2,
+    height: 3.5,
+    width: 3.5,
   },
   navEndpointFields: {
     flex: 1,
@@ -987,26 +1013,28 @@ const styles = StyleSheet.create({
   navEndpoint: {
     alignItems: "center",
     borderColor: theme.line,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 10,
+    borderWidth: 1,
     flexDirection: "row",
     gap: 8,
+    height: 40,
     paddingHorizontal: 12,
-    paddingVertical: 10,
   },
-  navEndpointValue: {
+  navEndpointActive: {
+    borderColor: theme.brand,
+  },
+  navEndpointInput: {
     color: theme.ink,
     flex: 1,
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "500",
+    paddingVertical: 0,
   },
   navEndpointStart: {
-    color: "#0E96D1",
+    color: theme.brand,
   },
-  swapText: {
-    color: theme.muted,
-    fontSize: 18,
-    fontWeight: "700",
+  navEndpointUnavailable: {
+    color: theme.subtle,
   },
   floors: {
     left: -70,

@@ -23,7 +23,7 @@ import {
   SwapIcon,
   TargetIcon,
 } from "@/components/Icons";
-import { NavPanel } from "@/components/NavPanel";
+import { NavPanel, StepsSheet, TurnByTurnBanner } from "@/components/NavPanel";
 import { PlaceSheet } from "@/components/PlaceSheet";
 import { ReportSheet } from "@/components/ReportSheet";
 import { SearchResults } from "@/components/SearchResults";
@@ -96,6 +96,7 @@ export const MapScreen = () => {
   const [gearOpen, setGearOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [stepsOpen, setStepsOpen] = useState(false);
   const [navEdit, setNavEdit] = useState<"src" | "dst" | null>(null);
   const [reviewPromptOpen, setReviewPromptOpen] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
@@ -311,7 +312,9 @@ export const MapScreen = () => {
   const navOpen = Boolean(src || dst);
   const originReady = src !== "user" || Boolean(userPosition);
   const line = originReady ? routeLine(routes.data, selectedRoute) : [];
-  const currentInstruction = routes.data?.[selectedRoute]?.instructions[instructionIndex];
+  const activeRoute = routes.data?.[selectedRoute];
+  const instructions = activeRoute?.instructions ?? [];
+  const currentInstruction = instructions[instructionIndex];
   const navError = !originReady
     ? "Path unavailable"
     : routes.isError
@@ -326,6 +329,12 @@ export const MapScreen = () => {
       return null;
     }
     const path = route.path.path;
+    if (instructionIndex >= route.instructions.length) {
+      return {
+        completed: path.map((node) => node.coordinate),
+        remaining: [],
+      };
+    }
     const currentNodeId =
       instructionIndex > 0 ? route.instructions[instructionIndex - 1]?.nodeId : path[0]?.id;
     const split = path.findIndex((node) => node.id === currentNodeId);
@@ -475,37 +484,20 @@ export const MapScreen = () => {
         }
         onRegionChangeComplete={onRegionChangeComplete}
       />
-      {navigating && currentInstruction ? (
-        <View style={[styles.banner, { top: searchTop }]}>
-          <View style={styles.bannerBody}>
-            <View style={styles.bannerCopy}>
-              <Text style={styles.bannerTitle}>{currentInstruction.action}</Text>
-              <Text style={styles.bannerSub}>
-                {currentInstruction.distance} ft · {end.label}
-              </Text>
-            </View>
-            <Text style={styles.bannerCode}>{placeBuildingCode ?? buildingCode ?? ""}</Text>
-          </View>
-          <View style={styles.bannerControls}>
-            <Pressable
-              onPress={() => setInstructionIndex(Math.max(0, instructionIndex - 1))}
-              style={styles.bannerControl}
-            >
-              <Text style={styles.bannerControlText}>{"<<"} Prev</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                const count = routes.data?.[selectedRoute]?.instructions.length ?? 0;
-                if (count === 0) {
-                  return;
-                }
-                setInstructionIndex(Math.min(count - 1, instructionIndex + 1));
-              }}
-              style={styles.bannerControl}
-            >
-              <Text style={styles.bannerControlText}>Next {">>"}</Text>
-            </Pressable>
-          </View>
+      {navigating && instructions.length > 0 ? (
+        <View style={[styles.bannerWrap, { top: searchTop }]}>
+          <TurnByTurnBanner
+            instructions={instructions}
+            index={instructionIndex}
+            destinationLabel={end.label || "Destination"}
+            buildingLabel={
+              end.buildingCode
+                ? buildings.data?.[end.buildingCode]?.name
+                : (placeBuildingCode ?? buildingCode)
+            }
+            onPrev={() => setInstructionIndex(Math.max(0, instructionIndex - 1))}
+            onNext={() => setInstructionIndex(Math.min(instructions.length, instructionIndex + 1))}
+          />
         </View>
       ) : navOpen ? (
         <View style={[styles.searchWrap, { top: searchTop }]}>
@@ -737,6 +729,19 @@ export const MapScreen = () => {
           }
         }}
       />
+      <StepsSheet
+        visible={stepsOpen && navigating}
+        route={activeRoute}
+        index={instructionIndex}
+        destinationLabel={end.label || "Destination"}
+        onSelectStep={(stepIdx) => setInstructionIndex(stepIdx)}
+        onClose={() => setStepsOpen(false)}
+        onEnd={() => {
+          setStepsOpen(false);
+          resetNav();
+          open(pathname);
+        }}
+      />
       <ReportSheet
         visible={reportOpen}
         context={{
@@ -757,7 +762,9 @@ export const MapScreen = () => {
             canGo={originReady && Boolean(routes.data?.[selectedRoute])}
             onSelect={setSelectedRoute}
             onGo={() => setNavigating(true)}
+            onOpenSteps={() => setStepsOpen(true)}
             onEnd={() => {
+              setStepsOpen(false);
               resetNav();
               open(pathname);
             }}
@@ -914,53 +921,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 28,
   },
-  banner: {
-    backgroundColor: theme.green,
-    borderRadius: 20,
+  bannerWrap: {
     left: 16,
-    overflow: "hidden",
     position: "absolute",
     right: 16,
     zIndex: 20,
-  },
-  bannerBody: {
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 12,
-  },
-  bannerCopy: {
-    flex: 1,
-  },
-  bannerTitle: {
-    color: "#ffffff",
-    fontSize: 26,
-    fontWeight: "700",
-  },
-  bannerSub: {
-    color: "#dcfce7",
-    fontSize: 15,
-    marginTop: 4,
-  },
-  bannerCode: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  bannerControls: {
-    backgroundColor: theme.greenDark,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  bannerControl: {
-    paddingVertical: 2,
-  },
-  bannerControlText: {
-    color: "#ffffff",
-    fontWeight: "700",
   },
   navHeader: {
     backgroundColor: theme.paper,

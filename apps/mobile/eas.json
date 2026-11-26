@@ -9,10 +9,7 @@
       "environment": "production",
       "channel": "production",
       "autoIncrement": true,
-      "bun": "1.3.5",
-      "ios": {
-        "image": "latest"
-      }
+      "bun": "1.3.5"
     }
   },
   "submit": {

@@ -1,7 +1,15 @@
 import type { GeoCoordinate } from "@cmumaps/common";
 import { router, useGlobalSearchParams, usePathname } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { Dimensions, Pressable, Share, StyleSheet, TextInput, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  BackHandler,
+  Dimensions,
+  Pressable,
+  Share,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import type { Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBuildings, useFloorplan, useFloorplans, usePois } from "@/api/client";
@@ -163,11 +171,14 @@ export const MapScreen = () => {
     );
   }, [step.stepFloor, signedIn]);
 
-  const open = (path: string, nextSrc = src, nextDst = dst) => {
-    router.replace(targetHref(path, nextSrc || undefined, nextDst || undefined));
-    setSearchOpen(false);
-    setSearchQuery("");
-  };
+  const open = useCallback(
+    (path: string, nextSrc = src, nextDst = dst) => {
+      router.replace(targetHref(path, nextSrc || undefined, nextDst || undefined));
+      setSearchOpen(false);
+      setSearchQuery("");
+    },
+    [dst, setSearchOpen, setSearchQuery, src],
+  );
 
   const startSignIn = (path: string) => {
     setSearchOpen(false);
@@ -253,12 +264,33 @@ export const MapScreen = () => {
     hasBuilding: Boolean(building),
   });
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearchQuery("");
     setSearchOpen(false);
     setSearchFocused(false);
     setNavEdit(null);
-  };
+  }, [setSearchOpen, setSearchQuery]);
+
+  const exitNavigation = useCallback(() => {
+    clearSearch();
+    resetNav();
+    open(pathname, "", "");
+  }, [clearSearch, open, pathname, resetNav]);
+
+  useEffect(() => {
+    if (!navOpen) {
+      return;
+    }
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (showSearchResults) {
+        clearSearch();
+        return true;
+      }
+      exitNavigation();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [clearSearch, exitNavigation, navOpen, showSearchResults]);
 
   return (
     <View style={styles.fill}>
@@ -317,11 +349,7 @@ export const MapScreen = () => {
             userLocationAvailable={Boolean(userPosition)}
             editingField={navEdit}
             searchQuery={searchQuery}
-            onBack={() => {
-              clearSearch();
-              resetNav();
-              open(pathname);
-            }}
+            onBack={exitNavigation}
             onFocusField={(field) => {
               setNavEdit(field);
               setSearchOpen(true);
@@ -465,10 +493,7 @@ export const MapScreen = () => {
         destinationLabel={end.label || "Destination"}
         onSelectStep={(stepIdx) => jumpToStep(stepIdx, step.instructions.length)}
         onClose={closeModal}
-        onEnd={() => {
-          resetNav();
-          open(pathname);
-        }}
+        onEnd={exitNavigation}
       />
 
       <ReportSheet
@@ -490,10 +515,7 @@ export const MapScreen = () => {
             onSelect={setSelectedRoute}
             onGo={startNavigation}
             onOpenSteps={() => openModal("steps")}
-            onEnd={() => {
-              resetNav();
-              open(pathname);
-            }}
+            onEnd={exitNavigation}
           />
         ) : chrome.bottomPanel === "place" ? (
           <PlaceSheet

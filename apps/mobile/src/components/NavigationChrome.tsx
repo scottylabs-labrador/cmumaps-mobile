@@ -55,7 +55,7 @@ export const NavHeader = ({
   onSwap,
 }: NavHeaderProps) => (
   <View style={styles.navHeader}>
-    <Pressable accessibilityLabel="Back" onPress={onBack} style={styles.navTitleRow}>
+    <Pressable accessibilityLabel="Back" hitSlop={8} onPress={onBack} style={styles.navTitleRow}>
       <ChevronLeftIcon size={18} color={theme.subtle} />
       <Text style={styles.navTitle}>Navigation</Text>
     </Pressable>

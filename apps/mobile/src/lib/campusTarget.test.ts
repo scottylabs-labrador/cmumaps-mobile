@@ -175,6 +175,7 @@ describe("campusTarget", () => {
       "Auditorium in Cohon University Center",
     );
     expect(targetHref("/CUC", "GHC", "CUC-222B")).toBe("/CUC?src=GHC&dst=CUC-222B");
+    expect(targetHref("/CUC", undefined, undefined)).toBe("/CUC");
     expect(
       targetShareUrl(roomTarget!, { src: "GHC", dst: "CUC-222B" }, "https://cmumaps.com"),
     ).toBe("https://cmumaps.com/CUC-222B?src=GHC&dst=CUC-222B");

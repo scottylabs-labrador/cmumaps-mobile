@@ -75,6 +75,7 @@ export const MapScreen = () => {
   const floorParam = one(params.floor) ?? "";
   const [gearOpen, setGearOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [navEdit, setNavEdit] = useState<"src" | "dst" | null>(null);
   const [returnPath, setReturnPath] = useState("/");
   const [mapFloor, setMapFloor] = useState<{
     buildingCode: string;
@@ -317,6 +318,7 @@ export const MapScreen = () => {
   const clearSearch = () => {
     setSearchQuery("");
     setSearchOpen(false);
+    setNavEdit(null);
   };
 
   return (
@@ -356,10 +358,70 @@ export const MapScreen = () => {
       )}
       {navigating && currentInstruction ? (
         <View style={[styles.banner, { top: searchTop }]}>
-          <Text style={styles.bannerTitle}>
-            {currentInstruction.action} · {currentInstruction.distance} ft
+          <Text style={styles.bannerEyebrow}>Next</Text>
+          <Text style={styles.bannerTitle}>{currentInstruction.action}</Text>
+          <Text style={styles.bannerSub}>
+            {currentInstruction.distance} ft · {end.label}
           </Text>
-          <Text style={styles.bannerSub}>{end.label}</Text>
+        </View>
+      ) : navOpen ? (
+        <View style={[styles.searchWrap, { top: searchTop }]}>
+          <View style={styles.navHeader}>
+            <View style={styles.navEndpoints}>
+              <Pressable
+                style={styles.navEndpoint}
+                onPress={() => {
+                  setNavEdit("src");
+                  setSearchOpen(true);
+                  setSearchQuery("");
+                }}
+              >
+                <Text style={styles.navEndpointLabel}>From</Text>
+                <Text style={styles.navEndpointValue} numberOfLines={1}>
+                  {start.label || "Choose start"}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={styles.navEndpoint}
+                onPress={() => {
+                  setNavEdit("dst");
+                  setSearchOpen(true);
+                  setSearchQuery("");
+                }}
+              >
+                <Text style={styles.navEndpointLabel}>To</Text>
+                <Text style={styles.navEndpointValue} numberOfLines={1}>
+                  {end.label || "Choose destination"}
+                </Text>
+              </Pressable>
+            </View>
+            <Pressable
+              accessibilityLabel="Swap start and destination"
+              onPress={() => open(pathname, dst, src)}
+              style={styles.swapButton}
+            >
+              <Text style={styles.swapText}>⇅</Text>
+            </Pressable>
+            <AccountDial
+              open={gearOpen}
+              signedIn={signedIn}
+              onToggle={() => setGearOpen((open) => !open)}
+              onSignIn={() => {
+                setGearOpen(false);
+                signIn(href(pathname, src || undefined, dst || undefined)).catch(() => {
+                  setSignInVisible(true);
+                });
+              }}
+              onSignOut={() => {
+                setGearOpen(false);
+                signOut().catch(() => undefined);
+              }}
+              onAbout={() => {
+                setGearOpen(false);
+                setAboutOpen(true);
+              }}
+            />
+          </View>
         </View>
       ) : (
         <View style={[styles.searchWrap, { top: searchTop }]}>
@@ -369,7 +431,10 @@ export const MapScreen = () => {
               placeholder="Search CMU Maps"
               placeholderTextColor={theme.muted}
               style={styles.search}
-              onFocus={() => setSearchOpen(true)}
+              onFocus={() => {
+                setNavEdit(null);
+                setSearchOpen(true);
+              }}
               onChangeText={(value) => {
                 setSearchQuery(value);
                 setSearchOpen(true);
@@ -511,11 +576,46 @@ export const MapScreen = () => {
             <SearchResults
               query={searchQuery}
               signedIn={signedIn}
-              pickingDestination={Boolean(src) && !dst}
-              onPick={(value) => open(pathname === "/" ? "/" : pathname, src, value)}
-              onSelectBuilding={selectBuilding}
-              onSelectFloor={selectFloor}
-              onSelectRoom={selectRoom}
+              pickingDestination={navEdit === "dst" || (Boolean(src) && !dst)}
+              onPick={(value) => {
+                if (navEdit === "src") {
+                  open(pathname, value, dst);
+                } else if (navEdit === "dst") {
+                  open(pathname, src, value);
+                } else {
+                  open(pathname === "/" ? "/" : pathname, src, value);
+                }
+                setNavEdit(null);
+              }}
+              onSelectBuilding={(code) => {
+                if (navEdit) {
+                  const next = navEdit === "src" ? [code, dst] : [src, code];
+                  open(pathname, next[0], next[1]);
+                  setNavEdit(null);
+                  return;
+                }
+                selectBuilding(code);
+              }}
+              onSelectFloor={(code, level) => {
+                if (navEdit) {
+                  const point = `floor:${code}-${level}`;
+                  const next = navEdit === "src" ? [point, dst] : [src, point];
+                  open(pathname, next[0], next[1]);
+                  setNavEdit(null);
+                  return;
+                }
+                selectFloor(code, level);
+              }}
+              onSelectRoom={(code, roomName) => {
+                if (navEdit) {
+                  const point = `${code}-${roomName}`;
+                  const next = navEdit === "src" ? [point, dst] : [src, point];
+                  open(pathname, next[0], next[1]);
+                  setNavEdit(null);
+                  return;
+                }
+                selectRoom(code, roomName);
+              }}
               onNeedSignIn={askSignIn}
             />
           </View>
@@ -564,20 +664,71 @@ const styles = StyleSheet.create({
   },
   banner: {
     backgroundColor: theme.green,
-    borderRadius: 16,
+    borderRadius: 20,
     left: 16,
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
     position: "absolute",
     right: 16,
+    zIndex: 20,
+  },
+  bannerEyebrow: {
+    color: "#dcfce7",
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
   },
   bannerTitle: {
     color: "#ffffff",
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: "700",
+    marginTop: 4,
   },
   bannerSub: {
     color: "#dcfce7",
-    marginTop: 4,
+    fontSize: 16,
+    marginTop: 6,
+  },
+  navHeader: {
+    alignItems: "center",
+    backgroundColor: theme.paper,
+    borderRadius: 20,
+    flexDirection: "row",
+    gap: 8,
+    padding: 10,
+  },
+  navEndpoints: {
+    flex: 1,
+    gap: 6,
+  },
+  navEndpoint: {
+    backgroundColor: theme.canvas,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  navEndpointLabel: {
+    color: theme.muted,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  navEndpointValue: {
+    color: theme.ink,
+    fontSize: 15,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  swapButton: {
+    alignItems: "center",
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  swapText: {
+    color: theme.greenDark,
+    fontSize: 20,
+    fontWeight: "700",
   },
   floors: {
     position: "absolute",

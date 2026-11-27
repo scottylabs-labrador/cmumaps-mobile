@@ -6,15 +6,19 @@
 
 CMU Maps is a Turborepo monorepo with apps under `apps/` (`mobile`, `server`, `dataflow`) and packages under `packages/` (`common`, `db`, `openapi-codegen`). See `README.md` for general project info. Domain language lives in `docs/GLOSSARY.md`. ADRs live in `docs/adr/`.
 
+### Design reference
+
+For mobile UI changes, inspect the relevant frames in [CMU Maps Figma — Mobile Interface](https://www.figma.com/design/4hihRwPsE7JDWI21q72B03/CMU-Maps?node-id=5185-25326) before adjusting layout or alignment. Use the specific screen's geometry as the reference; the map frame `4898:27303` places the 48-point plus button 32 points from the left edge with its icon centered.
+
 ### Services
 
 | Service                        | Port | How to start                                                                                                                                |
 | ------------------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | PostgreSQL (`@cmumaps/db`)     | 5432 | `bun run --filter @cmumaps/db dev` from the repo root. Database `cmumaps` at `postgresql://postgres:donotuseinprod@localhost:5432/cmumaps`. |
 | Server (`@cmumaps/server`)     | 8080 | `bun run --filter @cmumaps/server dev` from the repo root (also starts Cloudflare Tunnel → `https://local.cmumaps.com`)                     |
-| Mobile app (`@cmumaps/mobile`) | 8081 | `turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server` from the repo root                                                            |
+| Mobile app (`@cmumaps/mobile`) | 8081 | `turbo dev` from the repo root (starts the full project)                                                                                    |
 
-`bun run dev` / bare `turbo dev` runs every workspace `dev` script (Postgres compose, server+tunnel, Expo). Prefer the filtered command above when you only need the app against a local API.
+**Default startup:** Run `unset DATABASE_URL && turbo dev` from the repo root to start the full project (Postgres compose, server+tunnel, Expo). `bun run dev` is equivalent. Use filtered or service-only commands only when explicitly requested or when restarting a failed service while the rest of the stack is already running.
 
 ### Key gotchas
 
@@ -45,7 +49,7 @@ Xcode 27 ships **Device Hub** instead of Simulator.app (`open -a Simulator` fail
 
 #### Running
 
-1. From the repo root, `unset DATABASE_URL && turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server`. Done when Expo prints a Metro URL on port 8081, the server listens on 8080, and `curl -sS https://local.cmumaps.com/` returns ok. Metro alone: `cd apps/mobile && bunx expo start` (do not wrap mobile in `secretspec run` — that package has no SecretSpec secrets).
+1. Start the full project using the default startup command above. Done when Expo prints a Metro URL on port 8081, the server listens on 8080, and `curl -sS https://local.cmumaps.com/` returns ok. Do not wrap mobile in `secretspec run` — that package has no SecretSpec secrets.
 2. Open the project with `xcrun simctl openurl booted exp://127.0.0.1:8081`.
 3. In Device Hub, accept Expo Go’s **Open?** dialog if it appears, then the location permission card (**Allow While Using App** or **Not Now**).
 4. Done when the CMU Maps search field is on the map.
@@ -72,7 +76,5 @@ Apple reviewers cannot use CMU Keycloak. Long-press the dial **Sign in** control
 
 - **Lint/check**: `bun run check` runs `vp check` (Oxfmt, Oxlint, and tsrs typecheck).
 - **Build (server)**: `cd apps/server && bun run build`
-- **Dev**: `bun run dev` runs every package `dev` script: Postgres, the server, and Expo
-- **Dev (server + mobile)**: `turbo dev --filter=@cmumaps/mobile --filter=@cmumaps/server`
-- **Dev (server only)**: `bun run --filter @cmumaps/server dev`
+- **Dev**: Follow **Default startup** under Services.
 - See `package.json` scripts for the full list.

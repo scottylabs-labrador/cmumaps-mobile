@@ -1,0 +1,12 @@
+CMU Maps helps you get around Carnegie Mellon University.
+
+1. Map
+2. Building outlines
+3. Interactive floor plans
+4. Room cards with 25Live availability, dining info, and room images
+5. Building cards with images
+6. Waypoint-to-waypoint pathfinding and turn-based navigation
+7. Search nearest rooms, dining (see what's open), restrooms, and classes
+8. Upload your schedule
+
+Made by ScottyLabs

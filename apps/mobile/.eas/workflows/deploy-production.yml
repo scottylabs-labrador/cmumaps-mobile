@@ -72,16 +72,6 @@ jobs:
       build_id: ${{ needs.build_ios.outputs.build_id }}
       profile: production
 
-  push_metadata:
-    name: Push App Store metadata
-    needs: [submit_ios]
-    environment: production
-    steps:
-      - uses: eas/checkout
-      - uses: eas/install_node_modules
-      - name: Push store config
-        run: EXPO_APPLE_TEAM_ID=FZJR627CZ7 bunx eas-cli@27.11.0 metadata:push --profile production --non-interactive
-
   publish_android_update:
     name: Publish Android update
     needs: [get_android_build]

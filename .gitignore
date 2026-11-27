@@ -23,3 +23,9 @@ build/
 .env*
 .expo/
 .DS_Store
+
+# Fastlane output
+.bundle/
+vendor/bundle/
+**/fastlane/report.xml
+**/fastlane/Preview.html

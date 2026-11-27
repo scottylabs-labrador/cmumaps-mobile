@@ -1,0 +1,83 @@
+require "json"
+require "open3"
+
+opt_out_usage
+
+def expo_config
+  root = File.expand_path("..", __dir__)
+  stdout, stderr, status = Open3.capture3("bun", "x", "--no-install", "expo", "config", "--json", chdir: root)
+  UI.user_error!("Cannot resolve Expo config: #{stderr}") unless status.success?
+  JSON.parse(stdout)
+end
+
+platform :android do
+  desc "Upload Play listing text and supplied assets, leaving review submission manual"
+  lane :metadata do
+    config = expo_config
+    credentials = ENV.fetch("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON")
+    UI.user_error!("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is empty") if credentials.strip.empty?
+    upload_to_play_store(
+      package_name: config.fetch("android").fetch("package"),
+      json_key_data: credentials,
+      metadata_path: File.join(__dir__, "metadata", "android"),
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      sync_image_upload: true,
+      changes_not_sent_for_review: true,
+      rescue_changes_not_sent_for_review: false
+    )
+  end
+end
+
+platform :ios do
+  desc "Upload Apple listing text and supplied screenshots; never submit or release"
+  lane :metadata do
+    config = expo_config
+    identifier = config.fetch("ios").fetch("bundleIdentifier")
+    version = config.fetch("version")
+    key = app_store_connect_api_key(
+      key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID"),
+      key_content: ENV.fetch("APP_STORE_CONNECT_API_PRIVATE_KEY"),
+      in_house: false
+    )
+    app = Spaceship::ConnectAPI::App.find(identifier)
+    UI.user_error!("App Store Connect app #{identifier} does not exist") unless app
+    versions = app.get_app_store_versions(filter: { platform: "IOS" })
+    matching = versions.find { |candidate| candidate.version_string == version }
+    if matching
+      editable = %w[PREPARE_FOR_SUBMISSION DEVELOPER_REJECTED REJECTED METADATA_REJECTED INVALID_BINARY]
+      UI.user_error!("iOS #{version} is #{matching.app_version_state}, not editable.") unless editable.include?(matching.app_version_state)
+    else
+      conflict = versions.find { |candidate| !%w[READY_FOR_DISTRIBUTION REMOVED_FROM_SALE].include?(candidate.app_version_state) }
+      UI.user_error!("Another iOS version (#{conflict.version_string}) exists; refusing to rename it.") if conflict
+      Spaceship::ConnectAPI.post_app_store_version(
+        app_id: app.id,
+        attributes: { versionString: version, platform: "IOS" }
+      )
+    end
+    # Guard above prepares the exact version; Deliver must never rename a draft.
+    upload_to_app_store(
+      api_key: key,
+      app_identifier: identifier,
+      app_version: version,
+      skip_app_version_update: true,
+      metadata_path: File.join(__dir__, "metadata", "ios"),
+      screenshots_path: File.join(__dir__, "metadata", "ios", "screenshots"),
+      skip_screenshots: Dir.glob(File.join(__dir__, "metadata", "ios", "screenshots", "**", "*.{png,jpg,jpeg}")).empty?,
+      overwrite_screenshots: false,
+      skip_binary_upload: true,
+      skip_metadata: false,
+      submit_for_review: false,
+      automatic_release: false,
+      force: true,
+      run_precheck_before_submit: false,
+      primary_category: "NAVIGATION",
+      secondary_category: "EDUCATION",
+      app_rating_config_path: File.join(__dir__, "age_rating.json")
+    )
+  end
+end

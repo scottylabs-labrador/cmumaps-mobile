@@ -1,6 +1,9 @@
-import { Get, Path, Route } from "tsoa";
+import { Get, Path, Route, Security } from "tsoa";
+import { BEARER_AUTH, OIDC_AUTH } from "../lib/authentication.ts";
 import { buildingService } from "../services/buildingService.ts";
 
+@Security(OIDC_AUTH, [])
+@Security(BEARER_AUTH, [])
 @Route("buildings")
 export class BuildingController {
   @Get("/")

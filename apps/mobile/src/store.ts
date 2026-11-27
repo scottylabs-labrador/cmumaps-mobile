@@ -35,6 +35,7 @@ interface MapState {
   setUserPosition: (userPosition: Position | null) => void;
   setLocationPromptVisible: (locationPromptVisible: boolean) => void;
   resetNav: () => void;
+  resetSession: () => void;
 }
 
 const nextSheet: Record<SheetState, SheetState> = {
@@ -72,4 +73,16 @@ export const useMapStore = create<MapState>((set) => ({
   setUserPosition: (userPosition) => set({ userPosition }),
   setLocationPromptVisible: (locationPromptVisible) => set({ locationPromptVisible }),
   resetNav: () => set({ navigating: false, instructionIndex: 0, activeModal: "none" }),
+  resetSession: () =>
+    set({
+      sheet: "default",
+      activeModal: "none",
+      searchOpen: false,
+      searchQuery: "",
+      navigating: false,
+      instructionIndex: 0,
+      selectedRoute: "Fastest",
+      userPosition: null,
+      locationPromptVisible: false,
+    }),
 }));

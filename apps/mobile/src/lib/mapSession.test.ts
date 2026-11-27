@@ -131,17 +131,17 @@ describe("mapSession", () => {
     expect(clampInstructionIndex(10, 2)).toBe(2);
   });
 
-  test("gates non-CUC viewport floor focus behind sign-in when zoomed past raised threshold", () => {
+  test("resolves every building's viewport floor only past the floor zoom threshold", () => {
     const moderateZoomCuc = {
       latitude: 40.4435,
       longitude: -79.942,
       latitudeDelta: 0.001,
       longitudeDelta: 0.001,
     };
-    expect(resolveViewportFloor(buildings, moderateZoomCuc, 400, true)).toEqual({
+    expect(resolveViewportFloor(buildings, moderateZoomCuc, 400)).toEqual({
       kind: "none",
     });
-    expect(visibleAdjacentFloorCodes(buildings, moderateZoomCuc, 400, true, undefined)).toEqual([]);
+    expect(visibleAdjacentFloorCodes(buildings, moderateZoomCuc, 400, undefined)).toEqual([]);
 
     const zoomedCuc = {
       latitude: 40.4435,
@@ -149,7 +149,7 @@ describe("mapSession", () => {
       latitudeDelta: 0.0008,
       longitudeDelta: 0.0008,
     };
-    expect(resolveViewportFloor(buildings, zoomedCuc, 400, false)).toEqual({
+    expect(resolveViewportFloor(buildings, zoomedCuc, 400)).toEqual({
       kind: "floor",
       floor: { buildingCode: "CUC", floor: "1" },
     });
@@ -160,15 +160,13 @@ describe("mapSession", () => {
       latitudeDelta: 0.0008,
       longitudeDelta: 0.0008,
     };
-    expect(resolveViewportFloor(buildings, zoomedGhc, 400, false)).toEqual({
-      kind: "needsSignIn",
-      buildingCode: "GHC",
-      path: "/GHC-4",
-    });
-    expect(resolveViewportFloor(buildings, zoomedGhc, 400, true)).toEqual({
+    expect(resolveViewportFloor(buildings, zoomedGhc, 400)).toEqual({
       kind: "floor",
       floor: { buildingCode: "GHC", floor: "4" },
     });
+    expect(visibleAdjacentFloorCodes(buildings, zoomedGhc, 400, undefined)).toEqual(["GHC-4"]);
+    expect(visibleAdjacentFloorCodes(buildings, zoomedGhc, 400, "GHC")).toEqual([]);
+    expect(resolveViewportFloor(undefined, zoomedGhc, 400)).toEqual({ kind: "none" });
   });
 
   test("derives camera region for navigating step vs planning route vs building target", () => {

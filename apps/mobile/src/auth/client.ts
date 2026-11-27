@@ -3,6 +3,7 @@ import { createAuthClient } from "better-auth/react";
 import { expoClient } from "@better-auth/expo/client";
 import * as SecureStore from "expo-secure-store";
 import { env } from "@/env";
+import { notifySession } from "./sessionEvents";
 
 export const authClient = createAuthClient({
   baseURL: env.serverUrl,
@@ -27,4 +28,9 @@ export const signIn = (returnPath: string) => {
 export const signInWithPassword = (password: string) =>
   authClient.signIn.email({ email: APP_REVIEW_EMAIL, password });
 
-export const signOut = () => authClient.signOut();
+export const signOut = async () => {
+  const result = await authClient.signOut();
+  if (result.error) throw new Error(result.error.message ?? "Unable to sign out.");
+  notifySession("signed-out");
+  return result;
+};

@@ -1,6 +1,6 @@
 import type { GeoCoordinate } from "@cmumaps/common";
 import { router, useGlobalSearchParams, usePathname } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   BackHandler,
   Dimensions,
@@ -14,14 +14,13 @@ import {
 import type { Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBuildings, useFloorplan, useFloorplans, usePois } from "@/api/client";
-import { signIn, signInWithPassword, signOut } from "@/auth/client";
+import { signOut } from "@/auth/client";
 import { AboutPanel } from "@/components/AboutPanel";
-import { AccountCardModal, AccountDial, ReviewPasswordPrompt } from "@/components/AccountControls";
+import { AccountCardModal, AccountDial } from "@/components/AccountControls";
 import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
 import { CloseIcon, SearchIcon } from "@/components/Icons";
 import { LocationPrompt } from "@/components/LocationPrompt";
-import { LoginModal } from "@/components/LoginModal";
 import { NavHeader, NavPanel, StepsSheet, TurnByTurnBanner } from "@/components/NavigationChrome";
 import { PlaceSheet } from "@/components/PlaceSheet";
 import { ReportSheet } from "@/components/ReportSheet";
@@ -32,7 +31,6 @@ import { useShakeGesture } from "@/hooks/useShakeGesture";
 import { requestUserLocation, useUserLocation } from "@/hooks/useUserLocation";
 import { useSignedInUser } from "@/hooks/useWaypoint";
 import {
-  canViewFloor,
   type FloorRef,
   formatFloorCode,
   parseCampusTarget,
@@ -69,15 +67,10 @@ export const MapScreen = () => {
   const floorParam = one(params.floor) ?? "";
 
   const [navEdit, setNavEdit] = useState<"src" | "dst" | null>(null);
-  const [reviewBusy, setReviewBusy] = useState(false);
-  const [reviewError, setReviewError] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
-  const [signInReturnPath, setSignInReturnPath] = useState("/");
   const [mapFloor, setMapFloor] = useState<FloorRef | null>(null);
   const [viewRegion, setViewRegion] = useState<Region | null>(null);
   const [focusKey, setFocusKey] = useState(0);
-  const promptedBuilding = useRef<string | null>(null);
-  const skipSearchLoginPrompt = useRef(false);
 
   const sheet = useMapStore((state) => state.sheet);
   const setSheet = useMapStore((state) => state.setSheet);
@@ -104,17 +97,7 @@ export const MapScreen = () => {
 
   useUserLocation();
   const { user } = useSignedInUser();
-  const signedIn = Boolean(user);
-  useShakeGesture(
-    () => openModal("report"),
-    activeModal !== "report" && activeModal !== "reviewSignIn" && activeModal !== "login",
-  );
-
-  useEffect(() => {
-    if (signedIn) {
-      skipSearchLoginPrompt.current = false;
-    }
-  }, [signedIn]);
+  useShakeGesture(() => openModal("report"), activeModal !== "report");
 
   const buildings = useBuildings();
   const target = parseCampusTarget(pathname, buildings.data, floorParam);
@@ -124,22 +107,19 @@ export const MapScreen = () => {
   const buildingCode = targetBuilding ?? activeFloor?.buildingCode ?? floor?.buildingCode;
   const building = buildingCode ? buildings.data?.[buildingCode] : undefined;
   const floorCode = activeFloor ? formatFloorCode(activeFloor) : null;
-  const canSeeFloor = Boolean(activeFloor) && canViewFloor(activeFloor?.buildingCode, signedIn);
-
-  const rooms = useFloorplan(floorCode, canSeeFloor);
-  const pois = usePois(floorCode, canSeeFloor);
+  const rooms = useFloorplan(floorCode);
+  const pois = usePois(floorCode);
 
   const screenWidth = Dimensions.get("window").width;
   const inViewFloorCodes = visibleAdjacentFloorCodes(
     buildings.data,
     viewRegion,
     screenWidth,
-    signedIn,
     buildingCode,
   );
   const inViewFloorplans = useFloorplans(inViewFloorCodes, inViewFloorCodes.length > 0);
   const mergedRooms = (() => {
-    const base = canSeeFloor ? rooms.data : undefined;
+    const base = rooms.data;
     if (inViewFloorCodes.length === 0) {
       return base;
     }
@@ -182,7 +162,7 @@ export const MapScreen = () => {
   }, [pathname, setSheet]);
 
   useEffect(() => {
-    if (!step.stepFloor || !canViewFloor(step.stepFloor.buildingCode, signedIn)) {
+    if (!step.stepFloor) {
       return;
     }
     const nextFloor = step.stepFloor;
@@ -191,7 +171,7 @@ export const MapScreen = () => {
         ? current
         : nextFloor,
     );
-  }, [step.stepFloor, signedIn]);
+  }, [step.stepFloor]);
 
   const open = useCallback(
     (path: string, nextSrc = src, nextDst = dst) => {
@@ -202,78 +182,24 @@ export const MapScreen = () => {
     [dst, setSearchOpen, setSearchQuery, src],
   );
 
-  const startSignIn = (path: string) => {
-    setSearchOpen(false);
-    closeModal();
-    void signIn(path);
-  };
-
-  const promptLogin = (path: string) => {
-    setSignInReturnPath(path);
-    setSearchOpen(false);
-    setSearchFocused(false);
-    Keyboard.dismiss();
-    openModal("login");
-  };
-
-  const openReviewSignIn = () => {
-    setReviewError(null);
-    openModal("reviewSignIn");
-  };
-
-  const submitReviewSignIn = (password: string) => {
-    setReviewBusy(true);
-    setReviewError(null);
-    void signInWithPassword(password)
-      .then(({ error }) => {
-        if (error) {
-          setReviewError("Sign-in failed. Check the review password.");
-          return;
-        }
-        closeModal();
-      })
-      .catch(() => {
-        setReviewError("Sign-in failed. Check the review password.");
-      })
-      .finally(() => {
-        setReviewBusy(false);
-      });
-  };
-
   const selectBuilding = (code: string) => {
     setFocusKey((key) => key + 1);
     open(`/${code}`);
   };
   const selectFloor = (code: string, level: string) => {
-    if (!canViewFloor(code, signedIn)) {
-      startSignIn(`/${code}-${level}`);
-      return;
-    }
     setFocusKey((key) => key + 1);
     open(`/${code}-${level}`);
   };
   const selectRoom = (code: string, roomName: string) => {
-    if (!canViewFloor(code, signedIn)) {
-      startSignIn(`/${code}-${roomName}`);
-      return;
-    }
     setFocusKey((key) => key + 1);
     open(`/${code}-${roomName}`);
   };
 
   const onRegionChangeComplete = (region: Region) => {
     setViewRegion(region);
-    const resolved = resolveViewportFloor(buildings.data, region, screenWidth, signedIn);
+    const resolved = resolveViewportFloor(buildings.data, region, screenWidth);
     if (resolved.kind === "none") {
       setMapFloor((current) => (current ? null : current));
-      return;
-    }
-    if (resolved.kind === "needsSignIn") {
-      setMapFloor((current) => (current ? null : current));
-      if (promptedBuilding.current !== resolved.buildingCode) {
-        promptedBuilding.current = resolved.buildingCode;
-        promptLogin(resolved.path);
-      }
       return;
     }
     setMapFloor((current) =>
@@ -284,7 +210,6 @@ export const MapScreen = () => {
     );
   };
 
-  const needsSignIn = Boolean(floor) && !canSeeFloor;
   const searchTop = insets.top + 12;
   const selectedTargetTitle =
     target.kind !== "home" && target.kind !== "pending"
@@ -334,7 +259,7 @@ export const MapScreen = () => {
         buildings={buildings.data}
         rooms={mergedRooms}
         roomLabels={roomLabels}
-        pois={canSeeFloor ? pois.data : undefined}
+        pois={pois.data}
         line={plan.line}
         completedLine={step.progressLines?.completed}
         remainingLine={step.progressLines?.remaining}
@@ -427,10 +352,6 @@ export const MapScreen = () => {
               placeholderTextColor={theme.subtle}
               style={styles.search}
               onFocus={() => {
-                if (!signedIn && !skipSearchLoginPrompt.current) {
-                  promptLogin(targetHref(pathname, src || undefined, dst || undefined));
-                  return;
-                }
                 setNavEdit(null);
                 setSearchOpen(true);
                 setSearchFocused(true);
@@ -486,10 +407,7 @@ export const MapScreen = () => {
         <View style={[styles.dialWrap, { bottom: insets.bottom + 24 }]}>
           <AccountDial
             open={activeModal === "dial"}
-            signedIn={signedIn}
             onToggle={toggleDial}
-            onSignIn={() => startSignIn(targetHref(pathname, src || undefined, dst || undefined))}
-            onReviewSignIn={openReviewSignIn}
             onAccount={() => openModal("account")}
             onAbout={() => openModal("about")}
           />
@@ -516,28 +434,6 @@ export const MapScreen = () => {
         onDismiss={() => setLocationPromptVisible(false)}
       />
 
-      <LoginModal
-        visible={activeModal === "login" && !signedIn}
-        onSignIn={() => startSignIn(signInReturnPath)}
-        onDismiss={() => {
-          skipSearchLoginPrompt.current = true;
-          closeModal();
-        }}
-      />
-
-      <ReviewPasswordPrompt
-        visible={activeModal === "reviewSignIn"}
-        error={reviewError}
-        busy={reviewBusy}
-        onSubmit={submitReviewSignIn}
-        onDismiss={() => {
-          if (!reviewBusy) {
-            closeModal();
-            setReviewError(null);
-          }
-        }}
-      />
-
       <StepsSheet
         visible={activeModal === "steps" && navigating}
         plan={plan}
@@ -553,7 +449,6 @@ export const MapScreen = () => {
         visible={activeModal === "report"}
         context={{
           path: targetHref(pathname, src || undefined, dst || undefined),
-          signedIn,
         }}
         onDismiss={closeModal}
       />
@@ -584,8 +479,6 @@ export const MapScreen = () => {
               setMapFloor((current) => mapFloorAfterClosingPlaceSheet(activeFloor, current));
               open("/");
             }}
-            needsSignIn={needsSignIn}
-            onSignIn={() => startSignIn(pathname)}
             onDirections={() => {
               const nextDst = targetWaypointToken(target);
               if (!nextDst) {
@@ -618,7 +511,6 @@ export const MapScreen = () => {
           >
             <SearchResults
               query={searchQuery}
-              signedIn={signedIn}
               showYourLocation={navEdit !== null}
               pickingWaypoint={navEdit !== null || (Boolean(src) && !dst)}
               onPickWaypoint={(value) => {
@@ -636,7 +528,6 @@ export const MapScreen = () => {
                 setFocusKey((key) => key + 1);
                 open(targetPath(nextTarget));
               }}
-              onNeedSignIn={promptLogin}
             />
           </View>
         </View>

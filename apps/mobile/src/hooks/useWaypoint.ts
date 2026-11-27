@@ -1,6 +1,6 @@
 import { useBuildings, useFloorplan } from "@/api/client";
 import { authClient } from "@/auth/client";
-import { canViewFloor, formatFloorCode, parseWaypointToken } from "@/lib/campusTarget";
+import { formatFloorCode, parseWaypointToken } from "@/lib/campusTarget";
 import { resolveWaypointData, type Waypoint } from "@/lib/routePlan";
 import { useMapStore } from "@/store";
 
@@ -15,7 +15,6 @@ export const useSignedInUser = () => {
 };
 
 export const useWaypoint = (token: string): Waypoint => {
-  const { user } = useSignedInUser();
   const userPosition = useMapStore((state) => state.userPosition);
   const buildings = useBuildings();
   const parsed = parseWaypointToken(token, buildings.data);
@@ -24,10 +23,7 @@ export const useWaypoint = (token: string): Waypoint => {
     parsed.kind === "room" && parsed.buildingCode !== "outside"
       ? formatFloorCode({ buildingCode: parsed.buildingCode, floor: parsed.floor })
       : null;
-  const rooms = useFloorplan(
-    floorCode,
-    parsed.kind === "room" && canViewFloor(parsed.buildingCode, Boolean(user)),
-  );
+  const rooms = useFloorplan(floorCode);
 
   return resolveWaypointData(token, buildings.data, rooms.data, userPosition);
 };

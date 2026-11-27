@@ -16,9 +16,5 @@ export interface CampusDataAdapter {
   search: (query: string) => Promise<SearchDocument[]>;
   getFloorplan: (floorCode: string) => Promise<GeoRooms>;
   getPois: (floorCode: string) => Promise<Pois>;
-  getRoutes: (
-    start: string,
-    end: string,
-    signedIn: boolean,
-  ) => Promise<Record<string, PreciseRoute>>;
+  getRoutes: (start: string, end: string) => Promise<Record<string, PreciseRoute>>;
 }

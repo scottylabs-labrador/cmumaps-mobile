@@ -17,8 +17,6 @@ interface Props {
   onClose: () => void;
   onDirections: () => void;
   onShare: () => void;
-  needsSignIn: boolean;
-  onSignIn: () => void;
 }
 
 export const PlaceSheet = ({
@@ -32,8 +30,6 @@ export const PlaceSheet = ({
   onClose,
   onDirections,
   onShare,
-  needsSignIn,
-  onSignIn,
 }: Props) => {
   const dragY = useRef(new Animated.Value(0)).current;
 
@@ -141,7 +137,7 @@ export const PlaceSheet = ({
                 title
               )}
             </Text>
-            {sheet === "collapsed" && !needsSignIn ? (
+            {sheet === "collapsed" ? (
               <Pressable accessibilityLabel="Share" onPress={onShare} style={styles.shareIcon}>
                 <ShareIcon size={19} color={theme.ink} />
               </Pressable>
@@ -153,25 +149,17 @@ export const PlaceSheet = ({
           ) : null}
           {sheet === "expanded" && detail ? <Text style={styles.detail}>{detail}</Text> : null}
 
-          {needsSignIn ? (
-            <View style={styles.actions}>
-              <Pressable style={styles.signInButton} onPress={onSignIn}>
-                <Text style={styles.primaryText}>Sign in to see this floor</Text>
+          <View style={styles.actions}>
+            <Pressable style={styles.primary} onPress={onDirections}>
+              <ArrowRightIcon size={18} color="#ffffff" />
+              <Text style={styles.primaryText}>Directions</Text>
+            </Pressable>
+            {sheet !== "collapsed" ? (
+              <Pressable accessibilityLabel="Share" onPress={onShare} style={styles.shareIcon}>
+                <ShareIcon size={19} color={theme.ink} />
               </Pressable>
-            </View>
-          ) : (
-            <View style={styles.actions}>
-              <Pressable style={styles.primary} onPress={onDirections}>
-                <ArrowRightIcon size={18} color="#ffffff" />
-                <Text style={styles.primaryText}>Directions</Text>
-              </Pressable>
-              {sheet !== "collapsed" ? (
-                <Pressable accessibilityLabel="Share" onPress={onShare} style={styles.shareIcon}>
-                  <ShareIcon size={19} color={theme.ink} />
-                </Pressable>
-              ) : null}
-            </View>
-          )}
+            ) : null}
+          </View>
         </View>
       </View>
     </Animated.View>
@@ -309,13 +297,6 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
-  },
-  signInButton: {
-    alignItems: "center",
-    backgroundColor: theme.brand,
-    borderRadius: 100,
-    paddingHorizontal: 18,
-    paddingVertical: 11,
   },
   primaryText: {
     color: "#ffffff",

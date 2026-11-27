@@ -6,7 +6,6 @@ import { theme } from "@/theme";
 
 export interface ReportContext {
   path: string;
-  signedIn: boolean;
 }
 
 interface Props {
@@ -22,7 +21,6 @@ const buildBody = (message: string, context: ReportContext) => {
     "",
     "---",
     `Path: ${context.path}`,
-    `Signed in: ${context.signedIn ? "yes" : "no"}`,
     `App: ${appVersion}`,
     `Platform: ${Platform.OS} ${String(Platform.Version)}`,
   ].join("\n");

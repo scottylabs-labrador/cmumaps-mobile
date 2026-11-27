@@ -132,7 +132,6 @@ describe("routePlan", () => {
       srcToken: "GHC",
       dstToken: "CUC-222B",
       userPosition: null,
-      signedIn: false,
       selectedKind: "Fastest",
       now: Date.UTC(2026, 10, 26, 15, 0),
     });
@@ -146,13 +145,50 @@ describe("routePlan", () => {
     expect(plan.line).toHaveLength(2);
   });
 
+  test("loads non-CUC room endpoints and requests routes with only the resolved pair", async () => {
+    const floorRequests: string[] = [];
+    const routeRequests: string[][] = [];
+    const adapter: CampusDataAdapter = {
+      ...createInMemoryAdapter({}),
+      getFloorplan: async (floorCode) => {
+        floorRequests.push(floorCode);
+        return {
+          "4401": {
+            id: "room-ghc-4401",
+            alias: "GHC classroom",
+            type: "Classroom",
+            labelPosition: { latitude: 40.4435, longitude: -79.9445 },
+            points: [],
+            floor: { buildingCode: "GHC", level: "4" },
+          },
+        };
+      },
+      getRoutes: async (...endpoints) => {
+        routeRequests.push(endpoints);
+        return { Fastest: sampleRoute(520) };
+      },
+    };
+
+    const { start, plan } = await planRouteWithAdapter(adapter, {
+      srcToken: "GHC-4401",
+      dstToken: "CUC",
+      userPosition: null,
+      selectedKind: "Fastest",
+    });
+
+    expect(floorRequests).toEqual(["GHC-4"]);
+    expect(routeRequests).toEqual([["room-ghc-4401", "CUC"]]);
+    expect(start.label).toBe("GHC classroom");
+    expect(plan.status).toBe("ready");
+    expect(plan.canGo).toBe(true);
+  });
+
   test("surfaces unknown building error without requesting routes", async () => {
     const adapter = createInMemoryAdapter({});
     const { plan } = await planRouteWithAdapter(adapter, {
       srcToken: "INVALID",
       dstToken: "CUC",
       userPosition: null,
-      signedIn: false,
       selectedKind: "Fastest",
     });
 

@@ -8,7 +8,6 @@ import {
   type PreciseRoute,
 } from "@cmumaps/common";
 import {
-  canViewFloor,
   type CampusTarget,
   type FloorRef,
   formatFloorCode,
@@ -24,15 +23,7 @@ import {
 } from "./geometry";
 import { type RoutePlan, type RouteSummary, summarizeDistance, summarizeRoute } from "./routePlan";
 
-export type ActiveModal =
-  | "none"
-  | "dial"
-  | "account"
-  | "about"
-  | "steps"
-  | "reviewSignIn"
-  | "report"
-  | "login";
+export type ActiveModal = "none" | "dial" | "account" | "about" | "steps" | "report";
 
 export interface CameraRegion {
   latitude: number;
@@ -51,10 +42,7 @@ export interface NavigationStepState {
   summary: RouteSummary | null;
 }
 
-export type ViewportFloorResolution =
-  | { kind: "none" }
-  | { kind: "floor"; floor: FloorRef }
-  | { kind: "needsSignIn"; buildingCode: string; path: string };
+export type ViewportFloorResolution = { kind: "none" } | { kind: "floor"; floor: FloorRef };
 
 export const clampInstructionIndex = (index: number, instructionCount: number): number => {
   if (instructionCount <= 0) {
@@ -170,7 +158,6 @@ export const resolveViewportFloor = (
   buildings: Buildings | undefined,
   region: CameraRegion,
   screenWidth: number,
-  signedIn: boolean,
 ): ViewportFloorResolution => {
   if (!buildings || screenWidth / region.longitudeDelta < FLOOR_ZOOM_DENSITY) {
     return { kind: "none" };
@@ -182,13 +169,6 @@ export const resolveViewportFloor = (
   const level = hit?.defaultFloor ?? hit?.floors[0];
   if (!hit || !level) {
     return { kind: "none" };
-  }
-  if (!canViewFloor(hit.code, signedIn)) {
-    return {
-      kind: "needsSignIn",
-      buildingCode: hit.code,
-      path: `/${hit.code}-${level}`,
-    };
   }
   return {
     kind: "floor",
@@ -244,16 +224,13 @@ export const visibleAdjacentFloorCodes = (
   buildings: Buildings | undefined,
   region: CameraRegion | null,
   screenWidth: number,
-  signedIn: boolean,
   excludedBuildingCode: string | undefined,
 ): string[] => {
   if (!buildings || !region || screenWidth / region.longitudeDelta < FLOOR_ZOOM_DENSITY) {
     return [];
   }
   return buildingsInView(buildings, region)
-    .filter(
-      (building) => canViewFloor(building.code, signedIn) && building.code !== excludedBuildingCode,
-    )
+    .filter((building) => building.code !== excludedBuildingCode)
     .slice(0, 8)
     .map((building) => {
       const level = building.defaultFloor ?? building.floors[0];

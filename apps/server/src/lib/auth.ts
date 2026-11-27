@@ -6,7 +6,7 @@ import { genericOAuth, keycloak } from "better-auth/plugins";
 import { env } from "../env.ts";
 
 const isProd = process.env.NODE_ENV === "production";
-const passwordSignInEnabled = Boolean(env.PASSWORD_SIGN_IN);
+export const passwordSignInEnabled = Boolean(env.PASSWORD_SIGN_IN);
 console.log(`NODE_ENV=${process.env.NODE_ENV ?? "<unset>"} isProd=${isProd}`);
 
 // https://www.better-auth.com/docs/installation#create-a-better-auth-instance

@@ -1,6 +1,7 @@
 // https://tsoa-community.github.io/docs/authentication.html#authentication
 // https://medium.com/@alexandre.penombre/tsoa-the-library-that-will-supercharge-your-apis-c551c8989081
 
+import { APP_REVIEW_EMAIL } from "@cmumaps/common";
 import { fromNodeHeaders } from "better-auth/node";
 import type * as express from "express";
 import jwt from "jsonwebtoken";
@@ -12,7 +13,7 @@ import {
   AuthorizationError,
   InternalServerError,
 } from "../middleware/errorHandler.ts";
-import { auth } from "./auth.ts";
+import { auth, passwordSignInEnabled } from "./auth.ts";
 
 export const OIDC_AUTH = "oidc";
 export const BEARER_AUTH = "bearerAuth";
@@ -38,9 +39,6 @@ declare global {
   }
 }
 
-// Matches paths like /floors/:id/floorplan
-const FLOORPLAN_PATH_REGEX = "^/floors/[^/]+/floorplan$";
-
 export function expressAuthentication(
   request: express.Request,
   securityName: string,
@@ -52,12 +50,6 @@ export function expressAuthentication(
 
   // biome-ignore lint/nursery/noMisusedPromises: Weird TSOA quirks
   return new Promise((resolve, reject) => {
-    // Accept any request to view CUC floorplans
-    const match = request.path.match(FLOORPLAN_PATH_REGEX);
-    if (match && request.params.floorCode.startsWith("CUC")) {
-      return resolve({});
-    }
-
     if (securityName === OIDC_AUTH) {
       return validateOidc(request, reject, resolve, scopes);
     }
@@ -93,6 +85,25 @@ const validateOidc = async (
       const err = new AuthenticationError();
       request.authErrors?.push(err);
       return reject(err);
+    }
+
+    // The seeded review account has no Keycloak token. Only its credential-backed
+    // session can read unscoped resources; it never receives CMU group privileges.
+    if (session.user.email === APP_REVIEW_EMAIL) {
+      const ctx = await auth.$context;
+      const accounts = await ctx.internalAdapter.findAccounts(session.user.id);
+      if (
+        !passwordSignInEnabled ||
+        !accounts.some((account) => account.providerId === "credential")
+      ) {
+        const err = new AuthenticationError();
+        request.authErrors?.push(err);
+        return reject(err);
+      }
+      if (request.method !== "GET" || scopes?.length !== 0) {
+        return scopeValidationError(request, reject);
+      }
+      return resolve({ sub: session.user.id, email: session.user.email, groups: [] });
     }
 
     // Get the group from the user access token

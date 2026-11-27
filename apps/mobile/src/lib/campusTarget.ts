@@ -1,7 +1,6 @@
 import type { Buildings, GeoRooms } from "@cmumaps/common";
 import type { SearchDocument } from "@/api/client";
 
-const PUBLIC_BUILDING_CODES = new Set(["CUC"]);
 const FLOOR_REGEX = /^[A-F0-9]|LL|M|EV|PH/u;
 const FLOOR_WAYPOINT_PREFIX = "floor:";
 
@@ -27,16 +26,6 @@ export type ParsedWaypoint =
   | { kind: "floor"; buildingCode: string; floor: string }
   | { kind: "room"; buildingCode: string; floor: string; roomName: string }
   | { kind: "invalid"; label: string; buildingCode?: string; error?: string };
-
-export const canViewFloor = (
-  buildingCode: string | undefined | null,
-  signedIn: boolean,
-): boolean => {
-  if (!buildingCode) {
-    return false;
-  }
-  return signedIn || PUBLIC_BUILDING_CODES.has(buildingCode);
-};
 
 export const floorLevelFromRoomName = (roomName: string | undefined): string => {
   if (!roomName) {

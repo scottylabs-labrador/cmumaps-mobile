@@ -2,11 +2,8 @@ import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react
 import { useSearch } from "@/api/client";
 import { BuildingIcon, DoorIcon, LayersIcon, TargetIcon } from "@/components/Icons";
 import {
-  canViewFloor,
   type CampusTarget,
-  targetBuildingCode,
   targetFromSearchDocument,
-  targetPath,
   targetWaypointToken,
 } from "@/lib/campusTarget";
 import { theme } from "@/theme";
@@ -15,22 +12,18 @@ const MAX_DROPDOWN_HEIGHT = Math.round(Dimensions.get("window").height * 0.5);
 
 interface Props {
   query: string;
-  signedIn: boolean;
   showYourLocation?: boolean;
   pickingWaypoint: boolean;
   onSelectTarget: (target: CampusTarget) => void;
   onPickWaypoint: (token: string) => void;
-  onNeedSignIn: (path: string) => void;
 }
 
 export const SearchResults = ({
   query,
-  signedIn,
   showYourLocation = false,
   pickingWaypoint,
   onSelectTarget,
   onPickWaypoint,
-  onNeedSignIn,
 }: Props) => {
   const results = useSearch(query);
   const trimmed = query.trim();
@@ -64,11 +57,6 @@ export const SearchResults = ({
                 onPress={() => {
                   const target = targetFromSearchDocument(result);
                   if (!target) {
-                    return;
-                  }
-                  const buildingCode = targetBuildingCode(target);
-                  if (target.kind !== "building" && !canViewFloor(buildingCode, signedIn)) {
-                    onNeedSignIn(targetPath(target));
                     return;
                   }
                   if (pickingWaypoint) {

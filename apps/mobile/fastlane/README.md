@@ -136,6 +136,16 @@ Apple has no separate feature graphic; its app icon comes from the binary.
 
 ## Manual publishing
 
+### App Review sign-in
+
+Set `PASSWORD_SIGN_IN` on the server for the review period and restart/redeploy
+the server to apply it. The welcome screen then shows **App Review sign-in**.
+Reviewers tap it and enter the review password in the inline form; there is no
+long-press gesture. Put the same password and these instructions in App Store
+Connect review notes. The review account can browse maps and directions but
+cannot edit map data. Unset or empty the variable and restart/redeploy to disable
+password sign-in and hide the button.
+
 From `apps/mobile`, with Bun dependencies installed and Ruby 3.3.6:
 
 ```sh

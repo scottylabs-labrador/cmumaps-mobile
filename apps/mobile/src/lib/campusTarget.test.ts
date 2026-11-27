@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import type { Buildings, GeoRooms } from "@cmumaps/common";
 import {
-  canViewFloor,
   parseCampusTarget,
   parseWaypointToken,
   targetDetail,
@@ -62,13 +61,6 @@ const rooms: GeoRooms = {
 };
 
 describe("campusTarget", () => {
-  test("enforces CUC Floor visibility for signed-out vs signed-in users", () => {
-    expect(canViewFloor("CUC", false)).toBe(true);
-    expect(canViewFloor("GHC", false)).toBe(false);
-    expect(canViewFloor("GHC", true)).toBe(true);
-    expect(canViewFloor(undefined, true)).toBe(false);
-  });
-
   test("parses URL paths and floor fallback into Building, Floor, Room, and coordinates", () => {
     expect(parseCampusTarget("/", buildings)).toEqual({ kind: "home" });
     expect(parseCampusTarget("/CUC", undefined)).toEqual({ kind: "pending" });

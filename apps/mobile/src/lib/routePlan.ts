@@ -1,6 +1,6 @@
 import type { Buildings, GeoCoordinate, GeoRooms, PreciseRoute } from "@cmumaps/common";
 import type { CampusDataAdapter } from "../api/adapter";
-import { canViewFloor, formatFloorCode, parseWaypointToken } from "./campusTarget";
+import { formatFloorCode, parseWaypointToken } from "./campusTarget";
 
 export type RouteKind = "Fastest" | "Inside";
 
@@ -229,13 +229,9 @@ const fetchRoomsForToken = async (
   adapter: CampusDataAdapter,
   token: string,
   buildings: Buildings,
-  signedIn: boolean,
 ): Promise<GeoRooms | undefined> => {
   const parsed = parseWaypointToken(token, buildings);
   if (parsed.kind !== "room" || parsed.buildingCode === "outside") {
-    return undefined;
-  }
-  if (!canViewFloor(parsed.buildingCode, signedIn)) {
     return undefined;
   }
   return adapter.getFloorplan(formatFloorCode(parsed));
@@ -247,15 +243,14 @@ export const planRouteWithAdapter = async (
     srcToken: string;
     dstToken: string;
     userPosition: GeoCoordinate | null;
-    signedIn: boolean;
     selectedKind: RouteKind;
     now?: number;
   },
 ): Promise<{ start: Waypoint; end: Waypoint; plan: RoutePlan }> => {
   const buildings = await adapter.getBuildings();
   const [startRooms, endRooms] = await Promise.all([
-    fetchRoomsForToken(adapter, options.srcToken, buildings, options.signedIn),
-    fetchRoomsForToken(adapter, options.dstToken, buildings, options.signedIn),
+    fetchRoomsForToken(adapter, options.srcToken, buildings),
+    fetchRoomsForToken(adapter, options.dstToken, buildings),
   ]);
   const start = resolveWaypointData(options.srcToken, buildings, startRooms, options.userPosition);
   const end = resolveWaypointData(options.dstToken, buildings, endRooms, options.userPosition);
@@ -264,7 +259,7 @@ export const planRouteWithAdapter = async (
   let isError = false;
   if (start.query && end.query) {
     try {
-      routes = await adapter.getRoutes(start.query, end.query, options.signedIn);
+      routes = await adapter.getRoutes(start.query, end.query);
     } catch {
       isError = true;
     }

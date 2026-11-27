@@ -1,29 +1,18 @@
-import { useEffect, useRef, useState } from "react";
-import { Animated, Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { LogInIcon, LogOutIcon, PlusIcon, UserIcon } from "@/components/Icons";
+import { useEffect, useRef } from "react";
+import { Animated, Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { LogOutIcon, PlusIcon, UserIcon } from "@/components/Icons";
 import { theme } from "@/theme";
 
 const DIAL_STEP = 62;
 
 interface AccountDialProps {
   open: boolean;
-  signedIn: boolean;
   onToggle: () => void;
-  onSignIn: () => void;
-  onReviewSignIn: () => void;
   onAccount: () => void;
   onAbout: () => void;
 }
 
-export const AccountDial = ({
-  open,
-  signedIn,
-  onToggle,
-  onSignIn,
-  onReviewSignIn,
-  onAccount,
-  onAbout,
-}: AccountDialProps) => {
+export const AccountDial = ({ open, onToggle, onAccount, onAbout }: AccountDialProps) => {
   const progress = useRef(new Animated.Value(open ? 1 : 0)).current;
 
   useEffect(() => {
@@ -73,17 +62,11 @@ export const AccountDial = ({
         pointerEvents={open ? "auto" : "none"}
       >
         <Pressable
-          accessibilityLabel={signedIn ? "Account" : "Sign in"}
-          onPress={signedIn ? onAccount : onSignIn}
-          onLongPress={signedIn ? undefined : onReviewSignIn}
-          delayLongPress={600}
+          accessibilityLabel="Account"
+          onPress={onAccount}
           style={[styles.circle, styles.circleSecondary]}
         >
-          {signedIn ? (
-            <UserIcon size={22} color="#ffffff" />
-          ) : (
-            <LogInIcon size={21} color="#ffffff" />
-          )}
+          <UserIcon size={22} color="#ffffff" />
         </Pressable>
       </Animated.View>
       <Pressable
@@ -134,70 +117,6 @@ export const AccountCardModal = ({
     </Pressable>
   </Modal>
 );
-
-interface ReviewProps {
-  visible: boolean;
-  error: string | null;
-  busy: boolean;
-  onSubmit: (password: string) => void;
-  onDismiss: () => void;
-}
-
-export const ReviewPasswordPrompt = ({
-  visible,
-  error,
-  busy,
-  onSubmit,
-  onDismiss,
-}: ReviewProps) => {
-  const [password, setPassword] = useState("");
-
-  useEffect(() => {
-    if (!visible) {
-      setPassword("");
-    }
-  }, [visible]);
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-      <Pressable style={styles.modalBackdrop} onPress={onDismiss}>
-        <Pressable style={styles.modalCard} onPress={(event) => event.stopPropagation()}>
-          <Text style={styles.modalTitle}>App Review sign-in</Text>
-          <Text style={styles.body}>Enter the review password from App Store Connect notes.</Text>
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!busy}
-            placeholder="Password"
-            placeholderTextColor={theme.muted}
-            style={styles.passwordInput}
-            onSubmitEditing={() => {
-              if (password.length > 0 && !busy) {
-                onSubmit(password);
-              }
-            }}
-          />
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          <View style={styles.promptActions}>
-            <Pressable
-              disabled={busy || password.length === 0}
-              onPress={() => onSubmit(password)}
-              style={[styles.pillPrimary, (busy || password.length === 0) && styles.buttonDisabled]}
-            >
-              <Text style={styles.pillText}>{busy ? "Signing in…" : "Sign in"}</Text>
-            </Pressable>
-            <Pressable onPress={onDismiss} disabled={busy} style={styles.pillSecondary}>
-              <Text style={styles.pillText}>Cancel</Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-};
 
 const styles = StyleSheet.create({
   wrap: {
@@ -288,55 +207,5 @@ const styles = StyleSheet.create({
     color: theme.ink,
     fontSize: 16,
     fontWeight: "500",
-  },
-  body: {
-    color: theme.muted,
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 10,
-  },
-  promptActions: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 20,
-  },
-  pillPrimary: {
-    alignItems: "center",
-    backgroundColor: theme.brand,
-    borderRadius: 100,
-    flex: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-  },
-  pillSecondary: {
-    alignItems: "center",
-    backgroundColor: theme.disabled,
-    borderRadius: 100,
-    flex: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-  },
-  pillText: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  passwordInput: {
-    borderColor: theme.line,
-    borderRadius: 10,
-    borderWidth: 1,
-    color: theme.ink,
-    fontSize: 16,
-    marginTop: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  error: {
-    color: theme.danger,
-    fontSize: 13,
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.45,
   },
 });

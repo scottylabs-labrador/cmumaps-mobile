@@ -21,6 +21,7 @@
   "scripts": {
     "check": "vp check",
     "dev": "turbo dev",
+    "dev:mobile": "cd apps/mobile && bun run dev",
     "preinstall": "bunx only-allow bun",
     "prepare": "vp config --hooks --no-agent",
     "secrets": "BAO_ADDR=https://bao.scottylabs.org bao login -method=oidc",

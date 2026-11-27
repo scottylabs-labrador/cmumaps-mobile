@@ -31,7 +31,7 @@
         "description": "CMU Maps helps you get around Carnegie Mellon University.\n\n1. Map\n2. Building outlines\n3. Interactive floor plans\n4. Room cards with 25Live availability, dining info, and room images\n5. Building cards with images\n6. Waypoint-to-waypoint pathfinding and turn-based navigation\n7. Search nearest rooms, dining (see what's open), restrooms, and classes\n8. Upload your schedule\n\nMade by ScottyLabs",
         "keywords": ["CMU", "campus", "maps", "navigation", "ScottyLabs", "floor plans"],
         "supportUrl": "https://cmumaps.com",
-        "privacyPolicyUrl": "https://docs.google.com/document/d/11SGIF2uqN63vL80LA5jADpcl1DFgxCGHiCdKupzQ8Rk"
+        "privacyPolicyUrl": "https://policy.cmumaps.com"
       }
     }
   }

@@ -80,7 +80,7 @@ jobs:
       - uses: eas/checkout
       - uses: eas/install_node_modules
       - name: Push store config
-        run: bunx eas-cli metadata:push --profile production --non-interactive
+        run: EXPO_APPLE_TEAM_ID=FZJR627CZ7 bunx eas-cli@27.11.0 metadata:push --profile production --non-interactive
 
   publish_android_update:
     name: Publish Android update

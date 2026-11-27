@@ -404,7 +404,7 @@ export const MapScreen = () => {
       ) : null}
 
       {chrome.showAccountDial ? (
-        <View style={[styles.dialWrap, { bottom: insets.bottom + 24 }]}>
+        <View style={[styles.dialWrap, { bottom: insets.bottom + 36 }]}>
           <AccountDial
             open={activeModal === "dial"}
             onToggle={toggleDial}
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
     zIndex: 24,
   },
   dialWrap: {
-    left: 20,
+    left: 10,
     position: "absolute",
     zIndex: 25,
   },

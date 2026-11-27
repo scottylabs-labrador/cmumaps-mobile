@@ -177,7 +177,7 @@ describe("WelcomeScreen capability and review form", () => {
   test.each([false, true])("shows review form only when capability is %s", (enabled) => {
     harness.query.data = { passwordSignInEnabled: enabled };
     const tree = renderWelcome();
-    expect(text(tree).includes("App Review sign-in")).toBe(enabled);
+    expect(text(tree).includes("App Review Sign-In")).toBe(enabled);
     expect(text(tree)).toContain("Sign in with CMU");
     expect(text(tree)).not.toContain("Review password");
   });
@@ -201,7 +201,7 @@ describe("WelcomeScreen capability and review form", () => {
   test("capability error keeps CMU sign-in usable and offers retry", () => {
     harness.query.isError = true;
     const tree = renderWelcome();
-    expect(text(tree)).not.toContain("App Review sign-in");
+    expect(text(tree)).not.toContain("App Review Sign-In");
     expect(button(tree, "Sign in with CMU").props.disabled).toBe(false);
     button(tree, "Unable to load review sign-in. Tap to retry.").props.onPress!();
     expect(harness.query.refetch).toHaveBeenCalledOnce();
@@ -209,7 +209,7 @@ describe("WelcomeScreen capability and review form", () => {
 
   const enterPassword = (password: string) => {
     harness.query.data = { passwordSignInEnabled: true };
-    button(renderWelcome(), "App Review sign-in").props.onPress!();
+    button(renderWelcome(), "App Review Sign-In").props.onPress!();
     const input = elements(renderWelcome()).find(
       (element) => element.props.accessibilityLabel === "App Review password",
     )!;

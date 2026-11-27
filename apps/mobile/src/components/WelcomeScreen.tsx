@@ -74,7 +74,7 @@ export const WelcomeScreen = ({
               <Text style={styles.title}>CMU Maps</Text>
             </View>
             <Text style={styles.body}>
-              CMU Maps is built with ❤ by ScottyLabs. Find out more about us{" "}
+              CMU Maps is built with ❤ by{" "}
               <Text
                 accessibilityRole="link"
                 style={styles.link}
@@ -84,9 +84,9 @@ export const WelcomeScreen = ({
                   );
                 }}
               >
-                here
+                ScottyLabs
               </Text>
-              . Your feedback is appreciated.
+              .
             </Text>
             <Pressable
               accessibilityRole="button"
@@ -101,10 +101,10 @@ export const WelcomeScreen = ({
                 <Pressable
                   accessibilityRole="button"
                   disabled={busy}
-                  style={styles.secondary}
+                  style={styles.primary}
                   onPress={() => setPasswordOpen(!passwordOpen)}
                 >
-                  <Text style={styles.link}>App Review sign-in</Text>
+                  <Text style={styles.primaryText}>App Review Sign-In</Text>
                 </Pressable>
                 {passwordOpen && (
                   <>
@@ -164,7 +164,6 @@ const styles = StyleSheet.create({
   link: { color: theme.brand, textDecorationLine: "underline" },
   primary: { backgroundColor: theme.brand, padding: 16, borderRadius: 14, alignItems: "center" },
   primaryText: { color: theme.paper, fontSize: 16, fontWeight: "600" },
-  secondary: { padding: 12, alignItems: "center" },
   input: {
     borderWidth: 1,
     borderColor: theme.line,

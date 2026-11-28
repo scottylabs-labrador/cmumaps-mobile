@@ -1,10 +1,12 @@
 import type { Buildings, GeoCoordinate, GeoRooms, Pois } from "@cmumaps/common";
 import { getRoomTypeDetails } from "@cmumaps/common";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dimensions, Platform, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polygon, Polyline, type Region } from "react-native-maps";
+import { useUserHeading } from "@/hooks/useUserHeading";
 import { cameraForRegion, isInPolygon } from "@/lib/geometry";
 import type { VisibleRoomLabel } from "@/lib/mapSession";
+import { headingArrow } from "@/lib/userHeading";
 import { theme } from "@/theme";
 
 interface CameraTarget {
@@ -107,6 +109,14 @@ export const CampusMap = ({
   const mapRef = useRef<MapView>(null);
   const lastCameraIntent = useRef("");
   const lastFeaturePressAt = useRef(0);
+  const userHeading = useUserHeading(Boolean(userPosition));
+  const [arrowRadius, setArrowRadius] = useState(
+    (initialRegion.latitudeDelta * 111_320 * 32) / Dimensions.get("window").height,
+  );
+  const facingArrow =
+    userPosition && userHeading !== null
+      ? headingArrow(userPosition, userHeading, arrowRadius)
+      : null;
 
   const hasRoomAt = (point: GeoCoordinate | undefined) => {
     if (!point || !rooms) {
@@ -151,7 +161,11 @@ export const CampusMap = ({
         onPressMap?.();
       }}
       onLongPress={(event) => onLongPress(event.nativeEvent.coordinate)}
-      onRegionChangeComplete={onRegionChangeComplete}
+      onRegionChangeComplete={(region) => {
+        // Keep the arrow's scale stable as the user zooms.
+        setArrowRadius((region.latitudeDelta * 111_320 * 32) / Dimensions.get("window").height);
+        onRegionChangeComplete(region);
+      }}
     >
       {buildings
         ? Object.entries(buildings).map(([code, building]) => {
@@ -301,6 +315,16 @@ export const CampusMap = ({
         </>
       ) : line.length > 1 ? (
         <Polyline coordinates={line} strokeColor={theme.green} strokeWidth={5} />
+      ) : null}
+      {facingArrow ? (
+        <Polygon
+          coordinates={facingArrow}
+          fillColor="#007AFF"
+          strokeColor="#ffffff"
+          strokeWidth={1.5}
+          tappable={false}
+          zIndex={10}
+        />
       ) : null}
     </MapView>
   );

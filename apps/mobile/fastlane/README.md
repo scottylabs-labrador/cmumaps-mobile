@@ -6,6 +6,17 @@ and Apple metadata with Ruby 3.3.6 and Fastlane 2.242.0. Either store can fail
 without cancelling the other. Directly running the EAS workflow does not publish
 store metadata.
 
+For metadata-only publishing, manually dispatch the GitHub **Release** workflow.
+Manual runs skip EAS entirely (no fingerprint, build, submission, or OTA update)
+and run both store metadata jobs using the selected ref:
+
+```sh
+gh workflow run release.yml --ref main
+```
+
+The usual credentials and iOS review-information validation still apply.
+Push-triggered runs continue to require a successful EAS release first.
+
 Neither lane uploads binaries, promotes tracks, submits an Apple review, or
 releases an app directly. Google metadata edits use the automatic review policy:
 `changes_not_sent_for_review` is omitted because Google rejects it for this app.

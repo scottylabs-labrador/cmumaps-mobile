@@ -3,6 +3,8 @@ name: Release
 on:
   push:
     branches: [main]
+  # Manual runs publish metadata only; EAS is never invoked.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,6 +16,7 @@ concurrency:
 jobs:
   release:
     name: Release
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     defaults:
@@ -41,6 +44,7 @@ jobs:
   store-metadata:
     name: Publish ${{ matrix.store }} metadata
     needs: [release]
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.release.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:

@@ -5,6 +5,7 @@ const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 const projectId = "6158b479-bc89-41f9-a0cf-d6b56143f4e4";
 const bundleIdentifier = "org.scottylabs.cmumaps";
 const slug = "cmumaps";
+const buildNumber = process.env.MOBILE_BUILD_NUMBER;
 
 const plugins: NonNullable<ExpoConfig["plugins"]> = [
   "expo-router",
@@ -40,6 +41,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: "light",
   ios: {
     bundleIdentifier,
+    ...(buildNumber ? { buildNumber } : {}),
     supportsTablet: true,
     associatedDomains,
     infoPlist: {
@@ -50,6 +52,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: bundleIdentifier,
+    ...(buildNumber ? { versionCode: Number(buildNumber) } : {}),
     adaptiveIcon: {
       foregroundImage: "./assets/icon.png",
       backgroundColor: "#ffffff",
@@ -69,11 +72,14 @@ const config: ExpoConfig = {
     ],
   },
   plugins,
-  runtimeVersion: {
-    policy: "appVersion",
+  runtimeVersion: process.env.MOBILE_RUNTIME_VERSION ?? {
+    policy: "fingerprint",
   },
   updates: {
     url: `https://u.expo.dev/${projectId}`,
+    requestHeaders: {
+      "expo-channel-name": "production",
+    },
   },
   extra: {
     eas: {

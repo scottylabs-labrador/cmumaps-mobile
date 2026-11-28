@@ -1,6 +1,7 @@
 require "json"
 require "open3"
 require "rubygems/version"
+require_relative "native_build"
 
 opt_out_usage
 
@@ -16,6 +17,31 @@ def expo_config
 end
 
 platform :android do
+  desc "Prebuild and build a signed release AAB locally (no upload)"
+  lane :build do
+    artifact = NativeBuild.android
+    UI.success("Android artifact: #{artifact}")
+  end
+
+  desc "Upload ANDROID_AAB_PATH to Google Play as a draft (no rollout)"
+  lane :upload do
+    artifact = NativeBuild.upload_artifact("android")
+    config = NativeBuild.config
+    upload_to_play_store(
+      package_name: config.fetch("android").fetch("package"),
+      json_key_data: NativeBuild.required("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"),
+      aab: artifact,
+      track: ENV.fetch("GOOGLE_PLAY_TRACK", "production"),
+      release_status: "draft",
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      rescue_changes_not_sent_for_review: false
+    )
+  end
+
   desc "Upload Play listing text and supplied assets using Google's automatic review policy"
   lane :metadata do
     config = expo_config
@@ -37,6 +63,32 @@ platform :android do
 end
 
 platform :ios do
+  desc "Prebuild, archive, and export a signed App Store IPA locally (no upload)"
+  lane :build do
+    artifact = NativeBuild.ios { |options| build_app(options) }
+    UI.success("iOS artifact: #{artifact}")
+  end
+
+  desc "Upload IOS_IPA_PATH to App Store Connect only; never submit or distribute"
+  lane :upload do
+    artifact = NativeBuild.upload_artifact("ios")
+    config = NativeBuild.config
+    key = app_store_connect_api_key(
+      key_id: NativeBuild.required("APP_STORE_CONNECT_API_KEY_ID"),
+      issuer_id: NativeBuild.required("APP_STORE_CONNECT_ISSUER_ID"),
+      key_content: NativeBuild.required("APP_STORE_CONNECT_API_PRIVATE_KEY"),
+      in_house: false
+    )
+    upload_to_testflight(
+      api_key: key,
+      app_identifier: config.fetch("ios").fetch("bundleIdentifier"),
+      ipa: artifact,
+      skip_submission: true,
+      skip_waiting_for_build_processing: true,
+      distribute_external: false
+    )
+  end
+
   desc "Upload Apple listing text and supplied screenshots; never submit or release"
   lane :metadata do
     review_information = JSON.parse(File.read(File.join(fastlane_dir, "review_information.json")), symbolize_names: true)

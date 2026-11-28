@@ -1,50 +1,61 @@
 name: Release
 
 on:
-  push:
-    branches: [main]
-  # Manual runs publish metadata only; EAS is never invoked.
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Metadata only, or validate GitHub builds without publishing"
+        type: choice
+        options: [metadata, validate]
+        default: metadata
+  push:
+    branches: [main, feat/github-native-releases]
 
 permissions:
   contents: read
 
 concurrency:
-  group: production-release
+  group: production-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
-    name: Release
-    if: github.event_name == 'push'
+  changes:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
-    defaults:
-      run:
-        working-directory: apps/mobile
+    outputs:
+      mobile: ${{ steps.changes.outputs.mobile }}
+      metadata: ${{ steps.changes.outputs.metadata }}
     steps:
-      - name: Check out the commit
-        uses: actions/checkout@v4
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v4
         with:
-          bun-version: 1.3.5
-
-      - name: Run the production workflow
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.5"
+      - id: changes
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          SHA: ${{ github.sha }}
-        run: |
-          bunx eas-cli workflow:run .eas/workflows/deploy-production.yml \
-            --ref "$SHA" \
-            --non-interactive \
-            --wait
+          BEFORE_SHA: ${{ github.event.before }}
+        run: bun scripts/mobile-release/changes.ts
+
+  native:
+    needs: changes
+    if: inputs.mode == 'validate' || (github.event_name == 'push' && needs.changes.outputs.mobile == 'true')
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [android, ios]
+    uses: ./.github/workflows/mobile-native.yml
+    with:
+      platform: ${{ matrix.platform }}
+      publish: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    secrets: inherit
+    permissions:
+      contents: write
+      actions: read
 
   store-metadata:
     name: Publish ${{ matrix.store }} metadata
-    needs: [release]
-    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.release.result == 'success') }}
+    needs: changes
+    if: github.ref == 'refs/heads/main' && (inputs.mode == 'metadata' || (github.event_name == 'push' && needs.changes.outputs.metadata == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:

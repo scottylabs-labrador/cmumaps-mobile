@@ -1,7 +1,7 @@
 import type { Building, Buildings, GeoCoordinate } from "@cmumaps/common";
 
 // Screen width divided by longitude span required before rendering indoor floorplans.
-export const FLOOR_ZOOM_DENSITY = 250_000;
+export const FLOOR_ZOOM_DENSITY = 200_000;
 export const ROOM_LABEL_ZOOM_DENSITY = 500_000;
 
 const METERS_PER_DEGREE_LAT = 111_320;

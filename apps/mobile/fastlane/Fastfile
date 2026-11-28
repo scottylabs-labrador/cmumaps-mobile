@@ -39,6 +39,18 @@ end
 platform :ios do
   desc "Upload Apple listing text and supplied screenshots; never submit or release"
   lane :metadata do
+    review_information = JSON.parse(File.read(File.join(fastlane_dir, "review_information.json")), symbolize_names: true)
+    %i[first_name last_name phone_number email_address notes].each do |field|
+      value = review_information[field].to_s.strip
+      if value.empty? || value.include?("REPLACE_ME")
+        UI.user_error!("Replace the #{field} placeholder in fastlane/review_information.json before uploading iOS metadata.")
+      end
+    end
+    review_password = ENV.fetch("APP_REVIEW_PASSWORD", "")
+    UI.user_error!("APP_REVIEW_PASSWORD must match the server's PASSWORD_SIGN_IN value.") if review_password.strip.empty? || review_password.include?("REPLACE_ME")
+    review_information[:demo_user] = "review@cmumaps.com"
+    review_information[:demo_password] = review_password
+
     config = expo_config
     identifier = config.fetch("ios").fetch("bundleIdentifier")
     version = config.fetch("version")
@@ -79,6 +91,7 @@ platform :ios do
       overwrite_screenshots: false,
       skip_binary_upload: true,
       skip_metadata: false,
+      app_review_information: review_information,
       submit_for_review: false,
       automatic_release: false,
       force: true,

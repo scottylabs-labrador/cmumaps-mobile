@@ -51,10 +51,22 @@ replaced by the resolved Expo marketing version (`1.0.0` initially).
 
 Newer age-rating questions not answered in the original configuration must be
 reviewed in App Store Connect; no new policy answers are invented here. App
-Privacy, export compliance, review credentials/notes, pricing, availability,
+Privacy, export compliance, pricing, availability,
 Google Data safety, content rating, privacy-policy URL, support contact details,
 and Play category remain console-managed. Google's listing API does not cover
 all of these fields. Apple support/privacy URLs are automated.
+
+Apple review contact details and instructions are uploaded using
+`app_review_information` from `review_information.json`. Replace all
+`REPLACE_ME` values with genuine contact details. The lane fails before Apple
+API calls while any required field is empty or still contains a placeholder.
+Set the GitHub Actions secret `APP_REVIEW_PASSWORD` to the same password as the
+server's `PASSWORD_SIGN_IN`, and enable that server setting before review.
+The password is supplied through the environment, never committed to metadata.
+Fastlane creates or updates the review-detail record before handling attachments.
+There is no attachment workaround; Fastlane 2.242.0's default behavior deletes
+existing review attachments when none is supplied. Review submission remains
+manual (`submit_for_review: false`).
 
 ## iOS version policy
 

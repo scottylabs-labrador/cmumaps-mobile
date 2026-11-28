@@ -1,7 +1,7 @@
 {
   "first_name": "REPLACE_ME_FIRST_NAME",
   "last_name": "REPLACE_ME_LAST_NAME",
-  "phone_number": "+1 999 999 9999",
+  "phone_number": "+1 412 999 9999",
   "email_address": "replace-me@example.com",
   "notes": "A user is normally required to sign in with a Carnegie Mellon University account to use the app. For App Review, we provide a dedicated password bypass. On the welcome screen, tap App Review sign-in and enter the password supplied in the demo account password field. We plan to disable this review-only sign-in method on the server after App Review is complete and before the app is publicly released."
 }

@@ -119,9 +119,10 @@ export const MapScreen = () => {
   const pois = usePois(floorCode);
 
   const screenWidth = Dimensions.get("window").width;
-  const switcherResolution = viewRegion
-    ? resolveViewportFloor(buildings.data, viewRegion, screenWidth, activeFloor)
-    : null;
+  const switcherResolution =
+    target.kind !== "room" && viewRegion
+      ? resolveViewportFloor(buildings.data, viewRegion, screenWidth, activeFloor)
+      : null;
   const switcherFloor =
     switcherResolution?.kind === "floor" ? switcherResolution.floor : activeFloor;
   const switcherBuilding = switcherFloor ? buildings.data?.[switcherFloor.buildingCode] : building;
@@ -176,11 +177,15 @@ export const MapScreen = () => {
     dst,
     focusKey,
   });
-  const preserveViewport = !navOpen && preserveFloorViewport;
+  const preserveViewport = preserveFloorViewport;
 
   useEffect(() => {
     setSheet("default");
   }, [pathname, setSheet]);
+
+  useEffect(() => {
+    setPreserveFloorViewport(false);
+  }, [navigating, instructionIndex, selectedRoute, src, dst]);
 
   useEffect(() => {
     if (!step.stepFloor) {
@@ -219,6 +224,16 @@ export const MapScreen = () => {
 
   const onRegionChangeComplete = (region: Region) => {
     setViewRegion(region);
+    const focused = resolveViewportFloor(buildings.data, region, screenWidth, activeFloor);
+    if (
+      !navOpen &&
+      (target.kind === "building" || target.kind === "floor") &&
+      focused.kind === "floor" &&
+      (focused.floor.buildingCode !== target.buildingCode ||
+        (target.kind === "floor" && focused.floor.floor !== target.floor))
+    ) {
+      open(`/${formatFloorCode(focused.floor)}`, src, dst, true);
+    }
     setMapFloor((current) => {
       const resolved = resolveViewportFloor(buildings.data, region, screenWidth, current);
       if (resolved.kind === "none") return null;
@@ -299,7 +314,7 @@ export const MapScreen = () => {
           clearSearch();
           if (!navigating && target.kind !== "home") {
             setMapFloor((current) => mapFloorAfterClosingPlaceSheet(activeFloor, current));
-            open("/");
+            open("/", src, dst, true);
           }
         }}
         onLongPress={(coordinate: GeoCoordinate) =>
@@ -391,7 +406,7 @@ export const MapScreen = () => {
                     clearSearch();
                   } else {
                     setMapFloor(null);
-                    open("/");
+                    open("/", src, dst, true);
                   }
                 }}
                 hitSlop={8}
@@ -499,7 +514,7 @@ export const MapScreen = () => {
             onCycle={cycleSheet}
             onClose={() => {
               setMapFloor((current) => mapFloorAfterClosingPlaceSheet(activeFloor, current));
-              open("/");
+              open("/", src, dst, true);
             }}
             onDirections={() => {
               const nextDst = targetWaypointToken(target);

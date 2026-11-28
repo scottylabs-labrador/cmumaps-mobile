@@ -169,7 +169,7 @@ describe("mapSession", () => {
     expect(resolveViewportFloor(undefined, zoomedGhc, 400)).toEqual({ kind: "none" });
   });
 
-  test("shows neighboring floors below the density threshold when a reference floor is selected", () => {
+  test("applies the neighboring floor zoom threshold even when a reference floor is selected", () => {
     const region = {
       latitude: 40.4435,
       longitude: -79.9435,
@@ -179,6 +179,12 @@ describe("mapSession", () => {
     expect(resolveViewportFloor(buildings, region, 400)).toEqual({ kind: "none" });
     expect(
       visibleAdjacentFloorCodes(buildings, region, 400, "CUC", {
+        buildingCode: "CUC",
+        floor: "2",
+      }),
+    ).toEqual([]);
+    expect(
+      visibleAdjacentFloorCodes(buildings, { ...region, longitudeDelta: 0.002 }, 400, "CUC", {
         buildingCode: "CUC",
         floor: "2",
       }),
@@ -331,11 +337,11 @@ describe("mapSession", () => {
         "CUC",
         { buildingCode: "CUC", floor: "1" },
       ),
-    ).toEqual(["GHC-4"]);
+    ).toEqual([]);
     expect(adjacent("missing")).toEqual([]);
   });
 
-  test("defaults missing ordinals to 1 on both the reference and neighboring buildings", () => {
+  test("defaults missing ordinals to 0 on both the reference and neighboring buildings", () => {
     const nearbyBuildings: Buildings = {
       CUC: { ...buildings.CUC!, defaultOrdinal: null },
       GHC: { ...buildings.GHC!, shape: buildings.CUC!.shape, defaultOrdinal: null },
@@ -358,6 +364,37 @@ describe("mapSession", () => {
         floor: "3",
       }),
     ).toEqual(["CUC-LL"]);
+  });
+
+  test("matches GHC 4 with NSH 4 when GHC's ordinal is null and NSH's is -1", () => {
+    const nearbyBuildings: Buildings = {
+      GHC: { ...buildings.GHC!, defaultOrdinal: null },
+      NSH: {
+        ...buildings.GHC!,
+        code: "NSH",
+        floors: ["B", "A", "1", "2", "3", "4"],
+        defaultFloor: "3",
+        defaultOrdinal: -1,
+      },
+    };
+    const region = {
+      latitude: 40.4435,
+      longitude: -79.945,
+      latitudeDelta: 0.0008,
+      longitudeDelta: 0.0008,
+    };
+    expect(
+      visibleAdjacentFloorCodes(nearbyBuildings, region, 400, "GHC", {
+        buildingCode: "GHC",
+        floor: "4",
+      }),
+    ).toEqual(["NSH-4"]);
+    expect(
+      visibleAdjacentFloorCodes(nearbyBuildings, region, 400, "NSH", {
+        buildingCode: "NSH",
+        floor: "4",
+      }),
+    ).toEqual(["GHC-4"]);
   });
 
   test("matches nonnumeric floor labels using their offset from the default ordinal", () => {

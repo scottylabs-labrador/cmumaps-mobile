@@ -196,8 +196,8 @@ const matchingFloorLevel = (
   const referenceDefaultIndex = reference.floors.indexOf(reference.defaultFloor ?? "");
   const defaultIndex = building.floors.indexOf(building.defaultFloor ?? "");
   if (referenceDefaultIndex < 0 || defaultIndex < 0) return undefined;
-  const ordinal = (reference.defaultOrdinal ?? 1) + index - referenceDefaultIndex;
-  return building.floors[defaultIndex + ordinal - (building.defaultOrdinal ?? 1)];
+  const ordinal = (reference.defaultOrdinal ?? 0) + index - referenceDefaultIndex;
+  return building.floors[defaultIndex + ordinal - (building.defaultOrdinal ?? 0)];
 };
 
 export interface VisibleRoomLabel {
@@ -256,7 +256,7 @@ export const visibleAdjacentFloorCodes = (
   excludedBuildingCode: string | undefined,
   activeFloor: FloorRef | null = null,
 ): string[] => {
-  if (!buildings || !region) {
+  if (!buildings || !region || screenWidth / region.longitudeDelta < FLOOR_ZOOM_DENSITY) {
     return [];
   }
   const referenceFloor =

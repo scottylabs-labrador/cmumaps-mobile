@@ -4,12 +4,14 @@ import {
   clampInstructionIndex,
   deriveCamera,
   deriveChromeVisibility,
+  floorplansUnavailable,
   mapFloorAfterClosingPlaceSheet,
   resolveNavigationStep,
   resolveViewportFloor,
   visibleAdjacentFloorCodes,
   visibleRoomLabels,
 } from "./mapSession";
+import { FLOOR_ZOOM_DENSITY } from "./geometry";
 import { buildRoutePlan } from "./routePlan";
 
 const buildings: Buildings = {
@@ -87,6 +89,76 @@ const route: PreciseRoute = {
 };
 
 describe("mapSession", () => {
+  describe("floorplansUnavailable", () => {
+    const screenWidth = 400;
+    const region = {
+      latitude: 40.4435,
+      longitude: -79.9421,
+      latitudeDelta: 0.0008,
+      longitudeDelta: screenWidth / FLOOR_ZOOM_DENSITY,
+    };
+
+    test("starts reporting unavailability exactly at the floor zoom threshold", () => {
+      expect(
+        floorplansUnavailable(
+          {},
+          { ...region, longitudeDelta: region.longitudeDelta * 1.001 },
+          screenWidth,
+        ),
+      ).toBe(false);
+      expect(floorplansUnavailable({}, region, screenWidth)).toBe(true);
+      expect(
+        floorplansUnavailable(
+          {},
+          { ...region, longitudeDelta: region.longitudeDelta * 0.999 },
+          screenWidth,
+        ),
+      ).toBe(true);
+    });
+
+    test("does not report unavailability before building data or the region is ready", () => {
+      expect(floorplansUnavailable(undefined, region, screenWidth)).toBe(false);
+      expect(floorplansUnavailable(buildings, null, screenWidth)).toBe(false);
+      expect(floorplansUnavailable(undefined, null, screenWidth)).toBe(false);
+    });
+
+    test("reports unavailability when no buildings intersect the viewport", () => {
+      expect(floorplansUnavailable({}, region, screenWidth)).toBe(true);
+      expect(floorplansUnavailable(buildings, { ...region, latitude: 40.45 }, screenWidth)).toBe(
+        true,
+      );
+    });
+
+    test("reports unavailability when all visible buildings are floorless", () => {
+      const floorlessBuildings: Buildings = {
+        CUC: { ...buildings.CUC!, floors: [], defaultFloor: null },
+        GHC: { ...buildings.GHC!, shape: buildings.CUC!.shape, floors: [], defaultFloor: null },
+      };
+      expect(floorplansUnavailable(floorlessBuildings, region, screenWidth)).toBe(true);
+    });
+
+    test("finds an off-center visible building with floors even beside a floorless building", () => {
+      const mixedBuildings: Buildings = {
+        CUC: { ...buildings.CUC!, floors: [], defaultFloor: null },
+        GHC: { ...buildings.GHC!, shape: buildings.CUC!.shape, defaultFloor: null },
+      };
+      // The map center is north of both footprints, but their edges remain visible.
+      const offCenterRegion = { ...region, latitude: 40.4442, longitudeDelta: 0.0008 };
+      expect(floorplansUnavailable(mixedBuildings, offCenterRegion, screenWidth)).toBe(false);
+    });
+
+    test("accepts a default floor even when the floor list is empty", () => {
+      const defaultOnlyBuildings: Buildings = {
+        CUC: { ...buildings.CUC!, floors: [], defaultFloor: "1" },
+      };
+      expect(floorplansUnavailable(defaultOnlyBuildings, region, screenWidth)).toBe(false);
+      expect(resolveViewportFloor(defaultOnlyBuildings, region, screenWidth)).toEqual({
+        kind: "floor",
+        floor: { buildingCode: "CUC", floor: "1" },
+      });
+    });
+  });
+
   test("resolves navigation step node, floor, remaining summary, and progress split including arrived state", () => {
     const fixedNow = Date.UTC(2026, 10, 26, 15, 0);
     const longRoute: PreciseRoute = {

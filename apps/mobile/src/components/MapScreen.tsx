@@ -19,6 +19,7 @@ import { AboutPanel } from "@/components/AboutPanel";
 import { AccountCardModal, AccountDial } from "@/components/AccountControls";
 import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
+import { FloorplansUnavailable } from "@/components/FloorplansUnavailable";
 import { CloseIcon, SearchIcon } from "@/components/Icons";
 import { LocationPrompt } from "@/components/LocationPrompt";
 import { NavHeader, NavPanel, StepsSheet, TurnByTurnBanner } from "@/components/NavigationChrome";
@@ -47,6 +48,7 @@ import {
 import {
   deriveCamera,
   deriveChromeVisibility,
+  floorplansUnavailable,
   mapFloorAfterClosingPlaceSheet,
   resolveNavigationStep,
   resolveViewportFloor,
@@ -250,6 +252,8 @@ export const MapScreen = () => {
       ? targetTitle(target, buildings.data, rooms.data)
       : "";
   const showSearchResults = searchOpen && (searchQuery.trim().length > 0 || navEdit !== null);
+  const showFloorplansUnavailable =
+    !showSearchResults && floorplansUnavailable(buildings.data, viewRegion, screenWidth);
   const chrome = deriveChromeVisibility({
     target,
     navOpen,
@@ -419,7 +423,16 @@ export const MapScreen = () => {
         </View>
       )}
 
-      {chrome.showFloorSwitcher && switcherBuilding ? (
+      {showFloorplansUnavailable ? (
+        <View
+          style={[
+            styles.unavailableFloors,
+            { top: Math.round(Dimensions.get("window").height * 0.34) + 81 },
+          ]}
+        >
+          <FloorplansUnavailable region={viewRegion} />
+        </View>
+      ) : chrome.showFloorSwitcher && switcherBuilding ? (
         <View style={[styles.floors, { top: Math.round(Dimensions.get("window").height * 0.34) }]}>
           <FloorSwitcher
             floors={switcherBuilding.floors}
@@ -624,6 +637,11 @@ const styles = StyleSheet.create({
   },
   floors: {
     left: -120,
+    position: "absolute",
+    zIndex: 20,
+  },
+  unavailableFloors: {
+    left: 36,
     position: "absolute",
     zIndex: 20,
   },

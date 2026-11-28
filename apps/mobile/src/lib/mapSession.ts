@@ -153,6 +153,19 @@ export const resolveNavigationStep = (
   };
 };
 
+export const floorplansUnavailable = (
+  buildings: Buildings | undefined,
+  region: CameraRegion | null,
+  screenWidth: number,
+): boolean => {
+  if (!buildings || !region || screenWidth / region.longitudeDelta < FLOOR_ZOOM_DENSITY) {
+    return false;
+  }
+  return !buildingsInView(buildings, region).some(
+    (building) => building.defaultFloor || building.floors.length > 0,
+  );
+};
+
 export const resolveViewportFloor = (
   buildings: Buildings | undefined,
   region: CameraRegion,

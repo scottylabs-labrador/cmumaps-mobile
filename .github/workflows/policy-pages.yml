@@ -1,0 +1,36 @@
+name: Publish privacy policy
+
+on:
+  push:
+    branches: [main, policy-pages]
+    paths:
+      - apps/policy/**
+      - .github/workflows/policy-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: policy-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'scottylabs-labrador/cmumaps-mobile'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/policy
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

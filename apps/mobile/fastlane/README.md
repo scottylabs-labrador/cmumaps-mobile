@@ -7,9 +7,11 @@ without cancelling the other. Directly running the EAS workflow does not publish
 store metadata.
 
 Neither lane uploads binaries, promotes tracks, submits an Apple review, or
-releases an app. Google edits are committed with `changes_not_sent_for_review`;
-send them for review manually in Play Console. Errors requesting a different
-review policy fail rather than silently changing that policy.
+releases an app directly. Google metadata edits use the automatic review policy:
+`changes_not_sent_for_review` is omitted because Google rejects it for this app.
+Committing an edit may send changes for review automatically; approval and
+publication timing are governed by Play Console settings. Errors requesting a
+different review policy fail rather than silently changing that policy.
 
 ## Credentials
 
@@ -77,7 +79,7 @@ Platform-sized Figma exports live in these tracked locations:
 - Android: `metadata/android/en-US/images/featureGraphic.png` (1024×500),
   optional `icon.png` (512×512), and `phoneScreenshots/01.png`–`03.png`.
   These are regular directories using Fastlane Supply's required layout.
-- Apple: `metadata/ios/screenshots/en-US/01.png`–`03.png`. Fastlane identifies
+- Apple: `metadata/shared/screenshots/en-US/01.png`–`03.png`. Fastlane identifies
   device/display classes by size. No iPad screenshots are supplied. Native iPad
   support is controlled separately by `ios.supportsTablet` in `app.config.ts`;
   removing screenshots does not change supported devices.

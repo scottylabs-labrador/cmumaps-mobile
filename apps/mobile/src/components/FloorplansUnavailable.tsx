@@ -1,4 +1,4 @@
-import { LayersMinus } from "lucide-react-native";
+import { FileX } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Region } from "react-native-maps";
@@ -17,7 +17,7 @@ export const FloorplansUnavailable = ({ region }: { region: Region | null }) => 
         onPress={() => setTooltipRegion(expanded ? null : region)}
         style={styles.button}
       >
-        <LayersMinus size={24} color={theme.muted} strokeWidth={1.9} />
+        <FileX size={24} color="#92400E" strokeWidth={1.9} />
       </Pressable>
       {expanded ? (
         <View style={styles.tooltip}>
@@ -33,10 +33,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 10,
+    left: -25,
   },
   button: {
     alignItems: "center",
-    backgroundColor: theme.paper,
+    backgroundColor: "#FEF3C7",
     borderRadius: 23,
     height: 46,
     justifyContent: "center",
@@ -48,7 +49,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   tooltip: {
-    backgroundColor: theme.paper,
+    backgroundColor: "#FEF3C7",
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -59,7 +60,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   label: {
-    color: theme.ink,
+    color: "#92400E",
     fontSize: 14,
+    fontWeight: "600",
   },
 });

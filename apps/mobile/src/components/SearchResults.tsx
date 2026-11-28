@@ -1,6 +1,7 @@
+import { Building, DoorClosed, Layers, LocateFixed } from "lucide-react-native";
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSearch } from "@/api/client";
-import { BuildingIcon, DoorIcon, LayersIcon, TargetIcon } from "@/components/Icons";
+
 import {
   type CampusTarget,
   targetFromSearchDocument,
@@ -42,7 +43,7 @@ export const SearchResults = ({
         {showYourLocation ? (
           <Pressable style={styles.row} onPress={() => onPickWaypoint("user")}>
             <View style={styles.iconBox}>
-              <TargetIcon size={19} color={theme.brand} />
+              <LocateFixed strokeWidth={2} size={19} color={theme.brand} />
             </View>
             <Text style={[styles.title, styles.locationText]} numberOfLines={1}>
               Your Location
@@ -71,11 +72,11 @@ export const SearchResults = ({
               >
                 <View style={styles.iconBox}>
                   {result.type === "building" ? (
-                    <BuildingIcon size={18} color={theme.muted} />
+                    <Building strokeWidth={1.8} size={18} color={theme.muted} />
                   ) : result.type === "floor" ? (
-                    <LayersIcon size={18} color={theme.muted} />
+                    <Layers strokeWidth={1.9} size={18} color={theme.muted} />
                   ) : (
-                    <DoorIcon size={18} color={theme.muted} />
+                    <DoorClosed strokeWidth={1.8} size={18} color={theme.muted} />
                   )}
                 </View>
                 <View style={styles.rowText}>

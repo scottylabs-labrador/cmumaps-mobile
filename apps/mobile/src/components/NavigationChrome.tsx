@@ -1,3 +1,19 @@
+import {
+  ArrowUp,
+  ArrowUpDown,
+  Building,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight,
+  CornerUpLeft,
+  CornerUpRight,
+  Layers,
+  LocateFixed,
+  MapPin,
+  Undo2,
+  X,
+  Zap,
+} from "lucide-react-native";
 import type { Instruction } from "@cmumaps/common";
 import {
   Animated,
@@ -10,22 +26,32 @@ import {
   TextInput,
   View,
 } from "react-native";
-import {
-  BuildingIcon,
-  ChevronDoubleLeftIcon,
-  ChevronDoubleRightIcon,
-  ChevronLeftIcon,
-  CloseIcon,
-  DirectionArrowIcon,
-  LayersIcon,
-  PinIcon,
-  SwapIcon,
-  TargetIcon,
-  ZapIcon,
-} from "@/components/Icons";
+
 import { useSwipeToDismiss } from "@/hooks/useSwipeToDismiss";
 import { ROUTE_KINDS, type RouteKind, type RoutePlan, type RouteSummary } from "@/lib/routePlan";
 import { theme } from "@/theme";
+
+const DirectionArrowIcon = ({
+  action,
+  size,
+  color,
+}: {
+  action: string;
+  size: number;
+  color: string;
+}) => {
+  const normalized = action.toLowerCase();
+  const Icon = normalized.includes("left")
+    ? CornerUpLeft
+    : normalized.includes("right")
+      ? CornerUpRight
+      : normalized.includes("back") ||
+          normalized.includes("around") ||
+          normalized.includes("u-turn")
+        ? Undo2
+        : ArrowUp;
+  return <Icon size={size} color={color} strokeWidth={2.25} />;
+};
 
 const MAX_STEPS_HEIGHT = Math.round(Dimensions.get("window").height * 0.8);
 
@@ -58,12 +84,13 @@ export const NavHeader = ({
 }: NavHeaderProps) => (
   <View style={styles.navHeader}>
     <Pressable accessibilityLabel="Back" hitSlop={8} onPress={onBack} style={styles.navTitleRow}>
-      <ChevronLeftIcon size={18} color={theme.subtle} />
+      <ChevronLeft strokeWidth={2} size={18} color={theme.subtle} />
       <Text style={styles.navTitle}>Navigation</Text>
     </Pressable>
     <View style={styles.navEndpoints}>
       <View style={styles.navEndpointRail}>
-        <TargetIcon
+        <LocateFixed
+          strokeWidth={2}
           size={18}
           color={src === "user" && !userLocationAvailable ? theme.subtle : theme.brand}
         />
@@ -72,7 +99,7 @@ export const NavHeader = ({
           <View style={styles.navRailDot} />
           <View style={styles.navRailDot} />
         </View>
-        <PinIcon size={18} color={theme.danger} />
+        <MapPin strokeWidth={2} size={18} color={theme.danger} />
       </View>
       <View style={styles.navEndpointFields}>
         <View
@@ -95,7 +122,7 @@ export const NavHeader = ({
           />
           {src || (editingField === "src" && searchQuery.length > 0) ? (
             <Pressable accessibilityLabel="Clear start" onPress={onClearStart} hitSlop={8}>
-              <CloseIcon size={16} color={theme.muted} />
+              <X strokeWidth={2} size={16} color={theme.muted} />
             </Pressable>
           ) : null}
         </View>
@@ -111,7 +138,7 @@ export const NavHeader = ({
             onChangeText={(value) => onChangeQuery("dst", value)}
           />
           <Pressable accessibilityLabel="Swap start and destination" onPress={onSwap} hitSlop={8}>
-            <SwapIcon size={18} color={theme.muted} />
+            <ArrowUpDown strokeWidth={1.9} size={18} color={theme.muted} />
           </Pressable>
         </View>
       </View>
@@ -182,13 +209,13 @@ export const TurnByTurnBanner = ({
             onPress={onPrev}
             style={[styles.bannerControl, !canPrev ? styles.bannerControlDisabled : null]}
           >
-            <ChevronDoubleLeftIcon size={17} color="#ffffff" />
+            <ChevronsLeft strokeWidth={2.2} size={17} color="#ffffff" />
             <Text style={styles.bannerControlText}>Prev</Text>
           </Pressable>
           {!arrived ? (
             <Pressable accessibilityLabel="Next step" onPress={onNext} style={styles.bannerControl}>
               <Text style={styles.bannerControlText}>Next</Text>
-              <ChevronDoubleRightIcon size={17} color="#ffffff" />
+              <ChevronsRight strokeWidth={2.2} size={17} color="#ffffff" />
             </Pressable>
           ) : (
             <View />
@@ -311,7 +338,7 @@ export const StepsSheet = ({
               }}
             >
               <View style={styles.stepIcon}>
-                <PinIcon size={20} color={arrived ? theme.brand : theme.danger} />
+                <MapPin strokeWidth={2} size={20} color={arrived ? theme.brand : theme.danger} />
               </View>
               <View style={styles.stepCopy}>
                 <Text style={[styles.stepAction, arrived ? styles.stepArrived : null]}>
@@ -378,7 +405,7 @@ export const NavPanel = ({
             onPress={onOpenSteps}
             style={styles.stepsFab}
           >
-            <LayersIcon size={22} color="#ffffff" />
+            <Layers strokeWidth={1.9} size={22} color="#ffffff" />
           </Pressable>
         ) : null}
         <View style={styles.tripBar}>
@@ -415,9 +442,9 @@ export const NavPanel = ({
                 style={[styles.tab, active ? styles.tabOn : null]}
               >
                 {kind === "Fastest" ? (
-                  <ZapIcon size={18} color={tint} />
+                  <Zap strokeWidth={1.9} size={18} color={tint} />
                 ) : (
-                  <BuildingIcon size={18} color={tint} />
+                  <Building strokeWidth={1.8} size={18} color={tint} />
                 )}
                 <Text style={[styles.tabLabel, { color: tint }]}>
                   {kind === "Inside" ? "Indoor" : "Fastest"}

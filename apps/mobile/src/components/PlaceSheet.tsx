@@ -1,5 +1,6 @@
+import { ArrowRight, DoorClosed, Share } from "lucide-react-native";
 import { Animated, Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { ArrowRightIcon, DoorIcon, ShareIcon } from "@/components/Icons";
+
 import { useSwipeToDismiss } from "@/hooks/useSwipeToDismiss";
 import { locationImage } from "@/lib/locationImage";
 import { type CampusTarget, targetBuildingCode } from "@/lib/campusTarget";
@@ -81,7 +82,7 @@ export const PlaceSheet = ({
         <View style={[styles.body, showHero ? styles.bodyWithHero : null]}>
           {target.kind === "room" && roomType && sheet !== "collapsed" ? (
             <View style={styles.roomBadge}>
-              <DoorIcon size={15} color={theme.brandDark} />
+              <DoorClosed strokeWidth={1.8} size={15} color={theme.brandDark} />
               <Text style={styles.roomBadgeText}>{roomType}</Text>
             </View>
           ) : null}
@@ -99,7 +100,7 @@ export const PlaceSheet = ({
             </Text>
             {sheet === "collapsed" ? (
               <Pressable accessibilityLabel="Share" onPress={onShare} style={styles.shareIcon}>
-                <ShareIcon size={19} color={theme.ink} />
+                <Share strokeWidth={1.9} size={19} color={theme.ink} />
               </Pressable>
             ) : null}
           </View>
@@ -111,12 +112,12 @@ export const PlaceSheet = ({
 
           <View style={styles.actions}>
             <Pressable style={styles.primary} onPress={onDirections}>
-              <ArrowRightIcon size={18} color="#ffffff" />
+              <ArrowRight strokeWidth={2.2} size={18} color="#ffffff" />
               <Text style={styles.primaryText}>Directions</Text>
             </Pressable>
             {sheet !== "collapsed" ? (
               <Pressable accessibilityLabel="Share" onPress={onShare} style={styles.shareIcon}>
-                <ShareIcon size={19} color={theme.ink} />
+                <Share strokeWidth={1.9} size={19} color={theme.ink} />
               </Pressable>
             ) : null}
           </View>

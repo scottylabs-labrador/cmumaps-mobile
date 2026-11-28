@@ -1,3 +1,4 @@
+import { Search, X } from "lucide-react-native";
 import type { GeoCoordinate } from "@cmumaps/common";
 import { router, useGlobalSearchParams, usePathname } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -20,7 +21,7 @@ import { AccountCardModal, AccountDial } from "@/components/AccountControls";
 import { CampusMap } from "@/components/CampusMap";
 import { FloorSwitcher } from "@/components/FloorSwitcher";
 import { FloorplansUnavailable } from "@/components/FloorplansUnavailable";
-import { CloseIcon, SearchIcon } from "@/components/Icons";
+
 import { LocationPrompt } from "@/components/LocationPrompt";
 import { NavHeader, NavPanel, StepsSheet, TurnByTurnBanner } from "@/components/NavigationChrome";
 import { PlaceSheet } from "@/components/PlaceSheet";
@@ -74,6 +75,7 @@ export const MapScreen = () => {
   const [mapFloor, setMapFloor] = useState<FloorRef | null>(null);
   const [viewRegion, setViewRegion] = useState<Region | null>(null);
   const [focusKey, setFocusKey] = useState(0);
+  const [floorplanTooltipKey, setFloorplanTooltipKey] = useState(0);
   const [preserveFloorViewport, setPreserveFloorViewport] = useState(false);
 
   const sheet = useMapStore((state) => state.sheet);
@@ -314,6 +316,7 @@ export const MapScreen = () => {
           }
         }}
         onPressMap={() => {
+          setFloorplanTooltipKey((key) => key + 1);
           closeModal();
           clearSearch();
           if (!navigating && target.kind !== "home") {
@@ -382,7 +385,7 @@ export const MapScreen = () => {
         <View style={[styles.topOverlay, { top: searchTop }]}>
           <View style={styles.searchPill}>
             <View style={styles.searchIconBox}>
-              <SearchIcon size={19} color={theme.muted} />
+              <Search strokeWidth={2} size={19} color={theme.muted} />
             </View>
             <TextInput
               value={searchFocused || searchQuery.length > 0 ? searchQuery : selectedTargetTitle}
@@ -416,7 +419,7 @@ export const MapScreen = () => {
                 hitSlop={8}
                 style={styles.clearButton}
               >
-                <CloseIcon size={18} color={theme.muted} />
+                <X strokeWidth={2} size={18} color={theme.muted} />
               </Pressable>
             ) : null}
           </View>
@@ -430,7 +433,7 @@ export const MapScreen = () => {
             { top: Math.round(Dimensions.get("window").height * 0.34) + 81 },
           ]}
         >
-          <FloorplansUnavailable region={viewRegion} />
+          <FloorplansUnavailable key={floorplanTooltipKey} region={viewRegion} />
         </View>
       ) : chrome.showFloorSwitcher && switcherBuilding ? (
         <View style={[styles.floors, { top: Math.round(Dimensions.get("window").height * 0.34) }]}>

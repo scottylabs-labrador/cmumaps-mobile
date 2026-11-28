@@ -1,6 +1,7 @@
+import { LogOut, Plus, UserRound } from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import { Animated, Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { LogOutIcon, PlusIcon, UserIcon } from "@/components/Icons";
+
 import { theme } from "@/theme";
 
 const DIAL_STEP = 62;
@@ -66,7 +67,7 @@ export const AccountDial = ({ open, onToggle, onAccount, onAbout }: AccountDialP
           onPress={onAccount}
           style={[styles.circle, styles.circleSecondary]}
         >
-          <UserIcon size={22} color="#ffffff" />
+          <UserRound strokeWidth={1.9} size={22} color="#ffffff" />
         </Pressable>
       </Animated.View>
       <Pressable
@@ -75,7 +76,7 @@ export const AccountDial = ({ open, onToggle, onAccount, onAbout }: AccountDialP
         style={[styles.circle, styles.circleTrigger]}
       >
         <Animated.View style={{ transform: [{ rotate: triggerRotate }] }}>
-          <PlusIcon size={24} color="#ffffff" />
+          <Plus strokeWidth={2.4} size={24} color="#ffffff" />
         </Animated.View>
       </Pressable>
     </View>
@@ -110,7 +111,7 @@ export const AccountCardModal = ({
         </View>
         <View style={styles.divider} />
         <Pressable style={styles.signOutRow} onPress={onSignOut}>
-          <LogOutIcon size={19} color={theme.ink} />
+          <LogOut strokeWidth={1.9} size={19} color={theme.ink} />
           <Text style={styles.signOutText}>Sign out</Text>
         </Pressable>
       </Pressable>

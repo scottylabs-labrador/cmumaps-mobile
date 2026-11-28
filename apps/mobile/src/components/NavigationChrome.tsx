@@ -222,6 +222,7 @@ export const StepsSheet = ({
 }: StepsSheetProps) => {
   const { dragY, panHandlers } = useSwipeToDismiss(onClose, {
     dismissDistance: MAX_STEPS_HEIGHT,
+    visible,
   });
   const instructions = plan.activeRoute?.instructions ?? [];
   const arrived = instructions.length > 0 && index >= instructions.length;

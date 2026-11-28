@@ -1,6 +1,6 @@
-import { useMemo, useRef } from "react";
-import { Animated, Image, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { ArrowRightIcon, DoorIcon, ShareIcon } from "@/components/Icons";
+import { useSwipeToDismiss } from "@/hooks/useSwipeToDismiss";
 import { locationImage } from "@/lib/locationImage";
 import { type CampusTarget, targetBuildingCode } from "@/lib/campusTarget";
 import type { SheetState } from "@/store";
@@ -31,50 +31,10 @@ export const PlaceSheet = ({
   onDirections,
   onShare,
 }: Props) => {
-  const dragY = useRef(new Animated.Value(0)).current;
-
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gesture) =>
-          Math.abs(gesture.dy) > 8 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
-        onPanResponderMove: (_, gesture) => {
-          if (gesture.dy > 0) {
-            dragY.setValue(gesture.dy);
-          }
-        },
-        onPanResponderRelease: (_, gesture) => {
-          const shouldClose = gesture.dy > 100 || gesture.vy > 1.1;
-          if (shouldClose) {
-            Animated.timing(dragY, {
-              toValue: 420,
-              duration: 180,
-              useNativeDriver: true,
-            }).start(() => {
-              dragY.setValue(0);
-              onClose();
-            });
-            return;
-          }
-          Animated.spring(dragY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 4,
-          }).start();
-          if (gesture.dy < -48) {
-            onCycle();
-          }
-        },
-        onPanResponderTerminate: () => {
-          Animated.spring(dragY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 4,
-          }).start();
-        },
-      }),
-    [dragY, onClose, onCycle],
-  );
+  const { dragY, panHandlers } = useSwipeToDismiss(onClose, {
+    visible: target.kind !== "home" && target.kind !== "pending",
+    onSwipeUp: onCycle,
+  });
 
   if (target.kind === "home" || target.kind === "pending") {
     return null;
@@ -93,7 +53,7 @@ export const PlaceSheet = ({
     <Animated.View style={[styles.shadowWrap, { transform: [{ translateY: dragY }] }]}>
       <View
         style={[styles.sheet, sheet === "collapsed" ? styles.collapsed : null]}
-        {...pan.panHandlers}
+        {...panHandlers}
       >
         {showHero && photo ? (
           <View style={styles.heroWrap}>

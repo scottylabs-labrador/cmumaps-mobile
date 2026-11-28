@@ -1,5 +1,5 @@
-import { useMemo, useRef } from "react";
-import { Animated, PanResponder } from "react-native";
+import { useLayoutEffect, useMemo, useRef } from "react";
+import { Animated, PanResponder, useWindowDimensions } from "react-native";
 
 interface Options {
   /** Vertical drag distance (px) that dismisses. */
@@ -8,6 +8,9 @@ interface Options {
   velocity?: number;
   /** How far the sheet animates off-screen on dismiss. */
   dismissDistance?: number;
+  /** Reset the translation before a previously hidden sheet is shown again. */
+  visible?: boolean;
+  onSwipeUp?: () => void;
 }
 
 /**
@@ -18,7 +21,17 @@ export const useSwipeToDismiss = (onDismiss: () => void, options: Options = {}) 
   const threshold = options.threshold ?? 100;
   const velocity = options.velocity ?? 1.1;
   const dismissDistance = options.dismissDistance ?? 420;
+  const { height: windowHeight } = useWindowDimensions();
+  const onSwipeUp = options.onSwipeUp;
   const dragY = useRef(new Animated.Value(0)).current;
+  const visible = options.visible ?? true;
+
+  useLayoutEffect(() => {
+    if (visible) {
+      dragY.stopAnimation();
+      dragY.setValue(0);
+    }
+  }, [dragY, visible]);
 
   const pan = useMemo(
     () =>
@@ -33,12 +46,11 @@ export const useSwipeToDismiss = (onDismiss: () => void, options: Options = {}) 
         onPanResponderRelease: (_, gesture) => {
           if (gesture.dy > threshold || gesture.vy > velocity) {
             Animated.timing(dragY, {
-              toValue: dismissDistance,
+              toValue: Math.max(dismissDistance, windowHeight, gesture.dy + 1),
               duration: 180,
               useNativeDriver: true,
-            }).start(() => {
-              dragY.setValue(0);
-              onDismiss();
+            }).start(({ finished }) => {
+              if (finished) onDismiss();
             });
             return;
           }
@@ -47,6 +59,7 @@ export const useSwipeToDismiss = (onDismiss: () => void, options: Options = {}) 
             useNativeDriver: true,
             bounciness: 4,
           }).start();
+          if (gesture.dy < -48) onSwipeUp?.();
         },
         onPanResponderTerminate: () => {
           Animated.spring(dragY, {
@@ -56,7 +69,7 @@ export const useSwipeToDismiss = (onDismiss: () => void, options: Options = {}) 
           }).start();
         },
       }),
-    [dismissDistance, dragY, onDismiss, threshold, velocity],
+    [dismissDistance, dragY, onDismiss, onSwipeUp, threshold, velocity, windowHeight],
   );
 
   return { dragY, panHandlers: pan.panHandlers };

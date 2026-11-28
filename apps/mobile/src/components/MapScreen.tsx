@@ -68,6 +68,7 @@ export const MapScreen = () => {
 
   const [navEdit, setNavEdit] = useState<"src" | "dst" | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [reportAboveAbout, setReportAboveAbout] = useState(false);
   const [mapFloor, setMapFloor] = useState<FloorRef | null>(null);
   const [viewRegion, setViewRegion] = useState<Region | null>(null);
   const [focusKey, setFocusKey] = useState(0);
@@ -97,7 +98,13 @@ export const MapScreen = () => {
 
   useUserLocation();
   const { user } = useSignedInUser();
-  useShakeGesture(() => openModal("report"), activeModal !== "report");
+  useShakeGesture(
+    () => {
+      if (activeModal === "about") setReportAboveAbout(true);
+      else openModal("report");
+    },
+    activeModal !== "report" && !reportAboveAbout,
+  );
 
   const buildings = useBuildings();
   const target = parseCampusTarget(pathname, buildings.data, floorParam);
@@ -446,16 +453,19 @@ export const MapScreen = () => {
       />
 
       <ReportSheet
-        visible={activeModal === "report"}
+        visible={activeModal === "report" || reportAboveAbout}
         context={{
           path: targetHref(pathname, src || undefined, dst || undefined),
         }}
-        onDismiss={closeModal}
+        onDismiss={() => {
+          if (reportAboveAbout) setReportAboveAbout(false);
+          else closeModal();
+        }}
       />
 
       <View style={styles.bottom}>
         {chrome.bottomPanel === "about" ? (
-          <AboutPanel visible onClose={closeModal} />
+          <AboutPanel visible onClose={closeModal} onReport={() => setReportAboveAbout(true)} />
         ) : chrome.bottomPanel === "nav" ? (
           <NavPanel
             plan={plan}

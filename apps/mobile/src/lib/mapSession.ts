@@ -14,7 +14,6 @@ import {
   targetBuildingCode,
 } from "./campusTarget";
 import {
-  buildingAt,
   buildingsInView,
   FLOOR_ZOOM_DENSITY,
   ROOM_LABEL_ZOOM_DENSITY,
@@ -158,14 +157,28 @@ export const resolveViewportFloor = (
   buildings: Buildings | undefined,
   region: CameraRegion,
   screenWidth: number,
+  currentFloor: FloorRef | null = null,
 ): ViewportFloorResolution => {
   if (!buildings || screenWidth / region.longitudeDelta < FLOOR_ZOOM_DENSITY) {
     return { kind: "none" };
   }
-  const hit = buildingAt(buildings, {
-    latitude: region.latitude,
-    longitude: region.longitude,
-  });
+  const visible = buildingsInView(buildings, region);
+  if (
+    currentFloor &&
+    visible.some(
+      (building) =>
+        building.code === currentFloor.buildingCode && building.floors.includes(currentFloor.floor),
+    )
+  ) {
+    return { kind: "floor", floor: currentFloor };
+  }
+  const hit = visible
+    .filter((building) => building.defaultFloor || building.floors.length > 0)
+    .sort(
+      (a, b) =>
+        dist(region, { latitude: a.labelLatitude, longitude: a.labelLongitude }) -
+        dist(region, { latitude: b.labelLatitude, longitude: b.labelLongitude }),
+    )[0];
   const level = hit?.defaultFloor ?? hit?.floors[0];
   if (!hit || !level) {
     return { kind: "none" };
@@ -232,7 +245,7 @@ export const visibleAdjacentFloorCodes = (
   excludedBuildingCode: string | undefined,
   activeFloor: FloorRef | null = null,
 ): string[] => {
-  if (!buildings || !region || screenWidth / region.longitudeDelta < FLOOR_ZOOM_DENSITY) {
+  if (!buildings || !region) {
     return [];
   }
   const referenceFloor =
@@ -245,22 +258,18 @@ export const visibleAdjacentFloorCodes = (
   const referenceIndex = referenceBuilding?.floors.indexOf(referenceFloor?.floor ?? "") ?? -1;
   const referenceDefaultIndex =
     referenceBuilding?.floors.indexOf(referenceBuilding.defaultFloor ?? "") ?? -1;
-  if (
-    referenceBuilding?.defaultOrdinal == null ||
-    referenceIndex < 0 ||
-    referenceDefaultIndex < 0
-  ) {
+  if (!referenceBuilding || referenceIndex < 0 || referenceDefaultIndex < 0) {
     return [];
   }
-  const ordinal = referenceBuilding.defaultOrdinal + referenceIndex - referenceDefaultIndex;
+  const ordinal = (referenceBuilding.defaultOrdinal ?? 1) + referenceIndex - referenceDefaultIndex;
   return buildingsInView(buildings, region)
     .filter((building) => building.code !== excludedBuildingCode)
     .map((building) => {
       const defaultIndex = building.floors.indexOf(building.defaultFloor ?? "");
-      if (building.defaultOrdinal == null || defaultIndex < 0) {
+      if (defaultIndex < 0) {
         return null;
       }
-      const level = building.floors[defaultIndex + ordinal - building.defaultOrdinal];
+      const level = building.floors[defaultIndex + ordinal - (building.defaultOrdinal ?? 1)];
       return level ? formatFloorCode({ buildingCode: building.code, floor: level }) : null;
     })
     .filter((code): code is string => Boolean(code))

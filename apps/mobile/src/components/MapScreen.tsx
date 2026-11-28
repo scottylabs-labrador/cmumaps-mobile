@@ -213,17 +213,14 @@ export const MapScreen = () => {
 
   const onRegionChangeComplete = (region: Region) => {
     setViewRegion(region);
-    const resolved = resolveViewportFloor(buildings.data, region, screenWidth);
-    if (resolved.kind === "none") {
-      setMapFloor((current) => (current ? null : current));
-      return;
-    }
-    setMapFloor((current) =>
-      current?.buildingCode === resolved.floor.buildingCode &&
-      current.floor === resolved.floor.floor
+    setMapFloor((current) => {
+      const resolved = resolveViewportFloor(buildings.data, region, screenWidth, current);
+      if (resolved.kind === "none") return null;
+      return current?.buildingCode === resolved.floor.buildingCode &&
+        current.floor === resolved.floor.floor
         ? current
-        : resolved.floor,
-    );
+        : resolved.floor;
+    });
   };
 
   const searchTop = insets.top + 12;

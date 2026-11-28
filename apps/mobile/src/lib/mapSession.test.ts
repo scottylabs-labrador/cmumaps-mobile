@@ -135,8 +135,8 @@ describe("mapSession", () => {
     const moderateZoomCuc = {
       latitude: 40.4435,
       longitude: -79.942,
-      latitudeDelta: 0.001,
-      longitudeDelta: 0.001,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
     };
     expect(resolveViewportFloor(buildings, moderateZoomCuc, 400)).toEqual({
       kind: "none",
@@ -169,10 +169,124 @@ describe("mapSession", () => {
     expect(resolveViewportFloor(undefined, zoomedGhc, 400)).toEqual({ kind: "none" });
   });
 
+  test("shows neighboring floors below the density threshold when a reference floor is selected", () => {
+    const region = {
+      latitude: 40.4435,
+      longitude: -79.9435,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    };
+    expect(resolveViewportFloor(buildings, region, 400)).toEqual({ kind: "none" });
+    expect(
+      visibleAdjacentFloorCodes(buildings, region, 400, "CUC", {
+        buildingCode: "CUC",
+        floor: "2",
+      }),
+    ).toEqual(["GHC-2"]);
+    expect(
+      visibleAdjacentFloorCodes(
+        buildings,
+        { ...region, longitude: -79.9421, longitudeDelta: 0.001 },
+        400,
+        "CUC",
+        { buildingCode: "CUC", floor: "2" },
+      ),
+    ).toEqual([]);
+  });
+
+  test("shows matching visible floorplans even when the map center is outside every building", () => {
+    const visibleBuildings: Buildings = {
+      CUC: { ...buildings.CUC!, labelLatitude: 40.4441, labelLongitude: -79.9422 },
+      GHC: {
+        ...buildings.GHC!,
+        shape: buildings.CUC!.shape,
+        labelLatitude: 40.4441,
+        labelLongitude: -79.9418,
+      },
+    };
+    // Both footprints end at latitude 40.444, south of the map center.
+    const region = {
+      latitude: 40.4442,
+      longitude: -79.9422,
+      latitudeDelta: 0.0008,
+      longitudeDelta: 0.0008,
+    };
+    expect(resolveViewportFloor(visibleBuildings, region, 400)).toEqual({
+      kind: "floor",
+      floor: { buildingCode: "CUC", floor: "1" },
+    });
+    expect(visibleAdjacentFloorCodes(visibleBuildings, region, 400, undefined)).toEqual([
+      "CUC-1",
+      "GHC-1",
+    ]);
+    const emptyRegion = { ...region, latitude: 40.45 };
+    expect(resolveViewportFloor(visibleBuildings, emptyRegion, 400)).toEqual({ kind: "none" });
+    expect(visibleAdjacentFloorCodes(visibleBuildings, emptyRegion, 400, undefined)).toEqual([]);
+  });
+
+  test("shows the reference floor without ordinal metadata or a configured default", () => {
+    const region = {
+      latitude: 40.4435,
+      longitude: -79.942,
+      latitudeDelta: 0.0008,
+      longitudeDelta: 0.0008,
+    };
+    expect(
+      resolveViewportFloor({ CUC: { ...buildings.CUC!, defaultOrdinal: null } }, region, 400),
+    ).toEqual({ kind: "floor", floor: { buildingCode: "CUC", floor: "1" } });
+    expect(
+      resolveViewportFloor(
+        { CUC: { ...buildings.CUC!, defaultFloor: null, defaultOrdinal: null } },
+        region,
+        400,
+      ),
+    ).toEqual({ kind: "floor", floor: { buildingCode: "CUC", floor: "LL" } });
+  });
+
+  test("preserves the reference floor until its footprint leaves the padded viewport", () => {
+    const current = { buildingCode: "CUC", floor: "2" };
+    const region = {
+      latitude: 40.4435,
+      longitude: -79.9445,
+      latitudeDelta: 0.001,
+      longitudeDelta: 0.004,
+    };
+    // GHC is nearer, but CUC still intersects the padded viewport.
+    expect(resolveViewportFloor(buildings, region, 2000, current)).toEqual({
+      kind: "floor",
+      floor: current,
+    });
+    expect(
+      resolveViewportFloor(
+        buildings,
+        { ...region, longitude: -79.945, longitudeDelta: 0.0008 },
+        400,
+        current,
+      ),
+    ).toEqual({
+      kind: "floor",
+      floor: { buildingCode: "GHC", floor: "4" },
+    });
+    const closeUp = {
+      ...region,
+      longitude: -79.9429,
+      longitudeDelta: 0.0001,
+      latitudeDelta: 0.0001,
+    };
+    expect(resolveViewportFloor(buildings, closeUp, 400, current)).toEqual({
+      kind: "floor",
+      floor: current,
+    });
+  });
+
   test("matches neighboring floors by ordinal instead of their default floor", () => {
     const nearbyBuildings: Buildings = {
       ...buildings,
-      GHC: { ...buildings.GHC!, labelLongitude: buildings.CUC!.labelLongitude },
+      GHC: {
+        ...buildings.GHC!,
+        shape: buildings.CUC!.shape,
+        labelLongitude: buildings.CUC!.labelLongitude,
+      },
     };
     const region = {
       latitude: 40.4435,
@@ -200,10 +314,35 @@ describe("mapSession", () => {
         region,
         400,
         "CUC",
-        { buildingCode: "CUC", floor: "2" },
+        { buildingCode: "CUC", floor: "1" },
       ),
-    ).toEqual([]);
+    ).toEqual(["GHC-4"]);
     expect(adjacent("missing")).toEqual([]);
+  });
+
+  test("defaults missing ordinals to 1 on both the reference and neighboring buildings", () => {
+    const nearbyBuildings: Buildings = {
+      CUC: { ...buildings.CUC!, defaultOrdinal: null },
+      GHC: { ...buildings.GHC!, shape: buildings.CUC!.shape, defaultOrdinal: null },
+    };
+    const region = {
+      latitude: 40.4435,
+      longitude: -79.942,
+      latitudeDelta: 0.0008,
+      longitudeDelta: 0.0008,
+    };
+    expect(
+      visibleAdjacentFloorCodes(nearbyBuildings, region, 400, "CUC", {
+        buildingCode: "CUC",
+        floor: "1",
+      }),
+    ).toEqual(["GHC-4"]);
+    expect(
+      visibleAdjacentFloorCodes(nearbyBuildings, region, 400, "GHC", {
+        buildingCode: "GHC",
+        floor: "3",
+      }),
+    ).toEqual(["CUC-LL"]);
   });
 
   test("matches nonnumeric floor labels using their offset from the default ordinal", () => {
@@ -211,6 +350,7 @@ describe("mapSession", () => {
       ...buildings,
       GHC: {
         ...buildings.GHC!,
+        shape: buildings.CUC!.shape,
         labelLongitude: buildings.CUC!.labelLongitude,
         floors: ["B", "G", "M", "U"],
         defaultFloor: "G",
@@ -349,8 +489,8 @@ describe("mapSession", () => {
     const buildingZoom = {
       latitude: 40.4435,
       longitude: -79.9421,
-      latitudeDelta: 0.0008,
-      longitudeDelta: 0.0008,
+      latitudeDelta: 0.002,
+      longitudeDelta: 0.002,
     };
     expect(visibleRoomLabels(floorRooms, buildingZoom, 400)).toEqual([]);
     const selectedRoom = { buildingCode: "CUC", roomName: "121" };

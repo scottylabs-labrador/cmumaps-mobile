@@ -1,8 +1,8 @@
 import type { Building, Buildings, GeoCoordinate } from "@cmumaps/common";
 
 // Screen width divided by longitude span required before rendering indoor floorplans.
-export const FLOOR_ZOOM_DENSITY = 500_000;
-export const ROOM_LABEL_ZOOM_DENSITY = 750_000;
+export const FLOOR_ZOOM_DENSITY = 250_000;
+export const ROOM_LABEL_ZOOM_DENSITY = 500_000;
 
 const METERS_PER_DEGREE_LAT = 111_320;
 // Apple MapKit uses a 30-degree vertical field of view at 0 pitch.
@@ -116,13 +116,50 @@ export const buildingsInView = (
   buildings: Buildings,
   region: { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number },
 ) => {
-  const minLat = region.latitude - region.latitudeDelta / 2;
-  const maxLat = region.latitude + region.latitudeDelta / 2;
-  const minLon = region.longitude - region.longitudeDelta / 2;
-  const maxLon = region.longitude + region.longitudeDelta / 2;
+  // Expand each viewport dimension by 20% to reduce pop-in during panning.
+  const minLat = region.latitude - region.latitudeDelta * 0.6;
+  const maxLat = region.latitude + region.latitudeDelta * 0.6;
+  const minLon = region.longitude - region.longitudeDelta * 0.6;
+  const maxLon = region.longitude + region.longitudeDelta * 0.6;
+  const corners = [
+    { latitude: minLat, longitude: minLon },
+    { latitude: minLat, longitude: maxLon },
+    { latitude: maxLat, longitude: maxLon },
+    { latitude: maxLat, longitude: minLon },
+  ];
+  const edgeIntersects = (a: GeoCoordinate, b: GeoCoordinate) => {
+    let start = 0;
+    let end = 1;
+    for (const [origin, delta, min, max] of [
+      [a.latitude, b.latitude - a.latitude, minLat, maxLat],
+      [a.longitude, b.longitude - a.longitude, minLon, maxLon],
+    ] as const) {
+      if (delta === 0) {
+        if (origin < min || origin > max) return false;
+      } else {
+        const t1 = (min - origin) / delta;
+        const t2 = (max - origin) / delta;
+        start = Math.max(start, Math.min(t1, t2));
+        end = Math.min(end, Math.max(t1, t2));
+        if (start > end) return false;
+      }
+    }
+    return true;
+  };
   return Object.values(buildings).filter((building) => {
-    const lat = building.labelLatitude;
-    const lon = building.labelLongitude;
-    return lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon;
+    const outer = building.shape[0] ?? [];
+    if (outer.length < 3) return false;
+    // Edge crossings include footprints inside the viewport; corner containment
+    // also handles the viewport lying entirely inside a large footprint.
+    return (
+      building.shape.some((ring) =>
+        ring.some((point, index) => edgeIntersects(point, ring[(index + 1) % ring.length]!)),
+      ) ||
+      corners.some(
+        (corner) =>
+          isInPolygon(corner, outer) &&
+          !building.shape.slice(1).some((hole) => isInPolygon(corner, hole)),
+      )
+    );
   });
 };

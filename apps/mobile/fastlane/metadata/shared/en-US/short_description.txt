@@ -1,1 +1,1 @@
-Super App for Carnegie Mellon University
+Navigation App for Carnegie Mellon University

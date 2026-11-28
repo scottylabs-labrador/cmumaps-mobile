@@ -1,1 +1,1 @@
-Super App for CMU
+Navigation App for CMU

@@ -1,3 +1,4 @@
+import * as Haptics from "expo-haptics";
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -21,11 +22,18 @@ const ARC_Y = DELTAS.map((delta) => ARC_RADIUS * Math.sin(delta * ANGLE_STEP));
 const SCALES = [0.65, 0.74, 0.83, 0.94, 1, 0.94, 0.83, 0.74, 0.65];
 const OPACITIES = [0, 0.25, 1, 1, 1, 1, 1, 0.25, 0];
 
+const tickSelection = () => {
+  void Haptics.selectionAsync().catch(() => {
+    // Haptic feedback is optional and must not interrupt floor selection.
+  });
+};
+
 export const FloorSwitcher = ({ floors, current, onSelect }: Props) => {
   const index = Math.max(0, floors.indexOf(current ?? ""));
   const progress = useRef(new Animated.Value(index)).current;
   const progressValue = useRef(index);
   const dragStart = useRef(index);
+  const lastHapticIndex = useRef(index);
   const dragging = useRef(false);
   const floorsRef = useRef(floors);
   const currentRef = useRef(current);
@@ -85,6 +93,10 @@ export const FloorSwitcher = ({ floors, current, onSelect }: Props) => {
           progress.stopAnimation((value) => {
             progressValue.current = value;
             dragStart.current = value;
+            lastHapticIndex.current = Math.max(
+              0,
+              Math.min(floorsRef.current.length - 1, Math.round(value)),
+            );
           });
           dragStart.current = progressValue.current;
         },
@@ -92,6 +104,11 @@ export const FloorSwitcher = ({ floors, current, onSelect }: Props) => {
           const max = Math.max(0, floorsRef.current.length - 1);
           const next = Math.max(0, Math.min(max, dragStart.current - gesture.dy / STEP_PX));
           progress.setValue(next);
+          const nextIndex = Math.round(next);
+          if (nextIndex !== lastHapticIndex.current) {
+            lastHapticIndex.current = nextIndex;
+            tickSelection();
+          }
         },
         onPanResponderRelease: settleToNearest,
         onPanResponderTerminate: settleToNearest,
@@ -147,7 +164,12 @@ export const FloorSwitcher = ({ floors, current, onSelect }: Props) => {
                 accessibilityRole="button"
                 accessibilityLabel={`Floor ${floor}`}
                 accessibilityState={{ selected }}
-                onPress={() => onSelect(floor)}
+                onPress={() => {
+                  if (floor !== currentRef.current) {
+                    tickSelection();
+                  }
+                  onSelect(floor);
+                }}
                 style={[styles.floor, selected ? styles.floorOn : null]}
               >
                 <Text

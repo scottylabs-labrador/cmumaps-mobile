@@ -243,7 +243,7 @@ describe("mapSession", () => {
     ).toEqual({ kind: "floor", floor: { buildingCode: "CUC", floor: "LL" } });
   });
 
-  test("preserves the reference floor until its footprint leaves the padded viewport", () => {
+  test("chooses the closest label even while the previous building remains visible", () => {
     const current = { buildingCode: "CUC", floor: "2" };
     const region = {
       latitude: 40.4435,
@@ -251,10 +251,10 @@ describe("mapSession", () => {
       latitudeDelta: 0.001,
       longitudeDelta: 0.004,
     };
-    // GHC is nearer, but CUC still intersects the padded viewport.
+    // GHC is nearer, even though CUC still intersects the padded viewport.
     expect(resolveViewportFloor(buildings, region, 2000, current)).toEqual({
       kind: "floor",
-      floor: current,
+      floor: { buildingCode: "GHC", floor: "2" },
     });
     expect(
       resolveViewportFloor(
@@ -265,7 +265,7 @@ describe("mapSession", () => {
       ),
     ).toEqual({
       kind: "floor",
-      floor: { buildingCode: "GHC", floor: "4" },
+      floor: { buildingCode: "GHC", floor: "2" },
     });
     const closeUp = {
       ...region,
@@ -276,6 +276,21 @@ describe("mapSession", () => {
     expect(resolveViewportFloor(buildings, closeUp, 400, current)).toEqual({
       kind: "floor",
       floor: current,
+    });
+  });
+
+  test("falls back to the closest building's default when the previous floor has no match", () => {
+    const region = {
+      latitude: 40.4435,
+      longitude: -79.9445,
+      latitudeDelta: 0.001,
+      longitudeDelta: 0.004,
+    };
+    expect(
+      resolveViewportFloor(buildings, region, 2000, { buildingCode: "CUC", floor: "LL" }),
+    ).toEqual({
+      kind: "floor",
+      floor: { buildingCode: "GHC", floor: "4" },
     });
   });
 

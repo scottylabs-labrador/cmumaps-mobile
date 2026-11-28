@@ -119,6 +119,12 @@ export const MapScreen = () => {
   const pois = usePois(floorCode);
 
   const screenWidth = Dimensions.get("window").width;
+  const switcherResolution = viewRegion
+    ? resolveViewportFloor(buildings.data, viewRegion, screenWidth, activeFloor)
+    : null;
+  const switcherFloor =
+    switcherResolution?.kind === "floor" ? switcherResolution.floor : activeFloor;
+  const switcherBuilding = switcherFloor ? buildings.data?.[switcherFloor.buildingCode] : building;
   const inViewFloorCodes = visibleAdjacentFloorCodes(
     buildings.data,
     viewRegion,
@@ -234,7 +240,7 @@ export const MapScreen = () => {
     navOpen,
     showSearchResults,
     activeModal,
-    hasBuilding: Boolean(building),
+    hasBuilding: Boolean(switcherBuilding),
   });
 
   const clearSearch = useCallback(() => {
@@ -398,12 +404,12 @@ export const MapScreen = () => {
         </View>
       )}
 
-      {chrome.showFloorSwitcher && building ? (
+      {chrome.showFloorSwitcher && switcherBuilding ? (
         <View style={[styles.floors, { top: Math.round(Dimensions.get("window").height * 0.34) }]}>
           <FloorSwitcher
-            floors={building.floors}
-            current={activeFloor?.floor}
-            onSelect={(level) => selectFloor(building.code, level)}
+            floors={switcherBuilding.floors}
+            current={switcherFloor?.floor}
+            onSelect={(level) => selectFloor(switcherBuilding.code, level)}
           />
         </View>
       ) : null}

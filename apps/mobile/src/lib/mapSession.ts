@@ -163,15 +163,6 @@ export const resolveViewportFloor = (
     return { kind: "none" };
   }
   const visible = buildingsInView(buildings, region);
-  if (
-    currentFloor &&
-    visible.some(
-      (building) =>
-        building.code === currentFloor.buildingCode && building.floors.includes(currentFloor.floor),
-    )
-  ) {
-    return { kind: "floor", floor: currentFloor };
-  }
   const hit = visible
     .filter((building) => building.defaultFloor || building.floors.length > 0)
     .sort(
@@ -179,7 +170,9 @@ export const resolveViewportFloor = (
         dist(region, { latitude: a.labelLatitude, longitude: a.labelLongitude }) -
         dist(region, { latitude: b.labelLatitude, longitude: b.labelLongitude }),
     )[0];
-  const level = hit?.defaultFloor ?? hit?.floors[0];
+  const level = hit
+    ? (matchingFloorLevel(buildings, currentFloor, hit.code) ?? hit.defaultFloor ?? hit.floors[0])
+    : undefined;
   if (!hit || !level) {
     return { kind: "none" };
   }
@@ -187,6 +180,24 @@ export const resolveViewportFloor = (
     kind: "floor",
     floor: { buildingCode: hit.code, floor: level },
   };
+};
+
+const matchingFloorLevel = (
+  buildings: Buildings,
+  referenceFloor: FloorRef | null,
+  buildingCode: string,
+): string | undefined => {
+  const reference = referenceFloor ? buildings[referenceFloor.buildingCode] : undefined;
+  const building = buildings[buildingCode];
+  if (!reference || !referenceFloor || !building) return undefined;
+  const index = reference.floors.indexOf(referenceFloor.floor);
+  if (index < 0) return undefined;
+  if (reference.code === building.code) return referenceFloor.floor;
+  const referenceDefaultIndex = reference.floors.indexOf(reference.defaultFloor ?? "");
+  const defaultIndex = building.floors.indexOf(building.defaultFloor ?? "");
+  if (referenceDefaultIndex < 0 || defaultIndex < 0) return undefined;
+  const ordinal = (reference.defaultOrdinal ?? 1) + index - referenceDefaultIndex;
+  return building.floors[defaultIndex + ordinal - (building.defaultOrdinal ?? 1)];
 };
 
 export interface VisibleRoomLabel {
@@ -255,21 +266,16 @@ export const visibleAdjacentFloorCodes = (
       return resolved.kind === "floor" ? resolved.floor : null;
     })();
   const referenceBuilding = referenceFloor ? buildings[referenceFloor.buildingCode] : undefined;
-  const referenceIndex = referenceBuilding?.floors.indexOf(referenceFloor?.floor ?? "") ?? -1;
-  const referenceDefaultIndex =
-    referenceBuilding?.floors.indexOf(referenceBuilding.defaultFloor ?? "") ?? -1;
-  if (!referenceBuilding || referenceIndex < 0 || referenceDefaultIndex < 0) {
+  if (
+    !referenceBuilding ||
+    !referenceBuilding.floors.includes(referenceBuilding.defaultFloor ?? "")
+  ) {
     return [];
   }
-  const ordinal = (referenceBuilding.defaultOrdinal ?? 1) + referenceIndex - referenceDefaultIndex;
   return buildingsInView(buildings, region)
     .filter((building) => building.code !== excludedBuildingCode)
     .map((building) => {
-      const defaultIndex = building.floors.indexOf(building.defaultFloor ?? "");
-      if (defaultIndex < 0) {
-        return null;
-      }
-      const level = building.floors[defaultIndex + ordinal - (building.defaultOrdinal ?? 1)];
+      const level = matchingFloorLevel(buildings, referenceFloor, building.code);
       return level ? formatFloorCode({ buildingCode: building.code, floor: level }) : null;
     })
     .filter((code): code is string => Boolean(code))

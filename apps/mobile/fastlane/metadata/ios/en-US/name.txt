@@ -1,1 +1,1 @@
-CMU Maps
+../../shared/en-US/title.txt

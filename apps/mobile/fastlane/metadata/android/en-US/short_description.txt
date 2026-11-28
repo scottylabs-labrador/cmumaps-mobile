@@ -1,1 +1,1 @@
-Super App for Carnegie Mellon University
+../../shared/en-US/short_description.txt

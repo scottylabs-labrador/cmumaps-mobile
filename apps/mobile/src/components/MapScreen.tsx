@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
     width: 28,
   },
   floors: {
-    left: -100,
+    left: -120,
     position: "absolute",
     zIndex: 20,
   },

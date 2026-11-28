@@ -73,7 +73,7 @@ export const AboutPanel = ({ visible, onClose, onReport }: Props) => {
           >
             CMU ESIM Services
           </Text>
-          {" for the data support."}
+          {" for the data support!"}
         </Text>
       </View>
     </Animated.View>

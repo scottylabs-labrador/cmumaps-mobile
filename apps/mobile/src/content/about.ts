@@ -1,5 +1,5 @@
 export const aboutDescription =
-  "CMU Maps is a Carnegie Mellon University navigation app that provides you with various campus location information.";
+  "CMU Maps is a navigation app that helps you get around Carnegie Mellon University.";
 
 export const privacyPolicyUrl = "https://policy.cmumaps.com";
 

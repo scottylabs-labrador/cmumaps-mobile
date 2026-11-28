@@ -289,6 +289,22 @@ describe("mapSession", () => {
       longitudeDelta: 0.0008,
     };
     expect(visibleRoomLabels(floorRooms, buildingZoom, 400)).toEqual([]);
+    const selectedRoom = { buildingCode: "CUC", roomName: "121" };
+    const selectedLabel = {
+      key: "room-121",
+      buildingCode: "CUC",
+      roomName: "121",
+      alias: "McConomy Auditorium",
+      coordinate: { latitude: 40.4435, longitude: -79.9421 },
+    };
+    expect(visibleRoomLabels(floorRooms, buildingZoom, 400, selectedRoom)).toEqual([selectedLabel]);
+    expect(visibleRoomLabels(floorRooms, null, 400, selectedRoom)).toEqual([selectedLabel]);
+    expect(
+      visibleRoomLabels(floorRooms, buildingZoom, 400, {
+        buildingCode: "GHC",
+        roomName: "121",
+      }),
+    ).toEqual([]);
 
     const floorZoom = {
       latitude: 40.4435,

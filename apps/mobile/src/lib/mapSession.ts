@@ -188,16 +188,13 @@ export const visibleRoomLabels = (
   rooms: GeoRooms | undefined,
   region: CameraRegion | null,
   screenWidth: number,
+  selectedRoom?: { buildingCode: string; roomName: string },
 ): VisibleRoomLabel[] => {
-  if (!rooms || !region || screenWidth / region.longitudeDelta < ROOM_LABEL_ZOOM_DENSITY) {
+  if (!rooms) {
     return [];
   }
-  const halfLat = (region.latitudeDelta * 1.2) / 2;
-  const halfLon = (region.longitudeDelta * 1.2) / 2;
-  const minLat = region.latitude - halfLat;
-  const maxLat = region.latitude + halfLat;
-  const minLon = region.longitude - halfLon;
-  const maxLon = region.longitude + halfLon;
+  const showOrdinaryLabels =
+    region !== null && screenWidth / region.longitudeDelta >= ROOM_LABEL_ZOOM_DENSITY;
 
   const labels: VisibleRoomLabel[] = [];
   for (const [rawKey, room] of Object.entries(rooms)) {
@@ -206,7 +203,15 @@ export const visibleRoomLabels = (
       continue;
     }
     const { latitude, longitude } = room.labelPosition;
-    if (latitude < minLat || latitude > maxLat || longitude < minLon || longitude > maxLon) {
+    const selected =
+      selectedRoom?.buildingCode === room.floor.buildingCode && selectedRoom.roomName === roomName;
+    if (
+      !selected &&
+      (!showOrdinaryLabels ||
+        !region ||
+        Math.abs(latitude - region.latitude) > region.latitudeDelta * 0.6 ||
+        Math.abs(longitude - region.longitude) > region.longitudeDelta * 0.6)
+    ) {
       continue;
     }
     labels.push({

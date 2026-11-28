@@ -72,6 +72,7 @@ export const MapScreen = () => {
   const [mapFloor, setMapFloor] = useState<FloorRef | null>(null);
   const [viewRegion, setViewRegion] = useState<Region | null>(null);
   const [focusKey, setFocusKey] = useState(0);
+  const [preserveFloorViewport, setPreserveFloorViewport] = useState(false);
 
   const sheet = useMapStore((state) => state.sheet);
   const setSheet = useMapStore((state) => state.setSheet);
@@ -145,7 +146,12 @@ export const MapScreen = () => {
     }
     return Object.keys(merged).length > 0 ? merged : base;
   })();
-  const roomLabels = visibleRoomLabels(mergedRooms, viewRegion, screenWidth);
+  const roomLabels = visibleRoomLabels(
+    mergedRooms,
+    viewRegion,
+    screenWidth,
+    target.kind === "room" ? target : undefined,
+  );
 
   const { start, end, plan } = useRoutes(src, dst, selectedRoute);
   const navOpen = Boolean(src || dst);
@@ -163,6 +169,7 @@ export const MapScreen = () => {
     dst,
     focusKey,
   });
+  const preserveViewport = !navOpen && preserveFloorViewport;
 
   useEffect(() => {
     setSheet("default");
@@ -181,7 +188,8 @@ export const MapScreen = () => {
   }, [step.stepFloor]);
 
   const open = useCallback(
-    (path: string, nextSrc = src, nextDst = dst) => {
+    (path: string, nextSrc = src, nextDst = dst, preserveViewport = false) => {
+      setPreserveFloorViewport(preserveViewport);
       router.replace(targetHref(path, nextSrc || undefined, nextDst || undefined));
       setSearchOpen(false);
       setSearchQuery("");
@@ -194,8 +202,8 @@ export const MapScreen = () => {
     open(`/${code}`);
   };
   const selectFloor = (code: string, level: string) => {
-    setFocusKey((key) => key + 1);
-    open(`/${code}-${level}`);
+    // The floor dial changes the visible floor, not the map's camera.
+    open(`/${code}-${level}`, src, dst, true);
   };
   const selectRoom = (code: string, roomName: string) => {
     setFocusKey((key) => key + 1);
@@ -273,8 +281,8 @@ export const MapScreen = () => {
         selectedBuilding={buildingCode}
         selectedRoom={target.kind === "room" ? target.roomName : undefined}
         userPosition={userPosition}
-        camera={camera.region}
-        cameraIntent={camera.intent}
+        camera={preserveViewport ? null : camera.region}
+        cameraIntent={preserveViewport ? "" : camera.intent}
         onSelectBuilding={selectBuilding}
         onSelectRoom={(roomBuildingCode, roomName) => {
           const code = roomBuildingCode || targetBuilding || buildingCode;

@@ -1,5 +1,27 @@
 import { describe, expect, test } from "vite-plus/test";
-import { headingArrow, reliableHeading } from "./userHeading";
+import { headingArrow, headingArrowRadius, reliableHeading } from "./userHeading";
+
+describe("headingArrowRadius", () => {
+  const mapHeight = 800;
+  const screenRadius = (metersPerPoint: number) =>
+    headingArrowRadius((metersPerPoint * mapHeight) / 111_320, mapHeight) / metersPerPoint;
+
+  test("grows gradually rather than proportionally to zoom", () => {
+    expect(screenRadius(0.8)).toBeCloseTo(32);
+    expect(screenRadius(0.4)).toBeGreaterThan(screenRadius(0.8));
+    expect(screenRadius(0.4)).toBeLessThan(2 * screenRadius(0.8));
+  });
+
+  test("bounds screen size at both zoom extremes", () => {
+    expect(screenRadius(100)).toBeCloseTo(24);
+    expect(screenRadius(0.001)).toBeCloseTo(48);
+  });
+
+  test("uses the map's actual height to preserve screen size", () => {
+    const delta = 0.006;
+    expect(headingArrowRadius(delta, 400)).toBeCloseTo(headingArrowRadius(delta * 2, 800));
+  });
+});
 
 describe("reliableHeading", () => {
   test("prefers true north and falls back to magnetic north", () => {

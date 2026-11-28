@@ -1,12 +1,12 @@
 import type { Buildings, GeoCoordinate, GeoRooms, Pois } from "@cmumaps/common";
 import { getRoomTypeDetails } from "@cmumaps/common";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dimensions, Platform, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polygon, Polyline, type Region } from "react-native-maps";
 import { useUserHeading } from "@/hooks/useUserHeading";
 import { cameraForRegion, isInPolygon } from "@/lib/geometry";
 import type { VisibleRoomLabel } from "@/lib/mapSession";
-import { headingArrow } from "@/lib/userHeading";
+import { headingArrow, headingArrowRadius } from "@/lib/userHeading";
 import { theme } from "@/theme";
 
 interface CameraTarget {
@@ -43,9 +43,6 @@ const initialRegion = {
   latitudeDelta: 0.006337455593801167,
   longitudeDelta: 0.011960061265583022,
 };
-
-// Fixed geographic size lets the heading arrow scale naturally with map zoom.
-const headingArrowRadiusMeters = 2;
 
 // Fabric's RNMapsMapView passes maxCenterCoordinateDistance straight to
 // MKMapCameraZoomRange, where 0 (< min) makes the initializer return nil;
@@ -113,9 +110,11 @@ export const CampusMap = ({
   const lastCameraIntent = useRef("");
   const lastFeaturePressAt = useRef(0);
   const userHeading = useUserHeading(Boolean(userPosition));
+  const [latitudeDelta, setLatitudeDelta] = useState(initialRegion.latitudeDelta);
+  const [mapHeight, setMapHeight] = useState(Dimensions.get("window").height);
   const facingArrow =
     userPosition && userHeading !== null
-      ? headingArrow(userPosition, userHeading, headingArrowRadiusMeters)
+      ? headingArrow(userPosition, userHeading, headingArrowRadius(latitudeDelta, mapHeight))
       : null;
 
   const hasRoomAt = (point: GeoCoordinate | undefined) => {
@@ -161,7 +160,12 @@ export const CampusMap = ({
         onPressMap?.();
       }}
       onLongPress={(event) => onLongPress(event.nativeEvent.coordinate)}
-      onRegionChangeComplete={onRegionChangeComplete}
+      onLayout={(event) => setMapHeight(event.nativeEvent.layout.height)}
+      onRegionChange={(region) => setLatitudeDelta(region.latitudeDelta)}
+      onRegionChangeComplete={(region) => {
+        setLatitudeDelta(region.latitudeDelta);
+        onRegionChangeComplete(region);
+      }}
     >
       {buildings
         ? Object.entries(buildings).map(([code, building]) => {

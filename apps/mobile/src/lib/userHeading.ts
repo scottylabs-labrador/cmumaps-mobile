@@ -1,6 +1,13 @@
 import type { GeoCoordinate } from "@cmumaps/common";
 import type { LocationHeadingObject } from "expo-location";
 
+/** Grow gently with zoom, keeping the arrow visible without overwhelming the map. */
+export const headingArrowRadius = (latitudeDelta: number, mapHeight: number): number => {
+  const metersPerPoint = (Math.max(latitudeDelta, 1e-9) * 111_320) / Math.max(mapHeight, 1);
+  const radiusPoints = Math.min(48, Math.max(24, 32 * Math.pow(0.8 / metersPerPoint, 0.2)));
+  return radiusPoints * metersPerPoint;
+};
+
 export const reliableHeading = (heading: LocationHeadingObject): number | null => {
   if (heading.accuracy < 2) return null;
   const degrees = heading.trueHeading >= 0 ? heading.trueHeading : heading.magHeading;

@@ -1,4 +1,4 @@
-CMU Maps is a navigation app that helps you get around Carnegie Mellon University.
+CMU Maps is an app that helps you navigate Carnegie Mellon University.
 
 1. Explore campus with an interactive map and building outlines.
 2. Browse floor plans and find rooms across campus.

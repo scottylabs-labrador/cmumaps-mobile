@@ -1,5 +1,4 @@
-export const aboutDescription =
-  "CMU Maps is a navigation app that helps you get around Carnegie Mellon University.";
+export const aboutDescription = "An app that helps you navigate Carnegie Mellon University.";
 
 export const privacyPolicyUrl = "https://policy.cmumaps.com";
 

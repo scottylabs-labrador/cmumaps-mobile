@@ -69,8 +69,9 @@ all of these fields. Apple support/privacy URLs are automated.
 
 Apple review contact details and instructions are uploaded using
 `app_review_information` from `review_information.json`. Replace all
-`REPLACE_ME` values with genuine contact details. The lane fails before Apple
-API calls while any required field is empty or still contains a placeholder.
+`REPLACE_ME` values with genuine contact details before manually submitting for
+review. Draft uploads allow contact placeholders but reject empty required
+fields; Apple may still reject placeholder values during API validation.
 Set the GitHub Actions secret `APP_REVIEW_PASSWORD` to the same password as the
 server's `PASSWORD_SIGN_IN`, and enable that server setting before review.
 The password is supplied through the environment, never committed to metadata.

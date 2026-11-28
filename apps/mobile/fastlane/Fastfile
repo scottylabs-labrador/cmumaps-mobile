@@ -42,8 +42,8 @@ platform :ios do
     review_information = JSON.parse(File.read(File.join(fastlane_dir, "review_information.json")), symbolize_names: true)
     %i[first_name last_name phone_number email_address notes].each do |field|
       value = review_information[field].to_s.strip
-      if value.empty? || value.include?("REPLACE_ME")
-        UI.user_error!("Replace the #{field} placeholder in fastlane/review_information.json before uploading iOS metadata.")
+      if value.empty?
+        UI.user_error!("The #{field} field in fastlane/review_information.json must not be empty.")
       end
     end
     review_password = ENV.fetch("APP_REVIEW_PASSWORD", "")

@@ -45,7 +45,7 @@ const initialRegion = {
 };
 
 // Fixed geographic size lets the heading arrow scale naturally with map zoom.
-const headingArrowRadiusMeters = 25;
+const headingArrowRadiusMeters = 2;
 
 // Fabric's RNMapsMapView passes maxCenterCoordinateDistance straight to
 // MKMapCameraZoomRange, where 0 (< min) makes the initializer return nil;

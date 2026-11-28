@@ -1,7 +1,12 @@
 require "json"
 require "open3"
+require "rubygems/version"
 
 opt_out_usage
+
+# Fastlane evaluates this file with a relative filename, then changes directory
+# when running actions. Capture absolute paths while parsing the Fastfile.
+fastlane_dir = File.expand_path(__dir__)
 
 def expo_config
   root = File.expand_path("..", __dir__)
@@ -19,7 +24,7 @@ platform :android do
     upload_to_play_store(
       package_name: config.fetch("android").fetch("package"),
       json_key_data: credentials,
-      metadata_path: File.join(__dir__, "metadata", "android"),
+      metadata_path: File.join(fastlane_dir, "metadata", "android"),
       skip_upload_apk: true,
       skip_upload_aab: true,
       skip_upload_changelogs: true,
@@ -48,9 +53,13 @@ platform :ios do
     UI.user_error!("App Store Connect app #{identifier} does not exist") unless app
     versions = app.get_app_store_versions(filter: { platform: "IOS" })
     matching = versions.find { |candidate| candidate.version_string == version }
+    # Apple drafts may use 1.0 for Expo's 1.0.0. Reuse the existing spelling
+    # without renaming it; non-equivalent versions remain conflicts.
+    matching ||= versions.find { |candidate| Gem::Version.new(candidate.version_string) == Gem::Version.new(version) }
     if matching
       editable = %w[PREPARE_FOR_SUBMISSION DEVELOPER_REJECTED REJECTED METADATA_REJECTED INVALID_BINARY]
       UI.user_error!("iOS #{version} is #{matching.app_version_state}, not editable.") unless editable.include?(matching.app_version_state)
+      version = matching.version_string
     else
       conflict = versions.find { |candidate| !%w[READY_FOR_DISTRIBUTION REMOVED_FROM_SALE].include?(candidate.app_version_state) }
       UI.user_error!("Another iOS version (#{conflict.version_string}) exists; refusing to rename it.") if conflict
@@ -59,15 +68,15 @@ platform :ios do
         attributes: { versionString: version, platform: "IOS" }
       )
     end
-    # Guard above prepares the exact version; Deliver must never rename a draft.
+    # Guard above selects the version; Deliver must never rename a draft.
     upload_to_app_store(
       api_key: key,
       app_identifier: identifier,
       app_version: version,
       skip_app_version_update: true,
-      metadata_path: File.join(__dir__, "metadata", "ios"),
-      screenshots_path: File.join(__dir__, "metadata", "ios", "screenshots"),
-      skip_screenshots: Dir.glob(File.join(__dir__, "metadata", "ios", "screenshots", "**", "*.{png,jpg,jpeg}")).empty?,
+      metadata_path: File.join(fastlane_dir, "metadata", "ios"),
+      screenshots_path: File.join(fastlane_dir, "metadata", "ios", "screenshots"),
+      skip_screenshots: Dir.glob(File.join(fastlane_dir, "metadata", "ios", "screenshots", "**", "*.{png,jpg,jpeg}")).empty?,
       overwrite_screenshots: false,
       skip_binary_upload: true,
       skip_metadata: false,
@@ -77,7 +86,7 @@ platform :ios do
       run_precheck_before_submit: false,
       primary_category: "NAVIGATION",
       secondary_category: "EDUCATION",
-      app_rating_config_path: File.join(__dir__, "age_rating.json")
+      app_rating_config_path: File.join(fastlane_dir, "age_rating.json")
     )
   end
 end

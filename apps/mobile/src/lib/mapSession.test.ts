@@ -169,6 +169,70 @@ describe("mapSession", () => {
     expect(resolveViewportFloor(undefined, zoomedGhc, 400)).toEqual({ kind: "none" });
   });
 
+  test("matches neighboring floors by ordinal instead of their default floor", () => {
+    const nearbyBuildings: Buildings = {
+      ...buildings,
+      GHC: { ...buildings.GHC!, labelLongitude: buildings.CUC!.labelLongitude },
+    };
+    const region = {
+      latitude: 40.4435,
+      longitude: -79.942,
+      latitudeDelta: 0.0008,
+      longitudeDelta: 0.0008,
+    };
+    const adjacent = (floor: string) =>
+      visibleAdjacentFloorCodes(nearbyBuildings, region, 400, "CUC", {
+        buildingCode: "CUC",
+        floor,
+      });
+    expect(adjacent("1")).toEqual(["GHC-1"]);
+    expect(adjacent("2")).toEqual(["GHC-2"]);
+    expect(adjacent("LL")).toEqual([]);
+    expect(
+      visibleAdjacentFloorCodes(nearbyBuildings, region, 400, "GHC", {
+        buildingCode: "GHC",
+        floor: "2",
+      }),
+    ).toEqual(["CUC-2"]);
+    expect(
+      visibleAdjacentFloorCodes(
+        { ...nearbyBuildings, GHC: { ...nearbyBuildings.GHC!, defaultOrdinal: null } },
+        region,
+        400,
+        "CUC",
+        { buildingCode: "CUC", floor: "2" },
+      ),
+    ).toEqual([]);
+    expect(adjacent("missing")).toEqual([]);
+  });
+
+  test("matches nonnumeric floor labels using their offset from the default ordinal", () => {
+    const nearbyBuildings: Buildings = {
+      ...buildings,
+      GHC: {
+        ...buildings.GHC!,
+        labelLongitude: buildings.CUC!.labelLongitude,
+        floors: ["B", "G", "M", "U"],
+        defaultFloor: "G",
+        defaultOrdinal: 1,
+      },
+    };
+    expect(
+      visibleAdjacentFloorCodes(
+        nearbyBuildings,
+        {
+          latitude: 40.4435,
+          longitude: -79.942,
+          latitudeDelta: 0.0008,
+          longitudeDelta: 0.0008,
+        },
+        400,
+        "CUC",
+        { buildingCode: "CUC", floor: "2" },
+      ),
+    ).toEqual(["GHC-M"]);
+  });
+
   test("derives camera region for navigating step vs planning route vs building target", () => {
     const plan = buildRoutePlan({
       srcToken: "GHC",

@@ -124,6 +124,7 @@ export const MapScreen = () => {
     viewRegion,
     screenWidth,
     buildingCode,
+    activeFloor,
   );
   const inViewFloorplans = useFloorplans(inViewFloorCodes, inViewFloorCodes.length > 0);
   const mergedRooms = (() => {

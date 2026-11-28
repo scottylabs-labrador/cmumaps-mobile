@@ -1,6 +1,6 @@
 import type { Buildings, GeoCoordinate, GeoRooms, Pois } from "@cmumaps/common";
 import { getRoomTypeDetails } from "@cmumaps/common";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Dimensions, Platform, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polygon, Polyline, type Region } from "react-native-maps";
 import { useUserHeading } from "@/hooks/useUserHeading";
@@ -43,6 +43,9 @@ const initialRegion = {
   latitudeDelta: 0.006337455593801167,
   longitudeDelta: 0.011960061265583022,
 };
+
+// Fixed geographic size lets the heading arrow scale naturally with map zoom.
+const headingArrowRadiusMeters = 25;
 
 // Fabric's RNMapsMapView passes maxCenterCoordinateDistance straight to
 // MKMapCameraZoomRange, where 0 (< min) makes the initializer return nil;
@@ -110,12 +113,9 @@ export const CampusMap = ({
   const lastCameraIntent = useRef("");
   const lastFeaturePressAt = useRef(0);
   const userHeading = useUserHeading(Boolean(userPosition));
-  const [arrowRadius, setArrowRadius] = useState(
-    (initialRegion.latitudeDelta * 111_320 * 32) / Dimensions.get("window").height,
-  );
   const facingArrow =
     userPosition && userHeading !== null
-      ? headingArrow(userPosition, userHeading, arrowRadius)
+      ? headingArrow(userPosition, userHeading, headingArrowRadiusMeters)
       : null;
 
   const hasRoomAt = (point: GeoCoordinate | undefined) => {
@@ -161,11 +161,7 @@ export const CampusMap = ({
         onPressMap?.();
       }}
       onLongPress={(event) => onLongPress(event.nativeEvent.coordinate)}
-      onRegionChangeComplete={(region) => {
-        // Keep the arrow's scale stable as the user zooms.
-        setArrowRadius((region.latitudeDelta * 111_320 * 32) / Dimensions.get("window").height);
-        onRegionChangeComplete(region);
-      }}
+      onRegionChangeComplete={onRegionChangeComplete}
     >
       {buildings
         ? Object.entries(buildings).map(([code, building]) => {
